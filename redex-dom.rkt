@@ -1,5 +1,6 @@
 #lang racket
 (require redex)
+(provide DOM DOM)
 
 (define-language DOM
   [bool #t #f]
@@ -10,10 +11,12 @@
   ; Phases
   [P capture target bubble]
   ; DOM nodes
-  ; This representation only contains a list of (phase, listener list) pairs
-  [N (node (P (L ...) ...))]
+  ; This representation contains a list of (phase, listener list) pairs, a 
+  ; list of children, and a parent
+  [N-listener (P (L ...))]
+  [N null-node (node (node-listener ...) (N ...) N)]
   ; Event listeners
-  [L (listener E P (S ...))]
+  [L (listener T P (S ...))]
   ; Listener steps
   [S stop-prop
      stop-immediate
@@ -25,4 +28,3 @@
      (dispatch E N P (N ...) (L ...))]
   ; Machine state
   [M (state (S ...) N)])
-  
