@@ -10,11 +10,12 @@
   [E (event T bool bool bool)]
   ; Phases
   [P capture target bubble]
-  ; DOM nodes
-  ; This representation contains a list of (phase, listener list) pairs, a 
-  ; list of children, and a parent
-  [N-listener (P (L ...))]
-  [N null-node (node (node-listener ...) (N ...) N)]
+  ; DOM nodes are either null (for the parent of the root)
+  ; or a node - consisting of a list of listeners for the capture phase,
+  ; listeners for target phase, listeners for bubble phase, list of children,
+  ; and reference to the parent node.
+  [N null-node 
+     (node (L ...) (L ...) (L ...) (N ...) N)]
   ; Event listeners
   [L (listener T P (S ...))]
   ; Listener steps
