@@ -41,8 +41,25 @@
   (term (pre-dispatch loc-parent ,(list (term loc-child)) ,test-event)))
 (test S pd-after-step "predispatch after 1 step")
 
+; Test for arbitrary step while building path in pre-dispatch
 (define next-state
   (term (state ,(list pd-after-step) ,store)))
 (test M next-state "state after pd reduction step")
 
 (test--> DOM-reduce start-state next-state)
+
+; Test for transition from pre-dispatch to dispatch
+(define dispatch-start
+  (term (dispatch 
+         ,test-event 
+         loc-parent 
+         capture 
+         ,(list (term loc-parent) (term loc-child))
+         ,empty)))
+(test S dispatch-start "dispatch-start")
+
+(define dispatch-start-state
+  (term (state ,(list dispatch-start) ,store)))
+(test M dispatch-start-state "dispatch-start-state")
+
+(test--> DOM-reduce next-state dispatch-start-state)

@@ -38,6 +38,22 @@
 (define DOM-reduce
   (reduction-relation
    DOM
+   
+   ; Path building complete, transition to dispatch
+   (--> (state ((pre-dispatch loc_current (loc ...) E) S ...)
+               ((loc_b N_b) ...
+                (loc_current
+                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) null))
+                (loc_a N_a) ...))
+        (state ((dispatch E loc_current capture (loc_current loc ...) (L_c ...))
+                S ...)
+               ((loc_b N_b) ...
+                (loc_current
+                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) null))
+                (loc_a N_a) ...))
+        pd-finish-path)
+   
+   ; Building path in pre-dispatch
    (--> (state ((pre-dispatch loc_current (loc ...) E) S ...)
                ((loc_b N_b) ...
                 (loc_current
