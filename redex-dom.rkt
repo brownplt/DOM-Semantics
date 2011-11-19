@@ -10,12 +10,14 @@
   [E (event T bool bool bool)]
   ; Phases
   [P capture target bubble]
-  ; DOM nodes are either null (for the parent of the root)
-  ; or a node - consisting of a list of listeners for the capture phase,
-  ; listeners for target phase, listeners for bubble phase, list of children,
-  ; and reference to the parent node.
-  [N null-node 
-     (node (L ...) (L ...) (L ...) (N ...) N)]
+  ; Locations are like pointers.  The machine state maintains
+  ; a list of (location, DOM node) pairs.
+  [loc (variable-prefix loc)]
+  ; parent is possibly null (parent of root node)
+  [parent null loc]
+  ; DOM nodes contain lists of listeners for each of the 3 phases
+  ; (capture, target, bubble), a list of children, and a parent
+  [N (node (L ...) (L ...) (L ...) (loc ...) parent)]
   ; Event listeners
   [L (listener T P (S ...))]
   ; Listener steps
@@ -24,8 +26,9 @@
      prevent-default 
      mutate
      ; Predispatch of target node, path, event
-     (pre-dispatch N (N ...) E)
+     (pre-dispatch loc (loc ...) E)
      ; Dispatch of event, current node, phase, path, pending listeners
-     (dispatch E N P (N ...) (L ...))]
+     (dispatch E loc P (loc ...) (L ...))]
   ; Machine state
-  [M (state (S ...) N)])
+  [N-store ((loc_!_ N) ...)]
+  [M (state (S ...) N-store)])

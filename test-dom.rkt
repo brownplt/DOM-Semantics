@@ -17,14 +17,18 @@
   (term (listener click capture ,(list (term mutate)))))
 (test L test-listener "listener")
 
-(define test-dom
-  (term (node ,(list test-listener) ,empty ,empty ,empty null-node)))
-(test N test-dom "DOM node")
+(define root
+  (term (node ,empty ,empty ,empty ,(list (term loc-child)) null)))
+(test N root "root node")
 
-(define test-predispatch
-  (term (pre-dispatch ,test-dom ,empty ,test-event)))
-(test S test-predispatch "pre-dispatch")
+(define child
+  (term (node ,(list test-listener) ,empty ,empty ,empty loc-parent)))
+(test N child "child node")
 
-(define test-state
-  (term (state ,(list test-predispatch) ,test-dom)))
-(test M test-state "machine state")
+(define store
+  (term ((loc-child ,child) (loc-parent ,root))))
+(test N-store store "node store")
+
+(define test-init-pd
+  (term (pre-dispatch loc-child ,empty ,test-event)))
+(test S test-init-pd "initial pre-dispatch")
