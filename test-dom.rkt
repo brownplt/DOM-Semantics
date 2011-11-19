@@ -32,3 +32,17 @@
 (define test-init-pd
   (term (pre-dispatch loc-child ,empty ,test-event)))
 (test S test-init-pd "initial pre-dispatch")
+
+(define start-state
+  (term (state ,(list test-init-pd) ,store)))
+(test M start-state "start state")
+
+(define pd-after-step
+  (term (pre-dispatch loc-parent ,(list (term loc-child)) ,test-event)))
+(test S pd-after-step "predispatch after 1 step")
+
+(define next-state
+  (term (state ,(list pd-after-step) ,store)))
+(test M next-state "state after pd reduction step")
+
+(test--> DOM-reduce start-state next-state)

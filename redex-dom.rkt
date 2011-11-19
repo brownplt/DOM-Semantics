@@ -1,6 +1,6 @@
 #lang racket
 (require redex)
-(provide DOM DOM)
+(provide DOM DOM-reduce)
 
 (define-language DOM
   [bool #t #f]
@@ -21,14 +21,31 @@
   ; Event listeners
   [L (listener T P (S ...))]
   ; Listener steps
+  ; Predispatch: target node, path, event
+  [PD (pre-dispatch loc (loc ...) E)]
+  ; Dispatch: event, current node, phase, path, pending listeners
+  [D (dispatch E loc P (loc ...) (L ...))]
   [S stop-prop
      stop-immediate
      prevent-default 
      mutate
-     ; Predispatch of target node, path, event
-     (pre-dispatch loc (loc ...) E)
-     ; Dispatch of event, current node, phase, path, pending listeners
-     (dispatch E loc P (loc ...) (L ...))]
+     PD
+     D]
   ; Machine state
   [N-store ((loc_!_ N) ...)]
   [M (state (S ...) N-store)])
+
+(define DOM-reduce
+  (reduction-relation
+   DOM
+   (--> (state ((pre-dispatch loc_current (loc ...) E) S ...)
+               ((loc_b N_b) ...
+                (loc_current
+                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
+                (loc_a N_a) ...))
+        (state ((pre-dispatch loc_parent (loc_current loc ...) E) S ...)
+               ((loc_b N_b) ...
+                (loc_current
+                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
+                (loc_a N_a) ...))
+        pd-build-path)))
