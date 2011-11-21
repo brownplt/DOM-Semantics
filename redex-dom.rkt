@@ -91,13 +91,13 @@
    ; is not of the same type as the current event
    (--> (state ((pre-dispatch loc_current 
                               (loc ...) 
-                              (event T_!_1 bool_1 bool_2 bool_3)) S ...)
+                              (name E (event T_!_1 bool_1 bool_2 bool_3))) S ...)
                ((loc_b N_b) ...
                 (loc_current
-                 (node ((listener T_!_1 P (S_inner ...)) L_c ...)
+                 (node ((name L_cfirst (listener T_!_1 P (S_inner ...))) L_c ...)
                        (L_t ...) 
-                       (L_b ...) 
-                       (loc_children ...) 
+                       (L_b ...)
+                       (loc_children ...)
                        null))
                 (loc_a N_a) ...))
         ; Load the rest of the capture-phase listeners, but ignore the stack of

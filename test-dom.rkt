@@ -6,7 +6,7 @@
   (syntax-rules ()
     [(test pattern exp name)
      (let ((result-str
-            (if (redex-match DOM pattern exp) "passed" "failed")))
+            (if (redex-match DOM pattern exp) "passed" "FAILED!!!!")))
        (displayln (string-append name ": " result-str)))]))
 
 (define test-event
@@ -99,3 +99,45 @@
 (test M dispatch-other-start "dispatch other start")
 
 (test--> DOM-reduce finished-other-case dispatch-other-start)
+
+; -Case: root node has a capture-phase listener of a different type from
+; the event
+(define root-other-listener
+  (term (listener keydown capture ,(list (term mutate) (term mutate)))))
+(test L root-other-listener "root-other-listener")
+
+(define root-following-listener
+  (term (listener keydown capture ,(list (term stop-prop) (term stop-prop)))))
+(test L root-following-listener "root-following-listener")
+
+(define root-with-other
+  (term (node ,(list root-other-listener root-following-listener) 
+              ,empty 
+              ,empty 
+              ,(list (term loc-child)) 
+              null)))
+(test N root-with-other "root-with-other")
+
+(define root-other-store
+  (term ((loc-child ,child) (loc-parent ,root-with-other))))
+(test N-store root-other-store "root-other-store")
+
+(define finished-other2
+  (term (state ,(list pd-after-step) ,root-other-store)))
+(test M finished-other2 "state for testing root listener of wrong type")
+
+(define dispatch-other2
+  (term (dispatch
+         ,test-event
+         loc-parent
+         capture
+         ,(list (term loc-parent) (term loc-child))
+         ,(list root-following-listener)
+         ,empty)))
+(test S dispatch-other-case "dispatch other2")
+
+(define dispatch-other2-start
+  (term (state ,(list dispatch-other2) ,root-other-store)))
+(test M dispatch-other-start "dispatch other2 start")
+
+(test--> DOM-reduce finished-other2 dispatch-other2-start)
