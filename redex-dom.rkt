@@ -5,7 +5,8 @@
 (define-language DOM
   [bool #t #f]
   ; Event types
-  [T click keydown]
+  ;[T click keydown]
+  [T string]
   ; Event: type, bubble, cancelable, trusted
   [E (event T bool bool bool)]
   ; Phases
@@ -15,9 +16,9 @@
   [loc (variable-prefix loc)]
   ; parent is possibly null (parent of root node)
   [parent null loc]
-  ; DOM nodes contain lists of listeners for each of the 3 phases
-  ; (capture, target, bubble), a list of children, and a parent
-  [N (node (L ...) (L ...) (L ...) (loc ...) parent)]
+  [N (node LS (loc ...) parent)]
+  [LS ((T_!_ PM) ...)]
+  [PM ((P_!_ (L ...)) ...)]
   ; Event listeners
   [L (listener T P (S ...))]
   ; Predispatch: target node, path, event
