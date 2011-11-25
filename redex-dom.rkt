@@ -203,7 +203,7 @@
                           target        ; target phase
                           bool
                           (loc ... loc_current loc_target)
-                          (L_t ...)     ; target phase listeners
+                          (L_t ...)     ; target phase listeners TODO filter for event
                           ())
                 S ...)
                ((loc_b N_b) ...
@@ -229,7 +229,7 @@
                           bubble        ; bubble phase
                           bool
                           (loc ... loc_target)
-                          (L_b ...)     ; bubble phase listeners
+                          (L_b ...)     ; bubble phase listeners TODO filter for event
                           ())
                 S ...)
                ((loc_b N_b) ...
@@ -255,7 +255,7 @@
                           capture       ; capture phase
                           bool
                           (loc ... loc_current loc_next loc_nnext loc ...)
-                          (L_c ...)     ; bubble phase listeners
+                          (L_c ...)     ; bubble phase listeners TODO filter for event
                           ())
                 S ...)
                ((loc_b N_b) ...
@@ -281,7 +281,7 @@
                           bubble        ; bubble phase
                           bool
                           (loc ... loc_next loc_current loc ...)
-                          (L_b ...)     ; bubble phase listeners
+                          (L_b ...)     ; bubble phase listeners TODO filter for event
                           ())
                 S ...)
                ((loc_b N_b) ...
