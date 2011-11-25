@@ -51,10 +51,11 @@
 ; Test for transition from pre-dispatch to dispatch
 ; - Case: root node has no capture-phase listeners
 (define dispatch-start
-  (term (dispatch 
-         ,test-event 
-         loc-parent 
+  (term (dispatch
+         ,test-event
+         loc-parent
          capture
+         #f
          ,(list (term loc-parent) (term loc-child))
          ,empty
          ,empty)))
@@ -89,6 +90,7 @@
          ,test-event
          loc-parent
          capture
+         #f
          ,(list (term loc-parent) (term loc-child))
          ,empty
          ,(list (term mutate) (term prevent-default)))))
@@ -111,10 +113,10 @@
 (test L root-following-listener "root-following-listener")
 
 (define root-with-other
-  (term (node ,(list root-other-listener root-following-listener) 
-              ,empty 
-              ,empty 
-              ,(list (term loc-child)) 
+  (term (node ,(list root-other-listener root-following-listener)
+              ,empty
+              ,empty
+              ,(list (term loc-child))
               null)))
 (test N root-with-other "root-with-other")
 
@@ -131,6 +133,7 @@
          ,test-event
          loc-parent
          capture
+         #f
          ,(list (term loc-parent) (term loc-child))
          ,(list root-following-listener)
          ,empty)))
