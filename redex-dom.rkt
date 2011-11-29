@@ -39,17 +39,31 @@
 (define DOM-reduce
   (reduction-relation
    DOM
-
-   ; Path building complete, transition to dispatch
-   ; - Case: root node has no capture-phase listeners
+   
+   ; Building path in pre-dispatch
    (--> (state ((pre-dispatch loc_current (loc ...) E) S ...)
                ((loc_b N_b) ...
                 (loc_current
-                 (node () (L_t ...) (L_b ...) (loc_children ...) null))
+                 (node LS (loc_children ...) loc_parent))
                 (loc_a N_a) ...))
-        ; Just load the empty list to the dispatch pending listeners and stack,
-        ; then another reduction will transition to the next path node
-        (state ((dispatch E
+        (state ((pre-dispatch loc_parent (loc_current loc ...) E) S ...)
+               ((loc_b N_b) ...
+                (loc_current
+                 (node LS (loc_children ...) loc_parent))
+                (loc_a N_a) ...))
+        pd-build-path)
+
+   ; Path building complete, transition to dispatch
+
+   ; Case where parent doesn't have any listeners for type of event
+   (--> (side-condition 
+         (state ((pre-dispatch loc_current (loc ...) (event (name t1 T) bool_1 bool_2 bool_3)) S ...)
+                ((loc_b N_b) ...
+                 (loc_current
+                  (node (((name t2 T_different) PM) ...) (loc_children ...) null))
+                 (loc_a N_a) ...)) 
+         (empty? (filter (lambda (t) (equal? t (term t1))) (term (t2 ...)))))
+        (state ((dispatch (event t1 bool_1 bool_2 bool_3)
                           loc_current
                           capture
                           #f
@@ -58,80 +72,38 @@
                           ()) S ...)
                ((loc_b N_b) ...
                 (loc_current
-                 (node () (L_t ...) (L_b ...) (loc_children ...) null))
+                 (node ((t2 PM) ...) (loc_children ...) null))
                 (loc_a N_a) ...))
         pd-finish-no-listeners)
-   ; - Case: root node has capture-phase listeners, and the first one
-   ; is of the same event type as the current event
-   (--> (state ((pre-dispatch loc_current
-                              (loc ...)
-                              (event T bool_1 bool_2 bool_3)) S ...)
+   
+   ; Case where parent has listeners for same type as event
+   (--> (state ((pre-dispatch 
+                 loc_current 
+                 (loc ...) 
+                 (event T bool_1 bool_2 bool_3)) 
+                S ...)
                ((loc_b N_b) ...
                 (loc_current
-                 (node ((listener T P (S_inner ...)) L_c ...)
-                       (L_t ...)
-                       (L_b ...)
-                       (loc_children ...)
-                       null))
+                 (node ((T_before PM_before) ... 
+                        (T ((P_before (L_before ...)) ... (capture ((listener T capture (S_l ...))
+                                                                    L ...)) (P_after (L_after ...)) ...)) 
+                        (T_after PM_after) ...) (loc_children ...) null))
                 (loc_a N_a) ...))
         (state ((dispatch (event T bool_1 bool_2 bool_3)
                           loc_current
                           capture
                           #f
                           (loc_current loc ...)
-                          (L_c ...)
-                          (S_inner ...)) S ...)
+                          (L ...)
+                          (S_l ...)) S ...)
                ((loc_b N_b) ...
                 (loc_current
-                 (node ((listener T P (S_inner ...)) L_c ...)
-                       (L_t ...)
-                       (L_b ...)
-                       (loc_children ...)
-                       null))
+                 (node ((T_before PM_before) ... 
+                        (T ((P_before (L_before ...)) ... (capture ((listener T capture (S_l ...))
+                                                                    L ...)) (P_after (L_after ...)) ...)) 
+                        (T_after PM_after) ...) (loc_children ...) null))
                 (loc_a N_a) ...))
-        pd-finish-dofirst)
-   ; - Case: root node has some capture-phase listeners, but the first one
-   ; is not of the same type as the current event
-   (--> (state ((pre-dispatch loc_current
-                              (loc ...)
-                              (name E (event T_!_1 bool_1 bool_2 bool_3))) S ...)
-               ((loc_b N_b) ...
-                (loc_current
-                 (node ((name L_cfirst (listener T_!_1 P (S_inner ...))) L_c ...)
-                       (L_t ...)
-                       (L_b ...)
-                       (loc_children ...)
-                       null))
-                (loc_a N_a) ...))
-        ; Load the rest of the capture-phase listeners, but ignore the stack of
-        ; the first listener
-        (state ((dispatch E
-                          loc_current
-                          capture
-                          #f
-                          (loc_current loc ...)
-                          (L_c ...)
-                          ()))
-               ((loc_b N_b) ...
-                (loc_current
-                 (node (L_cfirst L_c ...) (L_t ...) (L_b ...) (loc_children ...) null))
-                (loc_a N_a) ...))
-        pd-finish-skipfirst)
-
-   ; Building path in pre-dispatch
-   (--> (state ((pre-dispatch loc_current (loc ...) E) S ...)
-               ((loc_b N_b) ...
-                (loc_current
-                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
-                (loc_a N_a) ...))
-        (state ((pre-dispatch loc_parent (loc_current loc ...) E) S ...)
-               ((loc_b N_b) ...
-                (loc_current
-                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
-                (loc_a N_a) ...))
-        pd-build-path)
-
-
+        pd-finish-listeners)
 
    ; Dispatch: event, current node, phase, path, pending listeners, stack
    ; ========== reduction steps to consider ==========

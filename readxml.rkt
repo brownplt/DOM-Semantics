@@ -79,7 +79,7 @@
 (test E test-event "event")
 
 (define test-listener
-  (term (listener type-click capture ,(list (term mutate)))))
+  (term (listener "click" capture ,(list (term mutate)))))
 (test L test-listener "listener")
 
 (define test-pm
@@ -87,7 +87,7 @@
 (test PM test-pm "test-pm")
 
 (define test-ls
-  (list (list (term type-click) test-pm)))
+  (list (list (term "click") test-pm)))
 (test LS test-ls "test-ls")
 ;
 (define root

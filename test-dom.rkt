@@ -10,19 +10,27 @@
        (displayln (string-append name ": " result-str)))]))
 
 (define test-event
-  (term (event click #t #t #t)))
+  (term (event "click" #t #t #t)))
 (test E test-event "event")
 
 (define test-listener
-  (term (listener click capture ,(list (term mutate)))))
+  (term (listener "click" capture ,(list (term mutate)))))
 (test L test-listener "listener")
 
 (define root
-  (term (node ,empty ,empty ,empty ,(list (term loc-child)) null)))
+  (term (node ,empty ,(list (term loc-child)) null)))
 (test N root "root node")
 
+(define test-pm
+  (list (list (term capture) (list test-listener))))
+(test PM test-pm "test-pm")
+
+(define test-ls
+  (list (list "click" test-pm)))
+(test LS test-ls "test-ls")
+
 (define child
-  (term (node ,(list test-listener) ,empty ,empty ,empty loc-parent)))
+  (term (node ,test-ls ,empty loc-parent)))
 (test N child "child node")
 
 (define store
@@ -49,7 +57,7 @@
 (test--> DOM-reduce start-state next-state)
 
 ; Test for transition from pre-dispatch to dispatch
-; - Case: root node has no capture-phase listeners
+; Case: root node has no click listeners
 (define dispatch-start
   (term (dispatch
          ,test-event
@@ -67,14 +75,21 @@
 
 (test--> DOM-reduce next-state dispatch-start-state)
 
-; - Case: root node has a capture-phase listener of the same type as
-; the event (in this case, click)
+; - Case: root node has a click listener
 (define root-listener
-  (term (listener click capture ,(list (term mutate) (term prevent-default)))))
+  (term (listener "click" capture ,(list (term mutate) (term prevent-default)))))
 (test L root-listener "root-listener")
 
+(define listener-pm
+  (list (list (term capture) (list root-listener))))
+(test PM listener-pm "listener-pm")
+
+(define listener-ls
+  (list (list "click" listener-pm)))
+(test LS listener-ls "listener-ls")
+
 (define root-with-listener
-  (term (node ,(list root-listener) ,empty ,empty ,(list (term loc-child)) null)))
+  (term (node ,listener-ls ,(list (term loc-child)) null)))
 (test N root-with-listener "root-with-listener")
 
 (define root-listener-store
@@ -105,17 +120,23 @@
 ; -Case: root node has a capture-phase listener of a different type from
 ; the event
 (define root-other-listener
-  (term (listener keydown capture ,(list (term mutate) (term mutate)))))
+  (term (listener "keydown" capture ,(list (term mutate) (term mutate)))))
 (test L root-other-listener "root-other-listener")
 
 (define root-following-listener
-  (term (listener keydown capture ,(list (term stop-prop) (term stop-prop)))))
+  (term (listener "keydown" capture ,(list (term stop-prop) (term stop-prop)))))
 (test L root-following-listener "root-following-listener")
 
+(define other-pm
+  (list (list (term capture) (list root-other-listener root-following-listener))))
+(test PM other-pm "other-pm")
+
+(define other-ls
+  (list (list "keydown" other-pm)))
+(test LS other-ls "other-ls")
+
 (define root-with-other
-  (term (node ,(list root-other-listener root-following-listener)
-              ,empty
-              ,empty
+  (term (node ,other-ls
               ,(list (term loc-child))
               null)))
 (test N root-with-other "root-with-other")
@@ -135,7 +156,7 @@
          capture
          #f
          ,(list (term loc-parent) (term loc-child))
-         ,(list root-following-listener)
+         ,empty
          ,empty)))
 (test S dispatch-other-case "dispatch other2")
 
