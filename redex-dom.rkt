@@ -346,33 +346,78 @@
                 S ...)
                store)
         capture-next-skip)
-                          
-   ; Fill the pending listeners list from the next node during bubble phase.
-   ; TODO get listeners
-   (--> (state ((dispatch E
-                          loc_current   ; any node (but the rootmost)
-                          bubble        ; bubble phase
+   
+   ; The following reductions handle advancing to the next node during the
+   ; bubble phase:
+   ;
+   ;     * bubble-next-node
+   ;     * bubble-next-none
+   ;     * bubble-next-skip
+   
+   ;;;;;;;;;;;;;;;;;;;;;
+   ; bubble-next-node
+   ;;;;;;;;;;;;;;;;;;;;;
+   ; Case: next node has listeners for the correct type AND the bubble phase
+   (--> (state ((dispatch (name E (event T_event bool_b bool_c bool_t))
+                          loc_current
+                          bubble
                           bool
-                          (loc ... loc_next loc_current loc ...)
+                          (name path (loc_before ... loc_next loc_current loc_after ...))
                           ()
                           ())
                 S ...)
-               ((loc_b N_b) ...
-                (loc_next
-                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
-                (loc_a N_a) ...))
+               (name store
+                     ((loc_b N_b) ...
+                      (loc_current
+                       (node LS (loc_cchildren ...) loc_next))
+                      (loc_between N_between) ...
+                      (loc_next
+                       (node ((T_b PM_b) ...
+                              (T_event ((P_b (L_b ...)) ...
+                                        (bubble ((name first-listener 
+                                                       (listener T_event bubble (S_toload ...)))
+                                                 L_bubble ...))
+                                        (P_a (L_a ...)) ...))
+                              (T_a PM_a) ...)
+                             (loc_pchildren ...) loc_somewhere))
+                      (loc_a N_a) ...)))
         (state ((dispatch E
-                          loc_next      ; next node
-                          bubble        ; bubble phase
+                          loc_next
+                          bubble
                           bool
-                          (loc ... loc_next loc_current loc ...)
-                          (L_b ...)     ; bubble phase listeners TODO filter for event
-                          ())
+                          path
+                          (first-listener L_bubble ...)
+                          (S_toload ...))
                 S ...)
-               ((loc_b N_b) ...
-                (loc_next
-                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
-                (loc_a N_a) ...)))
+               store)
+        bubble-next-node)
+                          
+;   ; Fill the pending listeners list from the next node during bubble phase.
+;   ; TODO get listeners
+;   (--> (state ((dispatch E
+;                          loc_current   ; any node (but the rootmost)
+;                          bubble        ; bubble phase
+;                          bool
+;                          (loc ... loc_next loc_current loc ...)
+;                          ()
+;                          ())
+;                S ...)
+;               ((loc_b N_b) ...
+;                (loc_next
+;                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
+;                (loc_a N_a) ...))
+;        (state ((dispatch E
+;                          loc_next      ; next node
+;                          bubble        ; bubble phase
+;                          bool
+;                          (loc ... loc_next loc_current loc ...)
+;                          (L_b ...)     ; bubble phase listeners TODO filter for event
+;                          ())
+;                S ...)
+;               ((loc_b N_b) ...
+;                (loc_next
+;                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
+;                (loc_a N_a) ...)))
 
    ;;;;;;;;;; Dispatch loading next handler, running handler steps ;;;;;;;;;;
 

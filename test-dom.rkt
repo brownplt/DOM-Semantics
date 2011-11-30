@@ -171,7 +171,7 @@
 ; the capture phase, when the next node has listeners for the correct
 ; event type AND the capture phase
 (define cnn-next-listener
-  (term (listener "click" capture (stop-immediate))))
+  (term (listener "click" capture ((debug-print "cnn-next-listener")))))
 (test L cnn-next-listener "cnn-next-listener")
   
 (define cnn-before
@@ -195,7 +195,7 @@
                           #f
                           ,(list (term loc-parent) (term loc-current) (term loc-next) (term loc-target))
                           ,(list cnn-next-listener)
-                          ,(list (term stop-immediate))))
+                          ,(list (term (debug-print "cnn-next-listener")))))
                ((loc-next
                  (node ,(list (list "click" (list (list (term capture) (list cnn-next-listener)))))
                        ,(list (term loc-target))
@@ -209,10 +209,10 @@
 ; phase, when the next node has listeners for the correct event type, BUT NOT
 ; for the capture phase
 (define cn-none-listener
-  (term (listener "click" bubble (stop-immediate))))
+  (term (listener "click" bubble ((debug-print "cn-none-listener")))))
 (test L cn-none-listener "cn-none-listener")
 (define cn-none-listener-t
-  (term (listener "click" target (stop-immediate))))
+  (term (listener "click" target ((debug-print "cn-none-listener-t")))))
 (test L cn-none-listener-t "cn-none-listener-t")
 
 (define cn-none-before
@@ -251,7 +251,7 @@
 ; Handles case of transitioning to next node on the path during capture phase
 ; when the next node has no listeners for the correct event type
 (define cn-skip-listener
-  (term (listener "keydown" capture (stop-immediate))))
+  (term (listener "keydown" capture ((debug-print "cn-skip-listener")))))
 (test L cn-skip-listener "cn-skip-listener")
 
 (define cn-skip-before
@@ -283,6 +283,47 @@
 (test M cn-skip-after "cn-skip-after")
 
 (test--> DOM-reduce cn-skip-before cn-skip-after)
+
+; Test bubble-next-skip reuction
+; Transitioning to the next node on the path during bubble phase, when the next
+; node has listeners of the correct event type AND for bubble phase
+(define bnn-next-listener
+  (term (listener "click" bubble ((debug-print "bnn-next-listener")))))
+(test L bnn-next-listener "bnn-next-listener")
+
+(define bnn-before
+  (term (state ((dispatch (event "click" #t #t #t)
+                          loc-current
+                          bubble
+                          #f
+                          ,(list (term loc-parent) (term loc-next) (term loc-current) (term loc-target))
+                          ,empty
+                          ,empty))
+               ((loc-current
+                 (node ,empty ,empty loc-next))
+                (loc-next
+                 (node ,(list (list "click" (list (list (term bubble) (list bnn-next-listener)))))
+                       ,(list (term loc-target))
+                       loc-current))))))
+(test M bnn-before "bnn-before")
+
+(define bnn-after
+  (term (state ((dispatch (event "click" #t #t #t)
+                          loc-next
+                          bubble
+                          #f
+                          ,(list (term loc-parent) (term loc-next) (term loc-current) (term loc-target))
+                          ,(list bnn-next-listener)
+                          ,(list (term (debug-print "bnn-next-listener")))))
+               ((loc-current
+                 (node ,empty ,empty loc-next))
+                (loc-next
+                 (node ,(list (list "click" (list (list (term bubble) (list bnn-next-listener)))))
+                       ,(list (term loc-target))
+                       loc-current))))))
+(test M bnn-after "bnn-after")
+
+(test--> DOM-reduce bnn-before bnn-after)
 
 (define last-store
   (term ((loc-root ,root))))
