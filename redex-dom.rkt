@@ -143,49 +143,62 @@
    ; TODO default handler
    ; TODO should pass back return value of dispatch call
    (--> (state ((dispatch E loc_current bubble bool (loc_current loc ...) () ())
-                S ...)
+                S_1 S ...)    ;made it so that this doesn't conflict with the last dispatch rule
                N-store)
-        (state (S ...)
+        (state (S_1 S ...)
                N-store))
    ; All done handling dispatch (stopProp'ed), falling back to stack steps.
    ; TODO default handler
    (--> (state ((dispatch E loc P bool () () ())
-                S ...)
+                S_1 S ...)   ;made it so that this doesn't conflict with the last dispatch rule
                N-store)
-        (state (S ...)
+        (state (S_1 S ...)
                N-store))
 
    ;;;;;;;;;; Dispatch moving between path nodes ;;;;;;;;;;
-
+;;[T click keydown]
+;[T string]
+;; Event: type, bubble, cancelable, trusted
+;[E (event T bool bool bool)]
    ; Time to switch capture->target phase.
    ; TODO get listeners
-   (--> (state ((dispatch E
+   (--> (state ((dispatch (event T_2 bool_1 bool_2 bool_3)
                           loc_current   ; parent of target node
                           capture
                           bool
                           (loc ... loc_current loc_target)
                           ()            ; empty listener list
                           ())
-                S ...)
+                S ...)               
                ((loc_b N_b) ...
                 (loc_target
-                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
+                 (node 
+                  ((T_1 PM_1) ... 
+                   (T_2 ((P (L ...)) ... (target (L_1 ...))))
+                   (T_after PM_after) ...)
+                  (loc_children ...)
+                  parent))
                 (loc_a N_a) ...))
-        (state ((dispatch E
+        (state ((dispatch (event T_2 bool_1 bool_2 bool_3)
                           loc_target    ; target node
                           target        ; target phase
                           bool
                           (loc ... loc_current loc_target)
-                          (L_t ...)     ; target phase listeners TODO filter for event
+                          (L_1 ...)   ; target phase listeners TODO filter for event
                           ())
                 S ...)
                ((loc_b N_b) ...
                 (loc_target
-                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
+                 (node 
+                  ((T_1 PM_1) ... 
+                   (T_2 ((P (L ...)) ... (target (L_1 ...))))
+                   (T_after PM_after) ...)
+                  (loc_children ...) parent))
                 (loc_a N_a) ...)))
+               
    ; Time to switch target->bubble phase.
    ; TODO get listeners
-   (--> (state ((dispatch E
+   (--> (state ((dispatch (event T_2 bool_1 bool_2 bool_3)
                           loc_target    ; target node
                           target        ; target phase
                           bool
@@ -194,20 +207,30 @@
                           ())
                 S ...)
                 ((loc_b N_b) ...
-                 (loc_target
-                  (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
-                 (loc_a N_a) ...))
-        (state ((dispatch E
+                (loc_target
+                 (node 
+                  ((T_1 PM_1) ... 
+                   (T_2 ((P (L ...)) ... (bubble (L_1 ...))))
+                   (T_after PM_after) ...)
+                  (loc_children ...)
+                  parent))
+                (loc_a N_a) ...))
+        (state ((dispatch (event T_2 bool_1 bool_2 bool_3)
                           loc_target    ; target node
                           bubble        ; bubble phase
                           bool
                           (loc ... loc_target)
-                          (L_b ...)     ; bubble phase listeners TODO filter for event
+                          (L_1 ...)     ; bubble phase listeners TODO filter for event
                           ())
                 S ...)
                ((loc_b N_b) ...
                 (loc_target
-                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
+                 (node 
+                  ((T_1 PM_1) ... 
+                   (T_2 ((P (L ...)) ... (bubble (L_1 ...))))
+                   (T_after PM_after) ...)
+                  (loc_children ...)
+                  parent))
                 (loc_a N_a) ...)))
    ; Fill the pending listeners list from the next node during capture phase.
    ; TODO get listeners
