@@ -144,6 +144,8 @@
    ;;;;;;;;;; Dispatch exiting b/c at end of path or after stopProp ;;;;;;;;;;
 
    ; All done handling this dispatch, falling back to stack steps.
+   ; !! Cahnged to require that the listener steps stack is not empty to 
+   ;    avoid conflict with previous rules!!
    ; TODO default handler
    ; TODO should pass back return value of dispatch call
    (--> (state ((dispatch E loc_current bubble bool (loc_current loc ...) () ())
