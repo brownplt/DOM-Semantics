@@ -2,6 +2,9 @@
 (require redex)
 (provide DOM DOM-reduce)
 
+(define (all-unique? l) 
+  (equal? (remove-duplicates l) l))
+
 (define-language DOM
   [bool #t #f]
   ; Event types
@@ -17,7 +20,7 @@
   ; parent is possibly null (parent of root node)
   [parent null loc]
   [N (node LS (loc ...) parent)]
-  [LS ((T_!_ PM) ...)]
+  [LS (side-condition (((name t T) PM) ...) (all-unique? (term (t ...))))]
   [PM ((P_!_ (L ...)) ...)]
   ; Event listeners
   [L (listener T P (S ...))]
