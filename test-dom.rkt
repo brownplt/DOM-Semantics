@@ -165,3 +165,121 @@
 (test M dispatch-other-start "dispatch other2 start")
 
 (test--> DOM-reduce finished-other2 dispatch-other2-start)
+
+; Test capture-next-node reduction:
+; Handles case of transitioning to the next node on the path during
+; the capture phase, when the next node has listeners for the correct
+; event type AND the capture phase
+(define cnn-next-listener
+  (term (listener "click" capture (stop-immediate))))
+(test L cnn-next-listener "cnn-next-listener")
+  
+(define cnn-before
+  (term (state ((dispatch (event "click" #t #t #t)
+                          loc-current
+                          capture
+                          #f
+                          ,(list (term loc-parent) (term loc-current) (term loc-next) (term loc-target))
+                          ,empty
+                          ,empty))
+               ((loc-next
+                 (node ,(list (list "click" (list (list (term capture) (list cnn-next-listener)))))
+                       ,(list (term loc-target))
+                       loc-current))))))
+(test M cnn-before "cnn-before")
+
+(define cnn-after
+  (term (state ((dispatch (event "click" #t #t #t)
+                          loc-next
+                          capture
+                          #f
+                          ,(list (term loc-parent) (term loc-current) (term loc-next) (term loc-target))
+                          ,(list cnn-next-listener)
+                          ,(list (term stop-immediate))))
+               ((loc-next
+                 (node ,(list (list "click" (list (list (term capture) (list cnn-next-listener)))))
+                       ,(list (term loc-target))
+                       loc-current))))))
+(test M cnn-after "cnn-after")
+
+(test--> DOM-reduce cnn-before cnn-after)
+
+; Test capture-next-none reduction
+; Handles case of transitioning to the next node on the path during the capture
+; phase, when the next node has listeners for the correct event type, BUT NOT
+; for the capture phase
+(define cn-none-listener
+  (term (listener "click" bubble (stop-immediate))))
+(test L cn-none-listener "cn-none-listener")
+(define cn-none-listener-t
+  (term (listener "click" target (stop-immediate))))
+(test L cn-none-listener-t "cn-none-listener-t")
+
+(define cn-none-before
+  (term (state ((dispatch (event "click" #t #t #t)
+                          loc-current
+                          capture
+                          #f
+                          ,(list (term loc-parent) (term loc-current) (term loc-next) (term loc-target))
+                          ,empty
+                          ,empty))
+               ((loc-next
+                 (node ,(list (list "click" (list (list (term bubble) (list cn-none-listener))
+                                                  (list (term target) (list cn-none-listener-t)))))
+                       ,(list (term loc-target))
+                       loc-current))))))
+(test M cn-none-before "cn-none-before")
+
+(define cn-none-after
+  (term (state ((dispatch (event "click" #t #t #t)
+                          loc-next
+                          capture
+                          #f
+                          ,(list (term loc-parent) (term loc-current) (term loc-next) (term loc-target))
+                          ,empty
+                          ,empty))
+               ((loc-next
+                 (node ,(list (list "click" (list (list (term bubble) (list cn-none-listener))
+                                                  (list (term target) (list cn-none-listener-t)))))
+                       ,(list (term loc-target))
+                       loc-current))))))
+(test M cn-none-after "cn-none-after")
+
+(test--> DOM-reduce cn-none-before cn-none-after)
+
+; Test capture-next-skip reduction
+; Handles case of transitioning to next node on the path during capture phase
+; when the next node has no listeners for the correct event type
+(define cn-skip-listener
+  (term (listener "keydown" capture (stop-immediate))))
+(test L cn-skip-listener "cn-skip-listener")
+
+(define cn-skip-before
+  (term (state ((dispatch (event "click" #t #t #t)
+                          loc-current
+                          capture
+                          #f
+                          ,(list (term loc-parent) (term loc-current) (term loc-next) (term loc-target))
+                          ,empty
+                          ,empty))
+               ((loc-next
+                 (node ,(list (list "keydown" (list (list (term bubble) (list cn-skip-listener)))))
+                       ,(list (term loc-target))
+                       loc-current))))))
+(test M cn-skip-before "cn-skip-before")
+
+(define cn-skip-after
+  (term (state ((dispatch (event "click" #t #t #t)
+                          loc-next
+                          capture
+                          #f
+                          ,(list (term loc-parent) (term loc-current) (term loc-next) (term loc-target))
+                          ,empty
+                          ,empty))
+               ((loc-next
+                 (node ,(list (list "keydown" (list (list (term bubble) (list cn-skip-listener)))))
+                       ,(list (term loc-target))
+                       loc-current))))))
+(test M cn-skip-after "cn-skip-after")
+
+(test--> DOM-reduce cn-skip-before cn-skip-after)

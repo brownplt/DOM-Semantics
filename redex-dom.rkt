@@ -33,6 +33,7 @@
      stop-immediate
      prevent-default
      mutate
+     (debug-print string)
      PD
      D]
   ; Machine state
@@ -212,32 +213,117 @@
                 (loc_target
                  (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
                 (loc_a N_a) ...)))
-   ; Fill the pending listeners list from the next node during capture phase.
-   ; TODO get listeners
-   (--> (state ((dispatch E
-                          loc_current   ; any node (but the second-to-last)
-                          capture       ; capture phase
-                          bool
-                          (loc ... loc_current loc_next loc_nnext loc ...)
-                          ()
-                          ())
+   
+   ; The following reductions handle advancing to the next node during the
+   ; capture phase:
+   ;
+   ;     * capture-next-node
+   ;     * capture-next-none
+   ;     * capture-next-skip
+   
+   ;;;;;;;;;;;;;;;;;;;;;
+   ; capture-next-node
+   ;;;;;;;;;;;;;;;;;;;;;
+   ; Case: next node has listeners for the event's type
+   ; AND next node has listeners for the capture phase
+   (--> (state ((dispatch (name E (event T_event bool_b bool_c bool_t))
+                         loc_current
+                         capture
+                         bool
+                         (name path (loc_before ... loc_current loc_next loc_nnext loc_after ...))
+                         ()
+                         ())
                 S ...)
-               ((loc_b N_b) ...
-                (loc_next
-                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
-                (loc_a N_a) ...))
+               (name store 
+                     ((loc_b N_b) ...
+                      (loc_next
+                       (node ((T_b PM_b) ...
+                              (T_event
+                               ((P_b (L_b ...)) ...
+                                (capture ((name first-listener 
+                                                (listener T capture (S_toload ...))) 
+                                          L_rest ...))
+                                (P_a (L_a ...)) ...))
+                              (T_a PM_a) ...)
+                             (loc_child ...)
+                             parent))
+                      (loc_a N_a) ...)))
         (state ((dispatch E
-                          loc_next      ; next node
-                          capture       ; capture phase
+                          loc_next
+                          capture
                           bool
-                          (loc ... loc_current loc_next loc_nnext loc ...)
-                          (L_c ...)     ; bubble phase listeners TODO filter for event
-                          ())
+                          path
+                          (first-listener L_rest ...)
+                          (S_toload ...))
                 S ...)
-               ((loc_b N_b) ...
-                (loc_target
-                 (node (L_c ...) (L_t ...) (L_b ...) (loc_children ...) loc_parent))
-                (loc_a N_a) ...)))
+               store)
+        capture-next-node)
+   
+   ;;;;;;;;;;;;;;;;;;;;;
+   ; capture-next-none
+   ;;;;;;;;;;;;;;;;;;;;;
+   ; Case: next node has listener's for the event's type but NOT for the capture phase
+   (--> (state ((dispatch (name E (event T_event bool_b bool_c bool_t))
+                         loc_current
+                         capture
+                         bool
+                         (name path (loc_before ... loc_current loc_next loc_nnext loc_after ...))
+                         ()
+                         ())
+                S ...)
+               (name store 
+                     ((loc_b N_b) ...
+                      (loc_next
+                       (node ((T_b PM_b) ...
+                              (T_event
+                               (((side-condition P_target
+                                                 (not (equal? (term P_target) (term capture))))
+                                 (L_target ...)) ...))
+                              (T_a PM_a) ...)
+                             (loc_child ...)
+                             parent))
+                      (loc_a N_a) ...)))
+        (state ((dispatch E
+                          loc_next
+                          capture
+                          bool
+                          path
+                          ,empty
+                          ,empty)
+                S ...)
+               store)
+        capture-next-none)
+   
+   ;;;;;;;;;;;;;;;;;;;;;
+   ; capture-next-skip
+   ;;;;;;;;;;;;;;;;;;;;;
+   ; Case: next node has no listeners for the event's type
+   (--> (side-condition (state ((dispatch (name E (event T_event bool_b bool_c bool_t))
+                                          loc_current
+                                          capture
+                                          bool
+                                          (name path (loc_before ... loc_current loc_next loc_nnext loc_after ...))
+                                          ()
+                                          ())
+                                S ...)
+                               (name store
+                                     ((loc_b N_b) ...
+                                      (loc_next
+                                       (node ((T PM) ...) (loc_child ...) parent))
+                                      (loc_a N_a) ...)))
+                        (empty? (filter (lambda (t) (equal? t (term T_event)))
+                                        (term (T ...)))))
+        (state ((dispatch E
+                          loc_next
+                          capture
+                          bool
+                          path
+                          ,empty
+                          ,empty)
+                S ...)
+               store)
+        capture-next-skip)
+                          
    ; Fill the pending listeners list from the next node during bubble phase.
    ; TODO get listeners
    (--> (state ((dispatch E
