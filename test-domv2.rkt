@@ -29,7 +29,7 @@
 (test E test-event "event")
 
 (define test-listener
-  (term (listener ,(list (term mutate)))))
+  (term (listener mutate)))
 (test L test-listener "listener")
 
 (define root
@@ -60,7 +60,7 @@
 (test S test-init-pd "initial pre-dispatch")
 
 (define start-state
-  (term (state ,(list test-init-pd) ,store)))
+  (term (state ,test-init-pd ,store)))
 (test M start-state "start state")
 
 (define pd-after-step
@@ -68,7 +68,7 @@
 (test S pd-after-step "predispatch after 1 step")
 
 (define next-state
-  (term (state ,(list pd-after-step) ,store)))
+  (term (state ,pd-after-step ,store)))
 (test M next-state "state after pd reduction step")
 
 (test--> DOM-reduce start-state next-state)
@@ -82,7 +82,7 @@
 (test S pd-end "pd-end")
 
 (define pd-end-state
-  (term (state ,(list pd-end)
+  (term (state ,pd-end
                ,store)))
 (test M pd-end-state "pd-end-state")
 
@@ -95,7 +95,7 @@
 (test DC dispatch-start "dispatch-start")
 
 (define dispatch-start-state
-  (term (state ,(list dispatch-start) ,store)))
+  (term (state ,dispatch-start ,store)))
 (test M dispatch-start-state "dispatch-start-state")
 
 (test--> DOM-reduce next-state pd-end-state)
@@ -113,7 +113,7 @@
 (test DN dispatch-end "dispatch-end")
 
 (define de-state
-  (term (state ,(list dispatch-end)
+  (term (state ,dispatch-end
                ,store)))
 (test M de-state "de-state")
 
@@ -124,7 +124,7 @@
 (test DD default-start "default-start")
 
 (define ds-state
-  (term (state ,(list default-start)
+  (term (state ,default-start
                ,store)))
 (test M ds-state "ds-state")
 
@@ -159,59 +159,65 @@
              (displayln (proc (counterexample-term result))))))]))
 
      
-(test-schema (state ((dispatch E
+(test-schema (state (in-hole Ctx
+                             (dispatch E
                                parent
                                P
                                PDef SP SI
                                (loc ...)
                                (L ...)
-                               ()) S ...)
+                               skip))
                         N-store)
              (lambda (binds)
-               (let ((ret
-                      (term (state 
-                             ,(cons 
-                               (term (dispatch-next ,(bind-ref binds 'E)
-                                                    ,(bind-ref binds 'parent)
-                                                    ,(bind-ref binds 'P)
-                                                    ,(bind-ref binds 'PDef)
-                                                    ,(bind-ref binds 'SP)
-                                                    ,(bind-ref binds 'SI)
-                                                    ,(bind-ref binds 'loc)
-                                                    ,(bind-ref binds 'L)
-                                                    ))
-                               (bind-ref binds 'S))
-                             ,(bind-ref binds 'N-store)))))
-                 ret
+               (term (state 
+                      (in-hole ,(bind-ref binds 'Ctx) 
+                        (dispatch-next ,(bind-ref binds 'E)
+                                             ,(bind-ref binds 'parent)
+                                             ,(bind-ref binds 'P)
+                                             ,(bind-ref binds 'PDef)
+                                             ,(bind-ref binds 'SP)
+                                             ,(bind-ref binds 'SI)
+                                             ,(bind-ref binds 'loc)
+                                             ,(bind-ref binds 'L)
+                                             ))
+                      ,(bind-ref binds 'N-store))
                  ))
              "finished-listener")
-(test-schema (state ((dispatch-next E parent P PDef SP #t (loc ...) (L ...)) S ...) 
+(test-schema (state (in-hole Ctx
+                             (dispatch-next E parent P PDef SP #t 
+                                            (loc ...) (L ...))) 
                     N-store)
              (lambda (binds) 
-               (term (state ,(cons (term (dispatch-default ,(bind-ref binds 'E)
-                                                           ,(bind-ref binds 'PDef)
-                                                           ,(bind-ref binds 'loc)))
-                                   (bind-ref binds 'S))
-                            ,(bind-ref binds 'N-store))))
+               (term (state 
+                      (in-hole ,(bind-ref binds 'Ctx)
+                               (dispatch-default ,(bind-ref binds 'E)
+                                                 ,(bind-ref binds 'PDef)
+                                                 ,(bind-ref binds 'loc)))
+                      ,(bind-ref binds 'N-store))))
              "stop-immediate-called")
-                  
+         
+
+
 
 (define add-event-state
   (term 
-   (state ((dispatch ,test-event loc_current capture #f #f #f (loc_current) ,empty
-                    ((addEventListener loc_parent "click" #t
-                                       ((debug-print "1")))
-                     (addEventListener loc_current "click" #t 
-                                       ((debug-print "2")))
-                     (addEventListener loc_current "click" #t
-                                       ((debug-print "2.5")))
-                     (addEventListener loc_current "click" #f 
-                                       ((debug-print "3")))
-                     (addEventListener loc_parent "click" #f 
-                                       ((debug-print "4")))
-                     (pre-dispatch loc_current ,empty 
-                                   (event "click" #t #t #t))
-                     )))
+   (state ,(foldr
+            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
+            #f
+            (list
+             (term (addEventListener loc_parent "click" #t
+                                     (debug-print "1")))
+             (term (addEventListener loc_current "click" #t 
+                                     (seq (debug-print "2") prevent-default)))
+             (term (addEventListener loc_current "click" #t
+                                     (debug-print "2.5")))
+             (term (addEventListener loc_current "click" #f 
+                                     (debug-print "3")))
+             (term (addEventListener loc_parent "click" #f 
+                                     (debug-print "4")))
+             (term (pre-dispatch loc_current ,empty 
+                                 (event "click" #t #t #t))
+                   )))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
            (loc_parent (node "parent" ,empty (loc_mid) null))))))
