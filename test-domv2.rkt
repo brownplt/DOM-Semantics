@@ -14,121 +14,121 @@
     (if (bind? b) (bind-exp b) (raise (list "Key not found:" key)))))
 
 
-;(define-syntax test
-;  (syntax-rules ()
-;    [(test pattern exp name)
-;     (let ((result-str
-;            (if (redex-match DOM pattern exp) "passed" "FAILED!!!!")))
-;       (displayln (string-append name ": " result-str)))]))
-;
-;; Test for arbitrary step while building path in pre-dispatch
-;; Tests pd-build-path
-;
-;(define test-event
-;  (term (event "click" #t #t #t)))
-;(test E test-event "event")
-;
-;(define test-listener
-;  (term (listener ,(list (term mutate)))))
-;(test L test-listener "listener")
-;
-;(define root
-;  (term (node "root"
-;              ,empty 
-;              ,(list (term loc-child)) 
-;              null)))
-;(test N root "root node")
-;
-;(define test-tp
-;  (list "click" (term capture)))
-;(test TP test-tp "test-tp")
-;
-;(define child
-;  (term (node "child"
-;              ,(list (list test-tp
-;                           (list test-listener)))
-;              ,empty
-;              loc-parent)))
-;(test N child "child node")
-;
-;(define store
-;  (term ((loc-child ,child) (loc-parent ,root))))
-;(test N-store store "node store")
-;
-;(define test-init-pd
-;  (term (pre-dispatch loc-child ,empty ,test-event)))
-;(test S test-init-pd "initial pre-dispatch")
-;
-;(define start-state
-;  (term (state ,(list test-init-pd) ,store)))
-;(test M start-state "start state")
-;
-;(define pd-after-step
-;  (term (pre-dispatch loc-parent ,(list (term loc-child)) ,test-event)))
-;(test S pd-after-step "predispatch after 1 step")
-;
-;(define next-state
-;  (term (state ,(list pd-after-step) ,store)))
-;(test M next-state "state after pd reduction step")
-;
-;(test--> DOM-reduce start-state next-state)
-;
-;;; Test transition to dispatch
-;;; (pd-to-dispatch)
-;(define pd-end
-;  (term (pre-dispatch null ,(list (term loc-parent)
-;                                  (term loc-child))
-;                      ,test-event)))
-;(test S pd-end "pd-end")
-;
-;(define pd-end-state
-;  (term (state ,(list pd-end)
-;               ,store)))
-;(test M pd-end-state "pd-end-state")
-;
-;(define dispatch-start
-;  (term (dispatch-collect ,test-event
-;                          loc-parent
-;                          capture
-;                          #f #f #f
-;                          ,(list (term loc-parent) (term loc-child)))))
-;(test DC dispatch-start "dispatch-start")
-;
-;(define dispatch-start-state
-;  (term (state ,(list dispatch-start) ,store)))
-;(test M dispatch-start-state "dispatch-start-state")
-;
-;(test--> DOM-reduce next-state pd-end-state)
-;(test--> DOM-reduce pd-end-state dispatch-start-state)
-;
-;;; Test finishing a dispatch
-;;; (finish-dispatch)
-;(define dispatch-end
-;  (term (dispatch-next ,test-event
-;                       loc-parent
-;                       bubble
-;                       #f #f #f
-;                       ,(list (term loc-parent) (term loc-child))
-;                       ,empty)))
-;(test DN dispatch-end "dispatch-end")
-;
-;(define de-state
-;  (term (state ,(list dispatch-end)
-;               ,store)))
-;(test M de-state "de-state")
-;
-;(define default-start
-;  (term (dispatch-default ,test-event
-;                          #f
-;                          ,(list (term loc-parent) (term loc-child)))))
-;(test DD default-start "default-start")
-;
-;(define ds-state
-;  (term (state ,(list default-start)
-;               ,store)))
-;(test M ds-state "ds-state")
-;
-;(test--> DOM-reduce de-state ds-state)
+(define-syntax test
+  (syntax-rules ()
+    [(test pattern exp name)
+     (let ((result-str
+            (if (redex-match DOM pattern exp) "passed" "FAILED!!!!")))
+       (displayln (string-append name ": " result-str)))]))
+
+; Test for arbitrary step while building path in pre-dispatch
+; Tests pd-build-path
+
+(define test-event
+  (term (event "click" #t #t #t)))
+(test E test-event "event")
+
+(define test-listener
+  (term (listener ,(list (term mutate)))))
+(test L test-listener "listener")
+
+(define root
+  (term (node "root"
+              ,empty 
+              ,(list (term loc-child)) 
+              null)))
+(test N root "root node")
+
+(define test-tp
+  (list "click" (term capture)))
+(test TP test-tp "test-tp")
+
+(define child
+  (term (node "child"
+              ,(list (list test-tp
+                           (list test-listener)))
+              ,empty
+              loc-parent)))
+(test N child "child node")
+
+(define store
+  (term ((loc-child ,child) (loc-parent ,root))))
+(test N-store store "node store")
+
+(define test-init-pd
+  (term (pre-dispatch loc-child ,empty ,test-event)))
+(test S test-init-pd "initial pre-dispatch")
+
+(define start-state
+  (term (state ,(list test-init-pd) ,store)))
+(test M start-state "start state")
+
+(define pd-after-step
+  (term (pre-dispatch loc-parent ,(list (term loc-child)) ,test-event)))
+(test S pd-after-step "predispatch after 1 step")
+
+(define next-state
+  (term (state ,(list pd-after-step) ,store)))
+(test M next-state "state after pd reduction step")
+
+(test--> DOM-reduce start-state next-state)
+
+;; Test transition to dispatch
+;; (pd-to-dispatch)
+(define pd-end
+  (term (pre-dispatch null ,(list (term loc-parent)
+                                  (term loc-child))
+                      ,test-event)))
+(test S pd-end "pd-end")
+
+(define pd-end-state
+  (term (state ,(list pd-end)
+               ,store)))
+(test M pd-end-state "pd-end-state")
+
+(define dispatch-start
+  (term (dispatch-collect ,test-event
+                          loc-parent
+                          capture
+                          #f #f #f
+                          ,(list (term loc-parent) (term loc-child)))))
+(test DC dispatch-start "dispatch-start")
+
+(define dispatch-start-state
+  (term (state ,(list dispatch-start) ,store)))
+(test M dispatch-start-state "dispatch-start-state")
+
+(test--> DOM-reduce next-state pd-end-state)
+(test--> DOM-reduce pd-end-state dispatch-start-state)
+
+;; Test finishing a dispatch
+;; (finish-dispatch)
+(define dispatch-end
+  (term (dispatch-next ,test-event
+                       loc-parent
+                       bubble
+                       #f #f #f
+                       ,(list (term loc-parent) (term loc-child))
+                       ,empty)))
+(test DN dispatch-end "dispatch-end")
+
+(define de-state
+  (term (state ,(list dispatch-end)
+               ,store)))
+(test M de-state "de-state")
+
+(define default-start
+  (term (dispatch-default ,test-event
+                          #f
+                          ,(list (term loc-parent) (term loc-child)))))
+(test DD default-start "default-start")
+
+(define ds-state
+  (term (state ,(list default-start)
+               ,store)))
+(test M ds-state "ds-state")
+
+(test--> DOM-reduce de-state ds-state)
 
 ;; Test finishing current listener steps, going to dispatch-next
 ;; (finished-listener)
@@ -195,3 +195,59 @@
                             ,(bind-ref binds 'N-store))))
              "stop-immediate-called")
                   
+
+(define add-event-state
+  (term 
+   (state ((dispatch ,test-event loc_current capture #f #f #f (loc_current) ,empty
+                    ((addEventListener loc_parent "click" #t
+                                       ((debug-print "1")))
+                     (addEventListener loc_current "click" #t 
+                                       ((debug-print "2")))
+                     (addEventListener loc_current "click" #f 
+                                       ((debug-print "3")))
+                     (addEventListener loc_parent "click" #f 
+                                       ((debug-print "4")))
+                     (pre-dispatch loc_current ,empty 
+                                   (event "click" #t #t #t))
+                     )))
+          ((loc_current (node "child" ,empty ,empty loc_parent))
+           (loc_parent (node "parent" ,empty (loc_child) null))))))
+(test M add-event-state "add-event-state")
+
+(let* ((s0 add-event-state)
+       (s1 (first (apply-reduction-relation DOM-reduce s0)))
+       (s2 (first (apply-reduction-relation DOM-reduce s1)))
+       (s3 (first (apply-reduction-relation DOM-reduce s2)))
+       (s4 (first (apply-reduction-relation DOM-reduce s3)))
+       (s5 (first (apply-reduction-relation DOM-reduce s4)))
+       (s6 (first (apply-reduction-relation DOM-reduce s5)))
+       (s7 (first (apply-reduction-relation DOM-reduce s6)))
+       (s8 (first (apply-reduction-relation DOM-reduce s7)))
+       (s9 (first (apply-reduction-relation DOM-reduce s8)))
+       (s10 (first (apply-reduction-relation DOM-reduce s9)))
+       (s11 (first (apply-reduction-relation DOM-reduce s10)))
+       (s12 (first (apply-reduction-relation DOM-reduce s11)))
+       (s13 (first (apply-reduction-relation DOM-reduce s12)))
+       (s14 (first (apply-reduction-relation DOM-reduce s13)))
+       (s15 (first (apply-reduction-relation DOM-reduce s14)))
+       (s16 (first (apply-reduction-relation DOM-reduce s15)))
+       (s17 (first (apply-reduction-relation DOM-reduce s16)))
+       (s18 (first (apply-reduction-relation DOM-reduce s17)))
+       (s19 (first (apply-reduction-relation DOM-reduce s18)))
+       (s20 (first (apply-reduction-relation DOM-reduce s19)))
+       (s21 (first (apply-reduction-relation DOM-reduce s20)))
+       (s22 (first (apply-reduction-relation DOM-reduce s21)))
+       (s23 (first (apply-reduction-relation DOM-reduce s22)))
+       (s24 (first (apply-reduction-relation DOM-reduce s23)))
+       (s25 (first (apply-reduction-relation DOM-reduce s24)))
+       (s26 (first (apply-reduction-relation DOM-reduce s25)))
+       ;(s27 (first (apply-reduction-relation DOM-reduce s26)))
+       ;(s28 (first (apply-reduction-relation DOM-reduce s27)))
+       ;(s29 (first (apply-reduction-relation DOM-reduce s28)))
+       ;(s30 (first (apply-reduction-relation DOM-reduce s29)))
+       ;(s31 (first (apply-reduction-relation DOM-reduce s30)))
+       ;(s32 (first (apply-reduction-relation DOM-reduce s31)))
+       )
+  (displayln s26)
+  )
+

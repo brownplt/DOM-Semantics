@@ -7,6 +7,9 @@
 (define (all-unique? l) 
   (equal? (remove-duplicates l) l))
 
+(define (not-in? T_event P LS)
+  (empty? (filter (lambda (tp) (equal? tp (list T_event P))) LS)))
+
 (define-language DOM
   [bool #t #f]
   ; Event types
@@ -56,6 +59,7 @@
      prevent-default
      mutate
      (debug-print string)
+     (addEventListener loc string bool (S ...))
      PD
      D
      DC
@@ -65,6 +69,29 @@
   ; Machine state
   [N-store ((loc_!_ N) ...)]
   [M (state (S ...) N-store)])
+
+(define-metafunction DOM
+  [(addListenerHelper ((TP_a (L_a ...)) ...
+                       ((string_type P) (L_p ...))
+                       (TP_b (L_b ...)) ...) 
+                      string_type P
+                      (S_listener ...))
+   ((TP_a (L_a ...)) ...
+    ((string_type P) (L_p ... (listener (S_listener ...))))
+    (TP_b (L_b ...)) ...)] ;when (string_type P) is present
+  [(addListenerHelper ((TP_a (L_a ...)) ...) 
+                      string_type P
+                      (S_listener ...))
+   ((TP_a (L_a ...)) ...
+    ((string_type P) ((listener (S_listener ...)))))]) ;when (string_type P) is absent
+
+(define-metafunction DOM
+  [(addListener LS string_type bool (S_listener ...))
+  (addListenerHelper 
+   (addListenerHelper LS string_type target (S_listener ...))
+   string_type
+   ,(if (term bool) (term capture) (term bubble))
+   (S_listener ...))])
 
 (define DOM-reduce
   (reduction-relation
@@ -132,10 +159,10 @@
         stop-prop-called-done-with-node)
    ; neither stop-prop nor stop-imm-prop called, do next listener on current node
    (--> (state ((dispatch-next E parent P PDef #f #f (loc_child ...) 
-                               (L_next L_rest ...)) S ...)
+                               ((listener (S_next ...)) L_rest ...)) S ...)
                N-store)
         (state ((dispatch E parent P PDef #f #f (loc_child ...) (L_rest ...) 
-                          L_next) S ...)
+                          (S_next ...)) S ...)
                N-store)
         more-to-do)
    
@@ -249,8 +276,7 @@
                        (loc_kids ...)
                        parent))
                 (loc_d N_d) ...))
-         (empty? (filter (lambda (tp) (equal? tp (list (term T_event) (term P))))
-                         (term (TP_a ...)))))
+         (not-in? (term T_event) (term P) (term (TP_a ...))))
         (state ((dispatch-next (event T_event Bubbles Cancels Trusted)
                                loc_target P PDef #f #f 
                                (loc_a ... loc_target loc_b ...)
@@ -267,8 +293,54 @@
         
 
         
-   
-
+   ; nested event dispatch
+   (--> (state ((dispatch E parent P PDef SP SI (loc ...) (L ...)
+                          ((pre-dispatch loc_target () E_target)
+                           S_inner ...))
+                S ...)
+               N-store)
+        (state ((pre-dispatch loc_target () E_target)
+                (dispatch E parent P PDef SP SI (loc ...) (L ...) (S_inner ...))
+                S ...)
+               N-store)
+        nested-dispatch)
+   ; addEventListener
+   (--> (state ((dispatch E parent P PDef SP SI (loc ...) (L ...)
+                          ((addEventListener 
+                            loc_target string_type bool (S_listener ...))
+                           S_cur ...))
+                S ...)
+               ((loc_a N_a) ...
+                (loc_target 
+                 (node 
+                  string_name 
+                  LS
+                  (loc_kids ...)
+                  parent_node))
+                (loc_b N_b) ...))
+        (state ((dispatch E parent P PDef SP SI (loc ...) (L ...)
+                          (S_cur ...))
+                S ...)
+               ((loc_a N_a) ...
+                (loc_target
+                 (node string_name
+                       (addListener LS string_type bool (S_listener ...))
+                       (loc_kids ...)
+                       parent_node))
+                (loc_b N_b) ...))
+        do-addEventListener)
+   ; debug-print
+   (--> (state ((dispatch E parent P PDef SP SI (loc ...) (L ...)
+                          ((debug-print string) S_rest ...))
+                S ...)
+               N-store)
+        ,(begin 
+           (displayln (term string))
+           (term (state ((dispatch E parent P PDef SP SI (loc ...) (L ...)
+                                   (S_rest ...))
+                         S ...)
+                        N-store)))
+        debug-print)
 
    
    
