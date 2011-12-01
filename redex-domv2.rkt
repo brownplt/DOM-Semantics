@@ -37,11 +37,18 @@
   [PDef bool]
   [SP bool]
   [SI bool]
-  ; Dispatch: event, curr node/null, phase, prevent default?, path, pending listeners, stack
+  ; Dispatch types: 
+  ; event, curr node/null, phase, prevent default?, path, pending listeners, stack
+  ; dispatch executes listener steps
   [D (dispatch E parent P PDef SP SI (loc ...) (L ...) (S ...))]
+  ; dispatch-collect looks for listeners
   [DC (dispatch-collect E parent P PDef SP SI (loc ...))]
+  ; dispatch-next determines whether to visit a next node, to jump
+  ; to the default action, or to terminate
   [DN (dispatch-next E parent P PDef SP SI (loc ...) (L ...))]
+  ; dispatch-default executes the default action, unless prevented
   [DD (dispatch-default E PDef (loc ...))]
+  ; dispatch-stupid handles the degenerate case of a single-node path
   [DS (dispatch-stupid loc E)]
   ; Listener steps
   [S stop-prop
@@ -79,23 +86,19 @@
    ; Path building complete, transition to dispatch
    (--> (state ((pre-dispatch null (loc_first loc ...) E) S ...)
                 N-store)
-        (state ((dispatch-collect E loc_first capture #f #f #f (loc ...) ())
+        (state ((dispatch-collect E 
+                                  loc_first 
+                                  capture 
+                                  #f #f #f 
+                                  (loc_first loc ...))
                 S ...)
-                N-store)
+               N-store)
         pd-to-dispatch)
+   
+   ; Single-node path degenerate case
    (--> (state ((pre-dispatch null (loc) E) S ...) N-store)
         (state ((dispatch-stupid loc E) S ...) N-store)
         dont-do-this)
-   
-   ; Done handling last dispatch on stack.
-   ; TODO default handler
-   (--> (state ((dispatch E loc_current bubble PDef SP SI (loc ...) () ())
-                S ...)
-               N-store)
-        (state ((dispatch-default E PDef (loc ...))
-                S ...)
-               N-store)
-        finish-dispatch)
    
    ; done with current listener, determine next listener to run (if any)
    (--> (state ((dispatch E parent P PDef SP SI
