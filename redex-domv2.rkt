@@ -144,10 +144,10 @@
         stop-immediate-called)
    ; stop-propagation called, finish current node,
    (--> (state ((dispatch-next E parent P PDef #t #f (loc_child ...) 
-                               (L_next L_rest ...)) S ...)
+                               ((listener (S_next ...)) L_rest ...)) S ...)
                N-store)
         (state ((dispatch E parent P PDef #t #f (loc_child ...) (L_rest ...) 
-                          L_next) S ...)
+                          (S_next ...)) S ...)
                N-store)
         stop-prop-called-more-to-do)
    ; and then abort dispatch and jump to default action
@@ -341,7 +341,139 @@
                          S ...)
                         N-store)))
         debug-print)
-
+   
+   ; debug-print-top
+   (--> (state ((debug-print string)
+                S ...)
+               N-store)
+        ,(begin 
+           (displayln (term string))
+           (term (state (S ...)
+                        N-store)))
+        debug-print-top)
+   
+   ; stop-prop
+   (--> (state ((dispatch E parent P PDef SP SI (loc ...) (L ...)
+                          (stop-prop S_rest ...))
+                S ...)
+               N-store)
+        (state ((dispatch E parent P PDef #t SI (loc ...) (L ...)
+                          (S_rest ...))
+                S ...)
+               N-store)
+        do-stop-prop)
+   
+   ; stop-prop-top
+   (--> (state (stop-prop S ...)
+               N-store)
+        (state (S ...)
+               N-store)
+        do-stop-prop-top)
+   
+   ; stop-immediate
+   (--> (state ((dispatch E parent P PDef SP SI (loc ...) (L ...)
+                          (stop-immediate S_rest ...))
+                S ...)
+               N-store)
+        (state ((dispatch E parent P PDef #t #t (loc ...) (L ...)
+                          (S_rest ...))
+                S ...)
+               N-store)
+        do-stop-immediate)
+   
+   ; stop-immediate-top
+   (--> (state (stop-immediate S ...)
+               N-store)
+        (state (S ...)
+               N-store)
+        do-stop-immediate-top)
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+ 
+   
+   ; dispatch-default-prevented
+   (--> (state ((dispatch E parent P PDef SP SI (loc ...) (L ...)
+                          ((dispatch-default E_inner
+                                             #t
+                                             (loc_inner ...))
+                           S_rest ...))
+                S ...)
+               N-store)
+        ,(begin 
+           (displayln "default prevented")
+           (term (state ((dispatch E parent P PDef SP SI (loc ...) (L ...)
+                                   (S_rest ...))
+                         S ...)
+                        N-store)))
+        dispatch-default-prevented)
+   
+   ; dispatch-default-not-prevented
+   (--> (state ((dispatch E parent P PDef SP SI (loc ...) (L ...)
+                          ((dispatch-default E_inner
+                                             #f
+                                             (loc_inner ...))
+                           S_rest ...))
+                S ...)
+               N-store)
+        ,(begin 
+           (displayln "default action!")
+           (term (state ((dispatch E parent P PDef SP SI (loc ...) (L ...)
+                                   (S_rest ...))
+                         S ...)
+                        N-store)))
+        dispatch-not-default-prevented)
+   
+   ; dispatch-default-prevented-top
+   (--> (state ((dispatch-default E #t (loc ...))
+                S ...)
+               N-store)
+        ,(begin 
+           (displayln "default prevented top")
+           (term (state (S ...)
+                        N-store)))
+        dispatch-default-prevented-top)
+   
+   ; dispatch-default-not-prevented-top
+   (--> (state ((dispatch-default E #f (loc ...))
+                S ...)
+               N-store)
+        ,(begin 
+           (displayln "default action top!")
+           (term (state (S ...)
+                        N-store)))
+        dispatch-default-not-prevented-top)
+   
+   
+   
    
    
    ))
