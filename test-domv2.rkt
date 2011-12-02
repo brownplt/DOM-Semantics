@@ -210,7 +210,7 @@
              (term (addEventListener loc_current "click" #t 
                                      (seq (debug-print "2") prevent-default)))
              (term (setEventHandler loc_current "click"
-                                    (debug-print "before 2")))
+                                    (if-phase target (debug-print "before 2") (debug-print "unknown phase"))))
              (term (addEventListener loc_current "click" #f 
                                      (debug-print "3")))
              (term (addEventListener loc_parent "click" #f 

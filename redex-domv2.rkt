@@ -65,6 +65,8 @@
      (addEventListener loc string bool S)
      (removeEventListener loc string bool S)
      (setEventHandler loc string S)
+     (if-phase P S S)
+     (if-curTarget loc S S)
      PD
      D
      DC
@@ -72,6 +74,8 @@
      DD
      DS]
   [DispCtx hole
+           (if-phase DispCtx S S)
+           (if-curTarget DispCtx S S)
            (seq DispCtx S)]
   [LCtx (listener Ctx)
         (handler Ctx)]
@@ -485,14 +489,48 @@
         debug-print)
    
    
+   ; if-phase
+   (--> (state (in-hole Ctx
+                        (dispatch E parent P PDef SP SI (loc ...) (L ...)
+                                  (in-hole LCtx 
+                                           (in-hole DispCtx
+                                                    (if-phase P_check S_true S_false)))))
+               N-store)
+        (state (in-hole Ctx
+                        (dispatch E parent P PDef SP SI (loc ...) (L ...)
+                                  (in-hole LCtx
+                                           (in-hole DispCtx
+                                                    ,(if (equal? (term P) (term P_check))
+                                                         (term S_true)
+                                                         (term S_false))))))
+               N-store)
+        do-if-phase)
+   
+   ; if-curTarget
+   (--> (state (in-hole Ctx
+                        (dispatch E parent P PDef SP SI (loc ...) (L ...)
+                                  (in-hole LCtx 
+                                           (in-hole DispCtx
+                                                    (if-curTarget loc_check S_true S_false)))))
+               N-store)
+        (state (in-hole Ctx
+                        (dispatch E parent P PDef SP SI (loc ...) (L ...)
+                                  (in-hole LCtx
+                                           (in-hole DispCtx
+                                                    ,(if (equal? (term parent) (term loc_check))
+                                                         (term S_true)
+                                                         (term S_false))))))
+               N-store)
+        do-if-curTarget)
+   
    ; stop-prop
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI (loc ...) (L ...)
-                          (in-hole LCtx (in-hole DispCtx stop-prop))))
+                                  (in-hole LCtx (in-hole DispCtx stop-prop))))
                N-store)
         (state (in-hole Ctx
                         (dispatch E parent P PDef #t SI (loc ...) (L ...)
-                          (in-hole LCtx (in-hole DispCtx skip))))
+                                  (in-hole LCtx (in-hole DispCtx skip))))
                N-store)
         do-stop-prop)
   
@@ -500,21 +538,21 @@
    ; stop-immediate
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI (loc ...) (L ...)
-                          (in-hole LCtx (in-hole DispCtx stop-immediate))))
+                                  (in-hole LCtx (in-hole DispCtx stop-immediate))))
                N-store)
         (state (in-hole Ctx
                         (dispatch E parent P PDef #t #t (loc ...) (L ...)
-                          (in-hole LCtx (in-hole DispCtx skip))))
+                                  (in-hole LCtx (in-hole DispCtx skip))))
                N-store)
         do-stop-immediate)
    ; prevent-default
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI (loc ...) (L ...)
-                          (in-hole LCtx (in-hole DispCtx prevent-default))))
+                                  (in-hole LCtx (in-hole DispCtx prevent-default))))
                N-store)
         (state (in-hole Ctx
                         (dispatch E parent P #t SP SI (loc ...) (L ...)
-                          (in-hole LCtx (in-hole DispCtx skip))))
+                                  (in-hole LCtx (in-hole DispCtx skip))))
                N-store)
         do-prevent-default)
  
