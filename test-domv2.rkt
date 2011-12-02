@@ -166,7 +166,7 @@
                                PDef SP SI
                                (loc ...)
                                (L ...)
-                               skip))
+                               (listener skip)))
                         N-store)
              (lambda (binds)
                (term (state 
@@ -209,12 +209,14 @@
                                      (debug-print "1")))
              (term (addEventListener loc_current "click" #t 
                                      (seq (debug-print "2") prevent-default)))
-             (term (addEventListener loc_current "click" #t
-                                     (debug-print "2.5")))
+             (term (setEventHandler loc_current "click"
+                                    (debug-print "before 2")))
              (term (addEventListener loc_current "click" #f 
                                      (debug-print "3")))
              (term (addEventListener loc_parent "click" #f 
                                      (debug-print "4")))
+             (term (setEventHandler loc_parent "click"
+                                    (debug-print "before 4")))
              (term (pre-dispatch loc_current ,empty 
                                  (event "click" #t #t #t))
                    )))

@@ -43,7 +43,7 @@
   ; Dispatch types: 
   ; event, curr node/null, phase, prevent default?, path, pending listeners, stack
   ; dispatch executes listener steps
-  [D (dispatch E parent P PDef SP SI (loc ...) (L ...) S)]
+  [D (dispatch E parent P PDef SP SI (loc ...) (L ...) L)]
   ; dispatch-collect looks for listeners
   [DC (dispatch-collect E parent P PDef SP SI (loc ...))]
   ; dispatch-next determines whether to visit a next node, to jump
@@ -55,6 +55,7 @@
   [DS (dispatch-stupid loc E)]
   ; Listener steps
   [S skip
+     (return bool)
      (seq S S)
      stop-prop
      stop-immediate
@@ -62,6 +63,8 @@
      mutate
      (debug-print string)
      (addEventListener loc string bool S)
+     (removeEventListener loc string bool S)
+     (setEventHandler loc string S)
      PD
      D
      DC
@@ -70,9 +73,11 @@
      DS]
   [DispCtx hole
            (seq DispCtx S)]
+  [LCtx (listener Ctx)
+        (handler Ctx)]
   [Ctx hole
        (seq Ctx S)
-       (dispatch E parent P PDef SP SI (loc ...) (L ...) Ctx)]
+       (dispatch E parent P PDef SP SI (loc ...) (L ...) LCtx)]
   ; Machine state
   [N-store ((loc_!_ N) ...)]
   [M (state S N-store)])
@@ -94,11 +99,65 @@
 
 (define-metafunction DOM
   [(addListener LS string_type bool S_listener)
-  (addListenerHelper 
-   (addListenerHelper LS string_type target S_listener)
-   string_type
-   ,(if (term bool) (term capture) (term bubble))
-   S_listener)])
+   (addListenerHelper 
+    (addListenerHelper LS string_type target S_listener)
+    string_type
+    ,(if (term bool) (term capture) (term bubble))
+    S_listener)])
+
+(define-metafunction DOM
+  [(removeListenerHelper ((TP_a (L_a ...)) ...
+                          ((string_type P) (L_p ... (listener S_listener) L_q ...))
+                          (TP_b (L_b ...)) ...) 
+                         string_type P
+                         S_listener)
+   ((TP_a (L_a ...)) ...
+    ((string_type P) (L_p ... L_q ...))
+    (TP_b (L_b ...)) ...)] ;when (string_type P) is present
+  [(removeListenerHelper ((TP_a (L_a ...)) ...) 
+                         string_type P
+                         S_listener)
+   ((TP_a (L_a ...)) ...)]) ;when (string_type P) is already absent
+
+(define-metafunction DOM
+  [(removeListener LS string_type bool S_listener)
+   (removeListenerHelper 
+    (removeListenerHelper LS string_type target S_listener)
+    string_type
+    ,(if (term bool) (term capture) (term bubble))
+    S_listener)])
+
+
+(define-metafunction DOM
+  [(setHandlerHelper ((TP_a (L_a ...)) ...
+                      ((string_type P) ((handler S_ignore) L_p ...))
+                      (TP_b (L_b ...)) ...)
+                     string_type P
+                     S_handler)
+   ((TP_a (L_a ...)) ...
+    ((string_type P) ((handler S_handler) L_p ...))
+    (TP_b (L_b ...)) ...)] ;if a handler was present for this (type, phase) pair, overwrite it
+  [(setHandlerHelper ((TP_a (L_a ...)) ...
+                      ((string_type P) (L_p ...))
+                      (TP_b (L_b ...)) ...)
+                     string_type P
+                     S_handler)
+   ((TP_a (L_a ...)) ...
+    ((string_type P) ((handler S_handler) L_p ...))
+    (TP_b (L_b ...)) ...)] ;if a handler was missing for this (type, phase) pair, add it
+  [(setHandlerHelper ((TP_a (L_a ...)) ...)
+                     string_type P
+                     S_handler)
+   ((TP_a (L_a ...)) ...
+    ((string_type P) ((handler S_handler))))]
+  ) ; if nothing exists for this (type, phase) pair, add it
+  
+(define-metafunction DOM
+  [(setHandler LS string_type S_handler)
+   (setHandlerHelper 
+    (setHandlerHelper LS string_type target S_handler)
+    string_type bubble S_handler)])
+
 
 (define DOM-reduce
   (reduction-relation
@@ -138,13 +197,40 @@
    ; done with current listener, determine next listener to run (if any)
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI
-                                  (loc_child ...) (L ...) skip))
+                                  (loc_child ...) (L ...) (listener skip)))
                N-store)
         (state (in-hole Ctx
                         (dispatch-next E parent P PDef SP SI 
                                        (loc_child ...) (L ...)))
                N-store)
         finished-listener)
+   ; done with current handler, determine what steps to take
+   (--> (state (in-hole Ctx
+                        (dispatch (event T_event Bubbles Cancels Trusted)
+                                  parent P PDef SP SI
+                                  (loc_child ...) (L ...)
+                                  (handler (in-hole DispCtx (return bool)))))
+               N-store)
+        (state (in-hole Ctx
+                        (dispatch (event T_event Bubbles Cancels Trusted)
+                                  parent P PDef SP SI
+                                  (loc_child ...) (L ...)
+                                  (listener 
+                                   ,(if (equal? (term bool) 
+                                                (equal? (term T_event) "mouseover"))
+                                        (term prevent-default)
+                                        (term skip)))))
+               N-store)
+        return-from-handler) ; when we finish a handler, this rule transmutes it into the exit from a listener
+   (--> (state (in-hole Ctx
+                        (dispatch E parent P PDef SP SI
+                                  (loc_child ...) (L ...) (handler skip)))
+               N-store)
+        (state (in-hole Ctx
+                        (dispatch E parent P PDef SP SI
+                                  (loc_child ...) (L ...) (handler (return #f))))
+               N-store)
+        finished-handler)
    
    ; stop-immediate-prop called, abort dispatch and jump to default action
    (--> (state (in-hole Ctx
@@ -159,12 +245,12 @@
    (--> (state (in-hole Ctx
                         (dispatch-next E parent P PDef #t #f 
                                        (loc_child ...) 
-                                       ((listener S)) L_rest ...))
+                                       (L L_rest ...)))
                N-store)
         (state (in-hole Ctx
                         (dispatch E parent P PDef #t #f 
                                   (loc_child ...) (L_rest ...)
-                                  S))
+                                  L))
                N-store)
         stop-prop-called-more-to-do)
    ; and then abort dispatch and jump to default action
@@ -178,12 +264,12 @@
    ; neither stop-prop nor stop-imm-prop called, do next listener on current node
    (--> (state (in-hole Ctx
                         (dispatch-next E parent P PDef #f #f (loc_child ...) 
-                               ((listener S) L_rest ...)))
+                               (L L_rest ...)))
                N-store)
         (state (in-hole Ctx
                         (dispatch E parent P PDef #f #f 
                                   (loc_child ...) (L_rest ...) 
-                                  S))
+                                  L))
                N-store)
         more-to-do)
    
@@ -346,6 +432,49 @@
                        parent_node))
                 (loc_b N_b) ...))
         do-addEventListener)
+   ; removeEventListener
+   (--> (state (in-hole Ctx
+                        (removeEventListener 
+                         loc_target string_type bool S_listener))
+               ((loc_a N_a) ...
+                (loc_target 
+                 (node 
+                  string_name 
+                  LS
+                  (loc_kids ...)
+                  parent_node))
+                (loc_b N_b) ...))
+        (state (in-hole Ctx skip)
+               ((loc_a N_a) ...
+                (loc_target
+                 (node string_name
+                       (removeListener LS string_type bool S_listener)
+                       (loc_kids ...)
+                       parent_node))
+                (loc_b N_b) ...))
+        do-removeEventListener)
+   ; setEventHandler
+   (--> (state (in-hole Ctx
+                        (setEventHandler 
+                         loc_target string_type S_listener))
+               ((loc_a N_a) ...
+                (loc_target 
+                 (node 
+                  string_name 
+                  LS
+                  (loc_kids ...)
+                  parent_node))
+                (loc_b N_b) ...))
+        (state (in-hole Ctx skip)
+               ((loc_a N_a) ...
+                (loc_target
+                 (node string_name
+                       (setHandler LS string_type S_listener)
+                       (loc_kids ...)
+                       parent_node))
+                (loc_b N_b) ...))
+        do-setEventHandler)
+   
    ; debug-print
    (--> (state (in-hole Ctx (debug-print string))
                N-store)
@@ -359,11 +488,11 @@
    ; stop-prop
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI (loc ...) (L ...)
-                          (in-hole DispCtx stop-prop)))
+                          (in-hole LCtx (in-hole DispCtx stop-prop))))
                N-store)
         (state (in-hole Ctx
                         (dispatch E parent P PDef #t SI (loc ...) (L ...)
-                          (in-hole DispCtx skip)))
+                          (in-hole LCtx (in-hole DispCtx skip))))
                N-store)
         do-stop-prop)
   
@@ -371,21 +500,21 @@
    ; stop-immediate
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI (loc ...) (L ...)
-                          (in-hole DispCtx stop-immediate)))
+                          (in-hole LCtx (in-hole DispCtx stop-immediate))))
                N-store)
         (state (in-hole Ctx
                         (dispatch E parent P PDef #t #t (loc ...) (L ...)
-                          (in-hole DispCtx skip)))
+                          (in-hole LCtx (in-hole DispCtx skip))))
                N-store)
         do-stop-immediate)
    ; prevent-default
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI (loc ...) (L ...)
-                          (in-hole DispCtx prevent-default)))
+                          (in-hole LCtx (in-hole DispCtx prevent-default))))
                N-store)
         (state (in-hole Ctx
                         (dispatch E parent P #t SP SI (loc ...) (L ...)
-                          (in-hole DispCtx skip)))
+                          (in-hole LCtx (in-hole DispCtx skip))))
                N-store)
         do-prevent-default)
  
