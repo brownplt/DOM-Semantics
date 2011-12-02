@@ -2,13 +2,15 @@
 (require redex)
 (provide DOM DOM-reduce)
 
+;; TODO: remove T and P from listener/handler
+;;       add node name to node
+
 (define (all-unique? l) 
   (equal? (remove-duplicates l) l))
 
 (define-language DOM
   [bool #t #f]
   ; Event types
-  ;[T click keydown]
   [T string]
   ; Event: type, bubble, cancelable, trusted
   [E (event T bool bool bool)]
@@ -19,15 +21,17 @@
   [loc (variable-prefix loc)]
   ; parent is possibly null (parent of root node)
   [parent null loc]
+  ; Node: node name, listeners, children, parent
   [N (node LS (loc ...) parent)]
   [LS (side-condition (((name t T) PM) ...) (all-unique? (term (t ...))))]
   [PM ((P_!_ (L ...)) ...)]
   ; Event listeners
-  [L (listener T P (S ...))]
-  ; Predispatch: target node, path, event
+  [L (listener T P (S ...))
+     (handler T P (S ...))]
+  ; Predispatch: target node, path root->target, event
   [PD (pre-dispatch loc (loc ...) E)]
-  ; Dispatch: event, curr node, phase, prevent default?, path, pending listeners, stack
-  [D (dispatch E loc P bool (loc ...) (L ...) (S ...))]
+  ; Dispatch: event, curr node/null, phase, prevent default?, path, pending listeners, stack
+  [D (dispatch E parent P bool (loc ...) (L ...) (S ...))]
   ; Listener steps
   [S stop-prop
      stop-immediate
@@ -58,56 +62,68 @@
         pd-build-path)
 
    ; Path building complete, transition to dispatch
-
-   ; Case where parent doesn't have any listeners for type of event
-   (--> (side-condition 
-         (state ((pre-dispatch loc_current (loc ...) (event (name t1 T) bool_1 bool_2 bool_3)) S ...)
-                ((loc_b N_b) ...
-                 (loc_current
-                  (node (((name t2 T_different) PM) ...) (loc_children ...) null))
-                 (loc_a N_a) ...)) 
-         (empty? (filter (lambda (t) (equal? t (term t1))) (term (t2 ...)))))
-        (state ((dispatch (event t1 bool_1 bool_2 bool_3)
-                          loc_current
-                          capture
-                          #f
-                          (loc_current loc ...)
-                          ()
-                          ()) S ...)
-               ((loc_b N_b) ...
-                (loc_current
-                 (node ((t2 PM) ...) (loc_children ...) null))
-                (loc_a N_a) ...))
-        pd-finish-no-listeners)
+   (--> (state ((pre-dispatch null (loc ...) E S ...)
+                N-store))
+        (state ((dispatch E null capture false (loc ...) () ())
+                N-store)))
    
-   ; Case where parent has listeners for same type as event
-   (--> (state ((pre-dispatch 
-                 loc_current 
-                 (loc ...) 
-                 (event T bool_1 bool_2 bool_3)) 
-                S ...)
-               ((loc_b N_b) ...
-                (loc_current
-                 (node ((T_before PM_before) ... 
-                        (T ((P_before (L_before ...)) ... (capture ((listener T capture (S_l ...))
-                                                                    L ...)) (P_after (L_after ...)) ...)) 
-                        (T_after PM_after) ...) (loc_children ...) null))
-                (loc_a N_a) ...))
-        (state ((dispatch (event T bool_1 bool_2 bool_3)
-                          loc_current
-                          capture
-                          #f
-                          (loc_current loc ...)
-                          (L ...)
-                          (S_l ...)) S ...)
-               ((loc_b N_b) ...
-                (loc_current
-                 (node ((T_before PM_before) ... 
-                        (T ((P_before (L_before ...)) ... (capture ((listener T capture (S_l ...))
-                                                                    L ...)) (P_after (L_after ...)) ...)) 
-                        (T_after PM_after) ...) (loc_children ...) null))
-                (loc_a N_a) ...))
-        pd-finish-listeners)
+;   (--> (state ((dispatch E loc_done P bool (loc_a ... loc_done loc_next loc_b ...) () ())
+;                S ...)
+;               N-store)
+;        (state ((dispatch E loc_next P bool (loc_a ... loc_done loc_next loc_b ...) (stuff ) (nonsense))
+;                S ...)
+;               N-store)
+   
+   
+;   ; Case where parent doesn't have any listeners for type of event
+;   (--> (side-condition 
+;         (state ((pre-dispatch loc_current (loc ...) (event (name t1 T) bool_1 bool_2 bool_3)) S ...)
+;                ((loc_b N_b) ...
+;                 (loc_current
+;                  (node (((name t2 T_different) PM) ...) (loc_children ...) null))
+;                 (loc_a N_a) ...)) 
+;         (empty? (filter (lambda (t) (equal? t (term t1))) (term (t2 ...)))))
+;        (state ((dispatch (event t1 bool_1 bool_2 bool_3)
+;                          loc_current
+;                          capture
+;                          #f
+;                          (loc_current loc ...)
+;                          ()
+;                          ()) S ...)
+;               ((loc_b N_b) ...
+;                (loc_current
+;                 (node ((t2 PM) ...) (loc_children ...) null))
+;                (loc_a N_a) ...))
+;        pd-finish-no-listeners)
+;   
+;   ; Case where parent has listeners for same type as event
+;   (--> (state ((pre-dispatch 
+;                 loc_current 
+;                 (loc ...) 
+;                 (event T bool_1 bool_2 bool_3)) 
+;                S ...)
+;               ((loc_b N_b) ...
+;                (loc_current
+;                 (node ((T_before PM_before) ... 
+;                        (T ((P_before (L_before ...)) ... (capture ((listener T capture (S_l ...))
+;                                                                    L ...)) (P_after (L_after ...)) ...)) 
+;                        (T_after PM_after) ...) (loc_children ...) null))
+;                (loc_a N_a) ...))
+;        (state ((dispatch (event T bool_1 bool_2 bool_3)
+;                          loc_current
+;                          capture
+;                          #f
+;                          (loc_current loc ...)
+;                          (L ...)
+;                          (S_l ...)) S ...)
+;               ((loc_b N_b) ...
+;                (loc_current
+;                 (node ((T_before PM_before) ... 
+;                        (T ((P_before (L_before ...)) ... (capture ((listener T capture (S_l ...))
+;                                                                    L ...)) (P_after (L_after ...)) ...)) 
+;                        (T_after PM_after) ...) (loc_children ...) null))
+;                (loc_a N_a) ...))
+;        pd-finish-listeners)
 
    ; Dispatch: event, current node, phase, path, pending listeners, stack
    ; ========== reduction steps to consider ==========
@@ -132,14 +148,14 @@
    ; TODO is there a real return value?
    (--> (state ((dispatch E loc_current bubble bool (loc_current loc ...) () ()))
                N-store)
-        #t)
+        (not ,bool)
 
    ; Done handling last dispatch on stack and stopProp[Immediate] was called.
    ; TODO default handler
    ; TODO is there a real return value?
    (--> (state ((dispatch E loc P bool () () ()))
                N-store)
-        #t)
+        (not ,bool))
 
    ;;;;;;;;;; Dispatch exiting b/c at end of path or after stopProp ;;;;;;;;;;
 
