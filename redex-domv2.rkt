@@ -51,19 +51,19 @@
   [loc (variable-prefix loc)]
   ; parent is possibly null (parent of root node)
   [parent null loc]
-  
+
   ; DOM Nodes
   ; N: node name, listeners, children, parent
   [N (node string LS (loc ...) parent)]
+  ; TP: event type, phase
+  [TP (T P)]
   ; LS: a list of (TP, listener list) pairs
   [LS (side-condition (((name tp TP) (L ...)) ...)
                       (all-unique? (term (tp ...))))]
-  ; TP: event type, phase
-  [TP (T P)]
   
   ; Event Listeners
   ; 4.4 - EventListener interface
-  [L (listener S)
+  [L (listener bool S) ;was this installed with useCapture?
      (handler S)]
   ; Predispatch: target node, path root->target, event
   [PD (pre-dispatch parent (loc ...) E)]
@@ -109,7 +109,7 @@
            (if-phase DispCtx S S)
            (if-curTarget DispCtx S S)
            (seq DispCtx S)]
-  [LCtx (listener Ctx)
+  [LCtx (listener bool Ctx)  ;does there need to be a bool flag here?
         (handler Ctx)]
   [Ctx hole
        (seq Ctx S)
@@ -127,25 +127,45 @@
 (define-metafunction DOM
   [(addListenerHelper ((TP_a (L_a ...)) ...
                        ((string_type P) (L_p ...))
-                       (TP_b (L_b ...)) ...)
-                      string_type P
+                       (TP_b (L_b ...)) ...) 
+                      string_type P bool_useCapture
                       S_listener)
    ((TP_a (L_a ...)) ...
-    ((string_type P) (L_p ... (listener S_listener)))
+    ((string_type P) (L_p ... (listener bool_useCapture S_listener)))
     (TP_b (L_b ...)) ...)] ;when (string_type P) is present
-  [(addListenerHelper ((TP_a (L_a ...)) ...)
-                      string_type P
+  [(addListenerHelper ((TP_a (L_a ...)) ...) 
+                      string_type P bool_useCapture
                       S_listener)
    ((TP_a (L_a ...)) ...
-    ((string_type P) ((listener S_listener))))]) ;when (string_type P) is absent
+    ((string_type P) ((listener bool_useCapture S_listener))))]) ;when (string_type P) is absent
 
 (define-metafunction DOM
-  [(addListener LS string_type bool S_listener)
-   (addListenerHelper
-    (addListenerHelper LS string_type target S_listener)
-    string_type
-    ,(if (term bool) (term capture) (term bubble))
-    S_listener)])
+  [(listenerPresent ((TP_a (L_a ...)) ...
+                     ((string_type P) (L_p ... (listener bool_useCapture S) L_q ...))
+                     (TP_b (L_b ...)) ...)
+                    string_type P bool_useCapture S)
+   #t]
+  [(listenerPresent LS string P bool_useCapture S)
+   #f])
+
+(define-metafunction DOM
+  [(addListener LS string_type bool_useCapture S_listener)
+   ; From spec of addEventListener, sec 4.3 para 3
+   ; when the listener is already present, do nothing
+   ,(let ([outerPhase
+           (if (term bool_useCapture) (term capture) (term bubble))])
+      (if (term (listenerPresent LS
+                                 string_type
+                                 ,outerPhase
+                                 bool_useCapture
+                                 S_listener))
+        (term LS)
+        (term (addListenerHelper 
+               (addListenerHelper LS string_type target bool_useCapture S_listener)
+               string_type
+               ,outerPhase
+               bool_useCapture
+               S_listener))))])
 
 ; removeEventListener
 ; 4.3 - EventTargetInterface
@@ -154,24 +174,27 @@
 ; no effect.
 (define-metafunction DOM
   [(removeListenerHelper ((TP_a (L_a ...)) ...
-                          ((string_type P) (L_p ... (listener S_listener) L_q ...))
-                          (TP_b (L_b ...)) ...)
+                          ((string_type P) (L_p ... (listener bool_useCapture S_listener) L_q ...))
+                          (TP_b (L_b ...)) ...) 
                          string_type P
+                         bool_useCapture
                          S_listener)
    ((TP_a (L_a ...)) ...
     ((string_type P) (L_p ... L_q ...))
     (TP_b (L_b ...)) ...)] ;when (string_type P) is present
   [(removeListenerHelper ((TP_a (L_a ...)) ...)
                          string_type P
+                         bool_useCapture
                          S_listener)
    ((TP_a (L_a ...)) ...)]) ;when (string_type P) is already absent
 
 (define-metafunction DOM
-  [(removeListener LS string_type bool S_listener)
-   (removeListenerHelper
-    (removeListenerHelper LS string_type target S_listener)
+  [(removeListener LS string_type bool_useCapture S_listener)
+   (removeListenerHelper 
+    (removeListenerHelper LS string_type target bool_useCapture S_listener)
     string_type
     ,(if (term bool) (term capture) (term bubble))
+    bool_useCapture
     S_listener)])
 
 ; TODO(matt) - comment/annotate setHandler(Helper)
@@ -261,7 +284,7 @@
    ;   - The listener has been registered for this event type.
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI
-                                  (loc_child ...) (L ...) (listener skip)))
+                                  (loc_child ...) (L ...) (listener bool_useCapture skip)))
                N-store
                Log)
         (state (in-hole Ctx
@@ -285,8 +308,8 @@
                         (dispatch (event T_event Bubbles Cancels Trusted)
                                   parent P PDef SP SI
                                   (loc_child ...) (L ...)
-                                  (listener
-                                   ,(if (equal? (term bool)
+                                  (listener #f
+                                   ,(if (equal? (term bool) 
                                                 (equal? (term T_event) "mouseover"))
                                         (term prevent-default)
                                         (term skip)))))
@@ -322,7 +345,6 @@
                N-store
                Log)
         stop-immediate-called)
-   
    
    ; stop-propagation called, finish current node, and then abort dispatch and
    ; jump to default action
@@ -629,7 +651,7 @@
                (string_log ...))
         (state (in-hole Ctx skip)
                N-store
-               (string_new string_log ...))
+               (string_log ... string_new))
         debug-print)
 
    ; if-phase
@@ -741,10 +763,10 @@
                                           #t
                                           (loc_inner ...)))
                N-store
-               (string_logged ...))
-        (state (in-hole Ctx skip)
+               Log)
+        (state (in-hole Ctx (debug-print "default-prevented"))
                N-store
-               ("default-prevented" string_logged ...))
+               Log)
         dispatch-default-prevented)
    
    ; dispatch-default-not-prevented
@@ -753,10 +775,10 @@
                                           #f
                                           (loc_inner ...)))
                N-store
-               (string_logged ...))
-        (state (in-hole Ctx skip)
+               Log)
+        (state (in-hole Ctx (debug-print "default action!"))
                N-store
-               ("default action!" string_logged ...))
+               Log)
         dispatch-not-default-prevented)
 
    

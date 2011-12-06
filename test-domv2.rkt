@@ -21,6 +21,19 @@
             (if (redex-match DOM pattern exp) "passed" "FAILED!!!!")))
        (displayln (string-append name ": " result-str)))]))
 
+(define-syntax test-log
+  (syntax-rules ()
+    [(test-log log state name)
+     (let ((out (last (first (apply-reduction-relation* DOM-reduce state)))))
+       (if (equal? out log)
+           (displayln (string-append name ": passed"))
+           (begin
+             (displayln (string-append name ": FAILED"))
+             (displayln "Got:")
+             (displayln log)
+             (displayln "Expected:")
+             (displayln out))))]))     
+
 (define-syntax test-schema
   (syntax-rules ()
     [(test-schema pattern f name)
@@ -54,9 +67,13 @@
   (term (event "click" #t #t #t)))
 (test E test-event "event")
 
-(define test-listener
-  (term (listener mutate)))
-(test L test-listener "listener")
+(define test-listener-cap
+  (term (listener #t mutate)))
+(test L test-listener-cap "listener-cap")
+
+(define test-listener-bub
+  (term (listener #f mutate)))
+(test L test-listener-bub "listener-bub")
 
 (define root
   (term (node "root"
@@ -65,14 +82,14 @@
               null)))
 (test N root "root node")
 
-(define test-tp
+(define test-tp-cap
   (list "click" (term capture)))
-(test TP test-tp "test-tp")
+(test TP test-tp-cap "test-tp-cap")
 
 (define child
   (term (node "child"
-              ,(list (list test-tp
-                           (list test-listener)))
+              ,(list (list test-tp-cap
+                           (list test-listener-cap)))
               ,empty
               loc-parent)))
 (test N child "child node")
@@ -85,12 +102,12 @@
   (term (pre-dispatch loc-child ,empty ,test-event)))
 (test S test-init-pd "initial pre-dispatch")
 
-(define test-log
+(define simple-log
   (list "debug 1" "debug 2"))
-(test Log test-log "test-log")
+(test Log simple-log "simple-log")
 
 (define start-state
-  (term (state ,test-init-pd ,store ,test-log)))
+  (term (state ,test-init-pd ,store ,simple-log)))
 (test M start-state "start state")
 
 (define pd-after-step
@@ -98,7 +115,7 @@
 (test S pd-after-step "predispatch after 1 step")
 
 (define next-state
-  (term (state ,pd-after-step ,store ,test-log)))
+  (term (state ,pd-after-step ,store ,simple-log)))
 (test M next-state "state after pd reduction step")
 
 (test--> DOM-reduce start-state next-state)
@@ -114,7 +131,7 @@
 (define pd-end-state
   (term (state ,pd-end
                ,store
-               ,test-log)))
+               ,simple-log)))
 (test M pd-end-state "pd-end-state")
 
 (define dispatch-start
@@ -126,7 +143,7 @@
 (test DC dispatch-start "dispatch-start")
 
 (define dispatch-start-state
-  (term (state ,dispatch-start ,store ,test-log)))
+  (term (state ,dispatch-start ,store ,simple-log)))
 (test M dispatch-start-state "dispatch-start-state")
 
 (test--> DOM-reduce next-state pd-end-state)
@@ -146,7 +163,7 @@
 (define de-state
   (term (state ,dispatch-end
                ,store
-               ,test-log)))
+               ,simple-log)))
 (test M de-state "de-state")
 
 (define default-start
@@ -158,7 +175,7 @@
 (define ds-state
   (term (state ,default-start
                ,store
-               ,test-log)))
+               ,simple-log)))
 (test M ds-state "ds-state")
 
 (test--> DOM-reduce de-state ds-state)
@@ -172,7 +189,7 @@
                                PDef SP SI
                                (loc ...)
                                (L ...)
-                               (listener skip)))
+                               (listener #t skip)))
                         N-store
                         Log)
              (lambda (binds)
@@ -204,7 +221,7 @@
                       ,(bind-ref binds 'N-store)
                       ,(bind-ref binds 'Log))))
              "stop-immediate-called")
-         
+
 (define add-event-state
   (term 
    (state ,(foldr
@@ -224,25 +241,77 @@
              (term (setEventHandler loc_parent "click"
                                     (debug-print "before 4")))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t))
-                   )))
+                                 (event "click" #t #t #t)))
+             ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
            (loc_parent (node "parent" ,empty (loc_mid) null)))
-          ,test-log)))
+          ,empty)))
 (test M add-event-state "add-event-state")
 
 (test-schema (state (in-hole Ctx (debug-print string_new))
                     N-store
-                    (string_log ...))
+                    Log)
              (lambda (binds)
                (term (state
                       (in-hole ,(bind-ref binds 'Ctx)
                                skip)
                       ,(bind-ref binds 'N-store)
-                      ,(cons
-                        (bind-ref binds 'string_new)
-                        (bind-ref binds 'string_log)))))
+                      ,(append
+                        (bind-ref binds 'Log)
+                        (list (bind-ref binds 'string_new))))))
              "debug-print-logged")
 
 (first (apply-reduction-relation* DOM-reduce add-event-state))
+
+(define add-remove-event-state-1
+  (let ([l1 (term (debug-print "L1"))]
+        [l2 (term (debug-print "L2"))])
+  (term 
+   (state ,(foldr
+            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
+            #f
+            (list
+             (term (addEventListener loc_current "click" #t
+                                     ,l1))
+             (term (addEventListener loc_current "click" #t 
+                                     ,l2))
+             (term (addEventListener loc_current "click" #f
+                                     ,l1))
+             (term (removeEventListener loc_current "click" #f
+                                     ,l1))
+             (term (pre-dispatch loc_current ,empty 
+                                 (event "click" #t #t #t)))
+             ))
+          ((loc_current (node "child" ,empty ,empty loc_mid))
+           (loc_mid (node "middle" ,empty (loc_child) loc_parent))
+           (loc_parent (node "parent" ,empty (loc_mid) null)))
+          ,empty))))
+(test M add-remove-event-state-1 "add-remove-event-state-1")
+(test-log (list "L1" "L2" "default action!") add-remove-event-state-1 "add-remove-event-state-1")
+
+(define add-remove-event-state-2
+  (let ([l1 (term (debug-print "L1"))]
+        [l2 (term (debug-print "L2"))])
+  (term 
+   (state ,(foldr
+            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
+            #f
+            (list
+             (term (addEventListener loc_current "click" #t
+                                     ,l1))
+             (term (addEventListener loc_current "click" #t 
+                                     ,l2))
+             (term (addEventListener loc_current "click" #f
+                                     ,l1))
+             (term (removeEventListener loc_current "click" #t
+                                     ,l1))
+             (term (pre-dispatch loc_current ,empty 
+                                 (event "click" #t #t #t)))
+             ))
+          ((loc_current (node "child" ,empty ,empty loc_mid))
+           (loc_mid (node "middle" ,empty (loc_child) loc_parent))
+           (loc_parent (node "parent" ,empty (loc_mid) null)))
+          ,empty))))
+(test M add-remove-event-state-2 "add-remove-event-state-2")
+(test-log (list "L2" "L1" "default action!") add-remove-event-state-2 "add-remove-event-state-2")
