@@ -315,3 +315,45 @@
           ,empty))))
 (test M add-remove-event-state-2 "add-remove-event-state-2")
 (test-log (list "L2" "L1" "default action!") add-remove-event-state-2 "add-remove-event-state-2")
+
+(define cancel-cancelable-state
+  (let ([l1 (term prevent-default)])
+  (term 
+   (state ,(foldr
+            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
+            #f
+            (list
+             (term (addEventListener loc_current "click" #t
+                                     ,l1))
+             (term (pre-dispatch loc_current ,empty 
+                                 (event "click" #t #t #t)))
+             ))
+          ((loc_current (node "child" ,empty ,empty loc_mid))
+           (loc_mid (node "middle" ,empty (loc_child) loc_parent))
+           (loc_parent (node "parent" ,empty (loc_mid) null)))
+          ,empty))))
+(test M cancel-cancelable-state "cancel-cancelable-state")
+(test-log (list "default-prevented") 
+          cancel-cancelable-state 
+          "log for cancel-cancelable-state")
+
+(define cancel-uncancelable-state
+  (let ([l1 (term prevent-default)])
+  (term 
+   (state ,(foldr
+            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
+            #f
+            (list
+             (term (addEventListener loc_current "click" #t
+                                     ,l1))
+             (term (pre-dispatch loc_current ,empty 
+                                 (event "click" #t #f #t)))
+             ))
+          ((loc_current (node "child" ,empty ,empty loc_mid))
+           (loc_mid (node "middle" ,empty (loc_child) loc_parent))
+           (loc_parent (node "parent" ,empty (loc_mid) null)))
+          ,empty))))
+(test M cancel-uncancelable-state "cancel-uncancelable-state")
+(test-log (list "default action!") 
+          cancel-uncancelable-state 
+          "log for cancel-uncancelable state")

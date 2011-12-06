@@ -737,7 +737,12 @@
    ; non-cancelable event must have no effect. If an event has more than one 
    ; default action, each cancelable default action must be canceled.
    (--> (state (in-hole Ctx
-                        (dispatch E parent P PDef SP SI (loc ...) (L ...)
+                        (dispatch (name E (event T Bubbles #t Trusted)) 
+                                  parent 
+                                  P 
+                                  PDef SP SI 
+                                  (loc ...) 
+                                  (L ...)
                                   (in-hole LCtx (in-hole DispCtx prevent-default))))
                N-store
                Log)
@@ -746,8 +751,23 @@
                                   (in-hole LCtx (in-hole DispCtx skip))))
                N-store
                Log)
-        do-prevent-default)
-
+        do-prevent-default-cancelable)
+   (--> (state (in-hole Ctx
+                        (dispatch (name E (event T Bubbles #f Trusted)) 
+                                  parent 
+                                  P 
+                                  PDef SP SI 
+                                  (loc ...) 
+                                  (L ...)
+                                  (in-hole LCtx (in-hole DispCtx prevent-default))))
+               N-store
+               Log)
+        (state (in-hole Ctx
+                        (dispatch E parent P PDef SP SI (loc ...) (L ...)
+                                  (in-hole LCtx (in-hole DispCtx skip))))
+               N-store
+               Log)
+        do-prevent-default-not-cancelable)
 
    ; 3.2 - Default actions and cancelable events
    ; A default action is an optional supplementary behavior that an 
