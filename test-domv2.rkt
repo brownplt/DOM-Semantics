@@ -21,6 +21,32 @@
             (if (redex-match DOM pattern exp) "passed" "FAILED!!!!")))
        (displayln (string-append name ": " result-str)))]))
 
+(define-syntax test-schema
+  (syntax-rules ()
+    [(test-schema pattern f name)
+     
+     (let* ((proc (lambda (e)
+                    (let ((binds (redex-match DOM pattern e)))
+                      (if (equal? binds #f)
+                          #f
+                          (f binds)))))
+            (result (redex-check DOM pattern 
+                                 (single-step-pat? 
+                                  (term pattern)
+                                  proc)
+                                 #:print? #f)))
+       (if (equal? result #t)
+           (displayln (string-append name ": passed"))
+           (begin
+             (displayln (string-append name ": FAILED"))
+             (displayln "Counterexample:")
+             (displayln result)
+             (displayln "Counterexample steps to:")
+             (displayln (apply-reduction-relation DOM-reduce 
+                                                  (counterexample-term result)))
+             (displayln "Expected:")
+             (displayln (proc (counterexample-term result))))))]))
+
 ; Test for arbitrary step while building path in pre-dispatch
 ; Tests pd-build-path
 
@@ -59,8 +85,12 @@
   (term (pre-dispatch loc-child ,empty ,test-event)))
 (test S test-init-pd "initial pre-dispatch")
 
+(define test-log
+  (list "debug 1" "debug 2"))
+(test Log test-log "test-log")
+
 (define start-state
-  (term (state ,test-init-pd ,store)))
+  (term (state ,test-init-pd ,store ,test-log)))
 (test M start-state "start state")
 
 (define pd-after-step
@@ -68,7 +98,7 @@
 (test S pd-after-step "predispatch after 1 step")
 
 (define next-state
-  (term (state ,pd-after-step ,store)))
+  (term (state ,pd-after-step ,store ,test-log)))
 (test M next-state "state after pd reduction step")
 
 (test--> DOM-reduce start-state next-state)
@@ -83,7 +113,8 @@
 
 (define pd-end-state
   (term (state ,pd-end
-               ,store)))
+               ,store
+               ,test-log)))
 (test M pd-end-state "pd-end-state")
 
 (define dispatch-start
@@ -95,14 +126,14 @@
 (test DC dispatch-start "dispatch-start")
 
 (define dispatch-start-state
-  (term (state ,dispatch-start ,store)))
+  (term (state ,dispatch-start ,store ,test-log)))
 (test M dispatch-start-state "dispatch-start-state")
 
 (test--> DOM-reduce next-state pd-end-state)
 (test--> DOM-reduce pd-end-state dispatch-start-state)
 
 ;; Test finishing a dispatch
-;; (finish-dispatch)
+;; (bubble-to-default)
 (define dispatch-end
   (term (dispatch-next ,test-event
                        loc-parent
@@ -114,7 +145,8 @@
 
 (define de-state
   (term (state ,dispatch-end
-               ,store)))
+               ,store
+               ,test-log)))
 (test M de-state "de-state")
 
 (define default-start
@@ -125,40 +157,14 @@
 
 (define ds-state
   (term (state ,default-start
-               ,store)))
+               ,store
+               ,test-log)))
 (test M ds-state "ds-state")
 
 (test--> DOM-reduce de-state ds-state)
 
-;; Test finishing current listener steps, going to dispatch-next
-;; (finished-listener)
-(define-syntax test-schema
-  (syntax-rules ()
-    [(test-schema pattern f name)
-     
-     (let* ((proc (lambda (e)
-                    (let ((binds (redex-match DOM pattern e)))
-                      (if (equal? binds #f)
-                          #f
-                          (f binds)))))
-            (result (redex-check DOM pattern 
-                                 (single-step-pat? 
-                                  (term pattern)
-                                  proc)
-                                 #:print? #f)))
-       (if (equal? result #t) 
-           (displayln (string-append name ": passed"))
-           (begin
-             (displayln (string-append name ": FAILED"))
-             (displayln "Counterexample:")
-             (displayln result)
-             (displayln "Counterexample steps to:")
-             (displayln (apply-reduction-relation DOM-reduce 
-                                                  (counterexample-term result)))
-             (displayln "Expected:")
-             (displayln (proc (counterexample-term result))))))]))
-
-     
+; Test finishing current listener steps, going to dispatch-next
+; (finished-listener)     
 (test-schema (state (in-hole Ctx
                              (dispatch E
                                parent
@@ -167,7 +173,8 @@
                                (loc ...)
                                (L ...)
                                (listener skip)))
-                        N-store)
+                        N-store
+                        Log)
              (lambda (binds)
                (term (state 
                       (in-hole ,(bind-ref binds 'Ctx) 
@@ -180,25 +187,24 @@
                                              ,(bind-ref binds 'loc)
                                              ,(bind-ref binds 'L)
                                              ))
-                      ,(bind-ref binds 'N-store))
+                      ,(bind-ref binds 'N-store)
+                      ,(bind-ref binds 'Log))
                  ))
              "finished-listener")
 (test-schema (state (in-hole Ctx
                              (dispatch-next E parent P PDef SP #t 
-                                            (loc ...) (L ...))) 
-                    N-store)
+                                            (loc ...) (L ...)))
+                    N-store Log)
              (lambda (binds) 
                (term (state 
                       (in-hole ,(bind-ref binds 'Ctx)
                                (dispatch-default ,(bind-ref binds 'E)
                                                  ,(bind-ref binds 'PDef)
                                                  ,(bind-ref binds 'loc)))
-                      ,(bind-ref binds 'N-store))))
+                      ,(bind-ref binds 'N-store)
+                      ,(bind-ref binds 'Log))))
              "stop-immediate-called")
          
-
-
-
 (define add-event-state
   (term 
    (state ,(foldr
@@ -222,7 +228,21 @@
                    )))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
-           (loc_parent (node "parent" ,empty (loc_mid) null))))))
+           (loc_parent (node "parent" ,empty (loc_mid) null)))
+          ,test-log)))
 (test M add-event-state "add-event-state")
+
+(test-schema (state (in-hole Ctx (debug-print string_new))
+                    N-store
+                    (string_log ...))
+             (lambda (binds)
+               (term (state
+                      (in-hole ,(bind-ref binds 'Ctx)
+                               skip)
+                      ,(bind-ref binds 'N-store)
+                      ,(cons
+                        (bind-ref binds 'string_new)
+                        (bind-ref binds 'string_log)))))
+             "debug-print-logged")
 
 (first (apply-reduction-relation* DOM-reduce add-event-state))

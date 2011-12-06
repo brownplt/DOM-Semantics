@@ -84,7 +84,8 @@
        (dispatch E parent P PDef SP SI (loc ...) (L ...) LCtx)]
   ; Machine state
   [N-store ((loc_!_ N) ...)]
-  [M (state S N-store)])
+  [Log (string ...)]
+  [M (state S N-store Log)])
 
 (define-metafunction DOM
   [(addListenerHelper ((TP_a (L_a ...)) ...
@@ -172,41 +173,47 @@
                ((loc_b N_b) ...
                 (loc_current
                  (node string LS (loc_children ...) parent))
-                (loc_a N_a) ...))
+                (loc_a N_a) ...)
+               Log)
         (state (in-hole Ctx (pre-dispatch parent (loc_current loc ...) E))
                ((loc_b N_b) ...
                 (loc_current
                  (node string LS (loc_children ...) parent))
-                (loc_a N_a) ...))
+                (loc_a N_a) ...)
+               Log)
         pd-build-path)
 
    ; Path building complete, transition to dispatch
    (--> (state (in-hole Ctx 
                         (pre-dispatch null (loc_first loc ...) E))
-                N-store)
+                N-store
+                Log)
         (state (in-hole Ctx
                         (dispatch-collect E 
                                           loc_first 
                                           capture 
                                           #f #f #f 
                                           (loc_first loc ...)))
-               N-store)
+               N-store
+               Log)
         pd-to-dispatch)
    
    ; Single-node path degenerate case
-   (--> (state (in-hole Ctx (pre-dispatch null (loc) E)) N-store)
-        (state (in-hole Ctx (dispatch-stupid loc E)) N-store)
+   (--> (state (in-hole Ctx (pre-dispatch null (loc) E)) N-store Log)
+        (state (in-hole Ctx (dispatch-stupid loc E)) N-store Log)
         dont-do-this)
    
    ; done with current listener, determine next listener to run (if any)
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI
                                   (loc_child ...) (L ...) (listener skip)))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch-next E parent P PDef SP SI 
                                        (loc_child ...) (L ...)))
-               N-store)
+               N-store
+               Log)
         finished-listener)
    ; done with current handler, determine what steps to take
    (--> (state (in-hole Ctx
@@ -214,7 +221,8 @@
                                   parent P PDef SP SI
                                   (loc_child ...) (L ...)
                                   (handler (in-hole DispCtx (return bool)))))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch (event T_event Bubbles Cancels Trusted)
                                   parent P PDef SP SI
@@ -224,57 +232,68 @@
                                                 (equal? (term T_event) "mouseover"))
                                         (term prevent-default)
                                         (term skip)))))
-               N-store)
+               N-store
+               Log)
         return-from-handler) ; when we finish a handler, this rule transmutes it into the exit from a listener
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI
                                   (loc_child ...) (L ...) (handler skip)))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI
                                   (loc_child ...) (L ...) (handler (return #f))))
-               N-store)
+               N-store
+               Log)
         finished-handler)
    
    ; stop-immediate-prop called, abort dispatch and jump to default action
    (--> (state (in-hole Ctx
                         (dispatch-next E parent P PDef SP #t 
                                        (loc_child ...) (L ...)))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch-default E PDef (loc_child ...)))
-               N-store)
+               N-store
+               Log)
         stop-immediate-called)
    ; stop-propagation called, finish current node,
    (--> (state (in-hole Ctx
                         (dispatch-next E parent P PDef #t #f 
                                        (loc_child ...) 
                                        (L L_rest ...)))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch E parent P PDef #t #f 
                                   (loc_child ...) (L_rest ...)
                                   L))
-               N-store)
+               N-store
+               Log)
         stop-prop-called-more-to-do)
    ; and then abort dispatch and jump to default action
    (--> (state (in-hole Ctx
                         (dispatch-next E parent P PDef #t #f (loc_child ...) 
                                ()))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx (dispatch-default E PDef (loc_child ...)))
-               N-store)
+               N-store
+               Log)
         stop-prop-called-done-with-node)
    ; neither stop-prop nor stop-imm-prop called, do next listener on current node
    (--> (state (in-hole Ctx
                         (dispatch-next E parent P PDef #f #f (loc_child ...) 
                                (L L_rest ...)))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch E parent P PDef #f #f 
                                   (loc_child ...) (L_rest ...) 
                                   L))
-               N-store)
+               N-store
+               Log)
         more-to-do)
    
    ; neither stop-prop nor stop-imm-prop called, no listeners left on current node,
@@ -285,23 +304,27 @@
                                        (loc_a ... loc_parent loc_child 
                                               loc_grand loc_b ...) 
                                        ()))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch-collect E loc_child capture PDef #f #f 
                                           (loc_a ... loc_parent loc_child 
                                                  loc_grand loc_b ...)))
-               N-store)
+               N-store
+               Log)
         capture-to-capture-collect)
    ; capture->target
    (--> (state (in-hole Ctx
                         (dispatch-next E loc_parent capture PDef #f #f 
                                (loc_a ... loc_parent loc_child) 
                                ()))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch-collect E loc_child target PDef #f #f 
                                           (loc_a ... loc_parent loc_child)))
-               N-store)
+               N-store
+               Log)
         capture-to-target-collect)
    ; target->bubble & event bubbles
    (--> (state (in-hole Ctx
@@ -309,12 +332,14 @@
                                        loc_child target PDef #f #f 
                                        (loc_a ... loc_parent loc_child) 
                                        ()))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch-collect (event T_event #t Cancels Trusted) 
                                           loc_parent bubble PDef #f #f 
                                           (loc_a ... loc_parent loc_child)))
-               N-store)
+               N-store
+               Log)
         target-to-bubble-collect)
    ; target->default & event doesn't bubble
    (--> (state (in-hole Ctx
@@ -322,33 +347,39 @@
                                        loc_child target PDef #f #f 
                                        (loc_a ... loc_child) 
                                        ()))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch-default (event T_event #f Cancels Trusted) 
                                           PDef
                                           (loc_a ... loc_child)))
-               N-store)
+               N-store
+               Log)
         target-to-default)
    ; bubble->bubble
    (--> (state (in-hole Ctx
                         (dispatch-next E loc_child bubble PDef #f #f 
                                        (loc_a ... loc_parent loc_child loc_b ...) 
                                        ()))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch-collect E loc_parent bubble PDef #f #f 
                                           (loc_a ... loc_parent loc_child 
                                                  loc_b ...)))
-               N-store)
+               N-store
+               Log)
         bubble-to-bubble-collect)
    ; bubble->default
    (--> (state (in-hole Ctx
                         (dispatch-next E loc_root bubble PDef #f #f 
                                        (loc_root loc_b ...)
                                        ()))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx (dispatch-default E PDef (loc_root loc_b ...)))
-               N-store)
+               N-store
+               Log)
         bubble-to-default)
    
    ; collecting listeners on current node, and listeners are found
@@ -364,7 +395,8 @@
                         (TP_b (L_b ...)) ...)
                        (loc_kids ...)
                        parent))
-                (loc_d N_d) ...))
+                (loc_d N_d) ...)
+               Log)
         (state (in-hole Ctx
                         (dispatch-next (event T_event Bubbles Cancels Trusted)
                                        loc_target P PDef #f #f 
@@ -378,7 +410,8 @@
                         (TP_b (L_b ...)) ...)
                        (loc_kids ...)
                        parent))
-                (loc_d N_d) ...))
+                (loc_d N_d) ...)
+               Log)
         collect-found-listeners)
    ; collecting listeners on current node, and listeners are not found
    (--> (side-condition 
@@ -392,7 +425,8 @@
                        ((TP_a (L_a ...)) ...)
                        (loc_kids ...)
                        parent))
-                (loc_d N_d) ...))
+                (loc_d N_d) ...)
+               Log)
          (not-in? (term T_event) (term P) (term (TP_a ...))))
         (state (in-hole Ctx
                         (dispatch-next (event T_event Bubbles Cancels Trusted)
@@ -405,14 +439,17 @@
                        ((TP_a (L_a ...)) ...)
                        (loc_kids ...)
                        parent))
-                (loc_d N_d) ...))
+                (loc_d N_d) ...)
+               Log)
         collect-found-no-listeners)
         
    ; seq-skip
    (--> (state (in-hole Ctx (seq skip S))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx S)
-               N-store)
+               N-store
+               Log)
         seq-skip)
    
    ; addEventListener
@@ -426,7 +463,8 @@
                   LS
                   (loc_kids ...)
                   parent_node))
-                (loc_b N_b) ...))
+                (loc_b N_b) ...)
+               Log)
         (state (in-hole Ctx skip)
                ((loc_a N_a) ...
                 (loc_target
@@ -434,7 +472,8 @@
                        (addListener LS string_type bool S_listener)
                        (loc_kids ...)
                        parent_node))
-                (loc_b N_b) ...))
+                (loc_b N_b) ...)
+               Log)
         do-addEventListener)
    ; removeEventListener
    (--> (state (in-hole Ctx
@@ -447,7 +486,8 @@
                   LS
                   (loc_kids ...)
                   parent_node))
-                (loc_b N_b) ...))
+                (loc_b N_b) ...)
+               Log)
         (state (in-hole Ctx skip)
                ((loc_a N_a) ...
                 (loc_target
@@ -455,7 +495,8 @@
                        (removeListener LS string_type bool S_listener)
                        (loc_kids ...)
                        parent_node))
-                (loc_b N_b) ...))
+                (loc_b N_b) ...)
+               Log)
         do-removeEventListener)
    ; setEventHandler
    (--> (state (in-hole Ctx
@@ -468,7 +509,8 @@
                   LS
                   (loc_kids ...)
                   parent_node))
-                (loc_b N_b) ...))
+                (loc_b N_b) ...)
+               Log)
         (state (in-hole Ctx skip)
                ((loc_a N_a) ...
                 (loc_target
@@ -476,18 +518,18 @@
                        (setHandler LS string_type S_listener)
                        (loc_kids ...)
                        parent_node))
-                (loc_b N_b) ...))
+                (loc_b N_b) ...)
+               Log)
         do-setEventHandler)
    
    ; debug-print
-   (--> (state (in-hole Ctx (debug-print string))
-               N-store)
-        ,(begin 
-           (displayln (term string))
-           (term (state (in-hole Ctx skip)
-                        N-store)))
+   (--> (state (in-hole Ctx (debug-print string_new))
+               N-store
+               (string_log ...))
+        (state (in-hole Ctx skip)
+               N-store
+                     (string_new string_log ...))
         debug-print)
-   
    
    ; if-phase
    (--> (state (in-hole Ctx
@@ -495,7 +537,8 @@
                                   (in-hole LCtx 
                                            (in-hole DispCtx
                                                     (if-phase P_check S_true S_false)))))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI (loc ...) (L ...)
                                   (in-hole LCtx
@@ -503,7 +546,8 @@
                                                     ,(if (equal? (term P) (term P_check))
                                                          (term S_true)
                                                          (term S_false))))))
-               N-store)
+               N-store
+               Log)
         do-if-phase)
    
    ; if-curTarget
@@ -512,7 +556,8 @@
                                   (in-hole LCtx 
                                            (in-hole DispCtx
                                                     (if-curTarget loc_check S_true S_false)))))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI (loc ...) (L ...)
                                   (in-hole LCtx
@@ -520,18 +565,21 @@
                                                     ,(if (equal? (term parent) (term loc_check))
                                                          (term S_true)
                                                          (term S_false))))))
-               N-store)
+               N-store
+               Log)
         do-if-curTarget)
    
    ; stop-prop
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI (loc ...) (L ...)
                                   (in-hole LCtx (in-hole DispCtx stop-prop))))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch E parent P PDef #t SI (loc ...) (L ...)
                                   (in-hole LCtx (in-hole DispCtx skip))))
-               N-store)
+               N-store
+               Log)
         do-stop-prop)
   
    
@@ -539,21 +587,25 @@
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI (loc ...) (L ...)
                                   (in-hole LCtx (in-hole DispCtx stop-immediate))))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch E parent P PDef #t #t (loc ...) (L ...)
                                   (in-hole LCtx (in-hole DispCtx skip))))
-               N-store)
+               N-store
+               Log)
         do-stop-immediate)
    ; prevent-default
    (--> (state (in-hole Ctx
                         (dispatch E parent P PDef SP SI (loc ...) (L ...)
                                   (in-hole LCtx (in-hole DispCtx prevent-default))))
-               N-store)
+               N-store
+               Log)
         (state (in-hole Ctx
                         (dispatch E parent P #t SP SI (loc ...) (L ...)
                                   (in-hole LCtx (in-hole DispCtx skip))))
-               N-store)
+               N-store
+               Log)
         do-prevent-default)
  
    
@@ -562,11 +614,11 @@
                         (dispatch-default E_inner
                                           #t
                                           (loc_inner ...)))
-               N-store)
-        ,(begin 
-           (displayln "default prevented")
-           (term (state (in-hole Ctx skip)
-                        N-store)))
+               N-store
+               (string_logged ...))
+        (state (in-hole Ctx skip)
+               N-store
+               ("default-prevented" string_logged ...))
         dispatch-default-prevented)
    
    ; dispatch-default-not-prevented
@@ -574,13 +626,13 @@
                         (dispatch-default E_inner
                                           #f
                                           (loc_inner ...)))
-               N-store)
-        ,(begin 
-           (displayln "default action!")
-           (term (state (in-hole Ctx skip)
-                        N-store)))
+               N-store
+               (string_logged ...))
+        (state (in-hole Ctx skip)
+               N-store
+               ("default action!" string_logged ...))
         dispatch-not-default-prevented)
-   
+
    
    
    ))
