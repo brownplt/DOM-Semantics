@@ -152,6 +152,7 @@
     (removeListenerHelper LS string_type target bool_useCapture S_listener)
     string_type
     ,(if (term bool) (term capture) (term bubble))
+    bool_useCapture
     S_listener)])
 
 
