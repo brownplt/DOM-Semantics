@@ -41,8 +41,8 @@
   [SP bool]
   [SI bool]
   ; Dispatch types: 
-  ; event, curr node/null, phase, prevent default?, path, pending listeners, stack
-  ; dispatch executes listener steps
+  ; event, curr node/null, phase, prevent default?, path, pending listeners,
+  ; stack dispatch executes listener steps
   [D (dispatch E parent P PDef SP SI (loc ...) (L ...) L)]
   ; dispatch-collect looks for listeners
   [DC (dispatch-collect E parent P PDef SP SI (loc ...))]
