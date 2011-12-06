@@ -72,7 +72,7 @@
 ;               N-store)
 ;        (state ((dispatch E loc_next P bool (loc_a ... loc_done loc_next loc_b ...) (stuff ) (nonsense))
 ;                S ...)
-;               N-store)
+;               N-store))
    
    
 ;   ; Case where parent doesn't have any listeners for type of event
@@ -145,17 +145,15 @@
 
    ; Done handling last dispatch on stack.
    ; TODO default handler
-   ; TODO is there a real return value?
    (--> (state ((dispatch E loc_current bubble bool (loc_current loc ...) () ()))
                N-store)
-        (not ,bool)
+        (not bool))
 
    ; Done handling last dispatch on stack and stopProp[Immediate] was called.
    ; TODO default handler
-   ; TODO is there a real return value?
    (--> (state ((dispatch E loc P bool () () ()))
                N-store)
-        (not ,bool))
+        (not bool))
 
    ;;;;;;;;;; Dispatch exiting b/c at end of path or after stopProp ;;;;;;;;;;
 

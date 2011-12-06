@@ -1,109 +1,67 @@
 #lang racket
 (require redex)
+(require srfi/1) ; for "zip"
 (require xml)
-(require "redex-dom.rkt")
+(require (planet neil/json-parsing:1:=2))
+(provide create-dom loc-to-node)
 
-(define test-doc
-  (xml->xexpr (document-element
-               (read-xml (open-input-string
-                          "<html><head><script>alert('hi');</script><br /></head><body></body></html>")))))
+; When a JSON object is supposed to represent a list, it looks like this:
+;   { "0" : A, "1" : B, ...}
+; so each entry in the list looks like:
+;   (member (@ (name "0")) (object ...))
+; but we want just the (object ...), so we use this unpacking function.
+(define (unpack-json-list json-list)
+  (map (lambda(o) (list-ref o 2))
+       (rest (list-ref json-list 2))))
 
+; Takes a JSON object, returns its children as JSON objects.
+(define (extract-children-as-json json-obj)
+  (unpack-json-list (list-ref json-obj 5)))
 
-;
-;(define (get-child-locs node)
-;  (first (rest (rest node))))
-;
-;(define (combine l1 l2)
-;  (if (empty? l1)
-;      empty
-;      (let ([new-pair (list (first l1) (first l2))])
-;        (cons new-pair (combine (rest l1) (rest l2))))))
-;
-;(define (create-store x-expr my-loc parent)
-;  (let* ([root-pair (create-node-pair x-expr my-loc parent)]
-;         [children-locs (get-child-locs (second root-pair))]
-;         [combined (combine children-locs (children x-expr))]
-;         [child-pairs (map (lambda (pair) 
-;                             (create-node-pair (second pair) (first pair) root-loc))
-;                           combined)])
-;    child-pairs))
-;
-;(define (create-node-pair x-expr my-loc parent)
-;  (let ([child-locs (map (lambda (c) (gensym 'loc))
-;                         (children x-expr))])
-;    (list my-loc (term (node ,empty ,child-locs ,parent)))))        
-(define make-tree cons)
-(define tree-datum first)
-(define (tree-children tree)
-  (filter list? (rest (rest tree))))
+; Takes a JSON object, returns the listeners in that object as Redex values.
+(define (extract-listeners-as-redex json-obj)
+  ; TODO merge listener lists with the same type/phase pair
+  (map (lambda(l)
+         (let* ([type (cadr (list-ref (list-ref l 2) 2))]
+                [phase (if (eq? (first (list-ref (list-ref l 3) 2))
+                                'false)
+                           (term bubble)
+                           (term capture))]
+                [maybe-source (list-ref (list-ref l 1) 2)]
+                [source (if (eq? (first maybe-source) 'null)
+                            "null"
+                            (cadr maybe-source))])
+           (list (list type phase)
+                 (list (term (listener (debug-print ,source)))))))
+                 ; TODO ^^^ this part should translate JS into S steps
+                 ;          but instead it just makes debug-print terms
+       (unpack-json-list (list-ref json-obj 1))))
 
-(define (treemap fn tree)
-  (make-tree (fn (tree-datum tree))
-             (forest-map fn (tree-children tree))))
+; Creates a set of (loc->DOM) mappings in loc-to-node.
+(define (create-dom xml-obj json-obj parent-loc)
+  (let* ([cur-loc (term ,(gensym 'loc_))]
+         [listeners (extract-listeners-as-redex json-obj)]
+         [new-node
+           (term (node ,(string-append (symbol->string (first xml-obj))
+                                       "::"
+                                       (symbol->string cur-loc))
+                       ,listeners
+                       ; TODO ^^^ include handlers from XML attributes
+                       ;;;;; recursively call on all children of this node
+                       ,(map (lambda(c) ; (list xml-children json-children)
+                               (create-dom (first c)
+                                           (second c)
+                                           cur-loc))
+                             ;;;;; zip XML and JSON child lists together
+                             (zip (filter (lambda(c)
+                                            (and (not (string? c))
+                                                 (not (cdata? c)))) ; TODO include cdata children
+                                          (rest (rest xml-obj)))
+                                  (extract-children-as-json json-obj)))
+                       ,parent-loc))])
+    (begin (set! loc-to-node (cons (list cur-loc new-node) loc-to-node))
+           ;(test LS listeners "listeners")
+           cur-loc)))
 
-(define (forest-map fn forest)
-  (if (empty? forest)
-      '()
-      (cons (treemap fn (first forest))
-            (forest-map fn (rest forest)))))
-
-(define doc-with-locations
-  (treemap (lambda (tag) (gensym 'loc))
-           test-doc))
-
-(define (update-store s-exp store parent)
-  (let* ([my-loc (first s-exp)]
-        [all-children-store
-         (foldr
-          (lambda (child prior-store)
-            (update-store child prior-store my-loc))
-          store
-          (rest s-exp))]
-        [child-locs (map first (rest s-exp))]
-        [this-node (term (node ,empty ,child-locs ,parent))])
-    (cons (list my-loc this-node) all-children-store)))
-
-(define initial-store '())
-(define initial-parent (term null))
-(define doc-store (update-store doc-with-locations initial-store initial-parent))
-
-(define-syntax test
-  (syntax-rules ()
-    [(test pattern exp name)
-     (let ((result-str
-            (if (redex-match DOM pattern exp) "passed" "FAILED!!!!")))
-       (displayln (string-append name ": " result-str)))]))
-
-(define test-event
-  (term (event "click" #t #t #t)))
-(test E test-event "event")
-
-(define test-listener
-  (term (listener "click" capture ,(list (term mutate)))))
-(test L test-listener "listener")
-
-(define test-pm
-  (list (list (term capture) (list test-listener))))
-(test PM test-pm "test-pm")
-
-(define test-ls
-  (list (list (term "click") test-pm)))
-(test LS test-ls "test-ls")
-;
-(define root
-  (term (node ,test-ls ,(list (term loc-child)) null)))
-(test N root "root node")
-
-
-
-;'(loc51262 
-;  (loc51263 
-;   (loc51264) 
-;   (loc51265)) 
-;  (loc51266))
-;
-;'(html 
-;  (head 
-;   (script ) 
-;   (br )) 
-;  (body ))
+; The node-store, which is a map from locations to nodes.
+(define loc-to-node empty)
