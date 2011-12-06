@@ -28,9 +28,13 @@
   (term (event "click" #t #t #t)))
 (test E test-event "event")
 
-(define test-listener
-  (term (listener mutate)))
-(test L test-listener "listener")
+(define test-listener-cap
+  (term (listener #t mutate)))
+(test L test-listener-cap "listener-cap")
+
+(define test-listener-bub
+  (term (listener #f mutate)))
+(test L test-listener-bub "listener-bub")
 
 (define root
   (term (node "root"
@@ -39,14 +43,14 @@
               null)))
 (test N root "root node")
 
-(define test-tp
+(define test-tp-cap
   (list "click" (term capture)))
-(test TP test-tp "test-tp")
+(test TP test-tp-cap "test-tp-cap")
 
 (define child
   (term (node "child"
-              ,(list (list test-tp
-                           (list test-listener)))
+              ,(list (list test-tp-cap
+                           (list test-listener-cap)))
               ,empty
               loc-parent)))
 (test N child "child node")
@@ -166,7 +170,7 @@
                                PDef SP SI
                                (loc ...)
                                (L ...)
-                               (listener skip)))
+                               (listener #t skip)))
                         N-store)
              (lambda (binds)
                (term (state 
@@ -195,9 +199,6 @@
                                                  ,(bind-ref binds 'loc)))
                       ,(bind-ref binds 'N-store))))
              "stop-immediate-called")
-         
-
-
 
 (define add-event-state
   (term 
@@ -218,8 +219,8 @@
              (term (setEventHandler loc_parent "click"
                                     (debug-print "before 4")))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t))
-                   )))
+                                 (event "click" #t #t #t)))
+             ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
            (loc_parent (node "parent" ,empty (loc_mid) null))))))
