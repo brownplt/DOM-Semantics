@@ -32,7 +32,8 @@
                             "null"
                             (cadr maybe-source))])
            (list (list type phase)
-                 (list (term (listener (debug-print ,source)))))))
+                 (list (term (listener ,#t (debug-print ,source)))))))
+                 ; TODO                ^^^ what does this bool mean?
                  ; TODO ^^^ this part should translate JS into S steps
                  ;          but instead it just makes debug-print terms
        (unpack-json-list (list-ref json-obj 1))))
@@ -41,6 +42,23 @@
 (define (create-dom xml-obj json-obj parent-loc)
   (let* ([cur-loc (term ,(gensym 'loc_))]
          [listeners (extract-listeners-as-redex json-obj)]
+         [listeners2 (foldl (lambda(f r)
+                    (let ([match-list (filter
+                                        (lambda(l)
+                                          (equal? (first (first l))
+                                                  (first (first f))))
+                                        r)])
+                         (if (empty? match-list)
+                             (cons f r)
+                             (cons (list (first f)
+                                         (append (second f)
+                                                 (second (first match-list))))
+                                   (filter (lambda(l)
+                                             (not (equal? (first (first l))
+                                                          (first (first f))))) 
+                                           r)))))
+                  empty
+                  listeners)] ; TODO wtf why doesn't this work
          [new-node
            (term (node ,(string-append (symbol->string (first xml-obj))
                                        "::"
@@ -60,7 +78,8 @@
                                   (extract-children-as-json json-obj)))
                        ,parent-loc))])
     (begin (set! loc-to-node (cons (list cur-loc new-node) loc-to-node))
-           ;(test LS listeners "listeners")
+           (display listeners2)
+           (newline)
            cur-loc)))
 
 ; The node-store, which is a map from locations to nodes.
