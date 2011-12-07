@@ -80,7 +80,8 @@
   ; to the default action, or to terminate
   [DN (dispatch-next E parent P PDef SP SI (loc ...) (L ...))]
   ; dispatch-default executes the default action, unless prevented
-  [DD (dispatch-default E PDef (loc ...))]
+  ; event, defaultPrevented, target loc
+  [DD (dispatch-default E PDef loc)]
   ; dispatch-stupid handles the degenerate case of a single-node path
   [DS (dispatch-stupid loc E)]
   ; Listener steps
@@ -337,11 +338,11 @@
    ;   ...
    (--> (state (in-hole Ctx
                         (dispatch-next E parent P PDef SP #t
-                                       (loc_child ...) (L ...)))
+                                       (loc_child ... loc_target) (L ...)))
                N-store
                Log)
         (state (in-hole Ctx
-                        (dispatch-default E PDef (loc_child ...)))
+                        (dispatch-default E PDef loc_target))
                N-store
                Log)
         stop-immediate-called)
@@ -367,11 +368,11 @@
                Log)
         stop-prop-called-more-to-do)
    (--> (state (in-hole Ctx
-                        (dispatch-next E parent P PDef #t #f (loc_child ...)
+                        (dispatch-next E parent P PDef #t #f (loc_child ... loc_target)
                                ()))
                N-store
                Log)
-        (state (in-hole Ctx (dispatch-default E PDef (loc_child ...)))
+        (state (in-hole Ctx (dispatch-default E PDef loc_target))
                N-store
                Log)
         stop-prop-called-done-with-node)
@@ -459,7 +460,7 @@
         (state (in-hole Ctx
                         (dispatch-default (event T_event #f Cancels Trusted)
                                           PDef
-                                          (loc_a ... loc_child)))
+                                          loc_child))
                N-store
                Log)
         target-to-default)
@@ -487,11 +488,11 @@
    ; bubble->default
    (--> (state (in-hole Ctx
                         (dispatch-next E loc_root bubble PDef #f #f
-                                       (loc_root loc_b ...)
+                                       (loc_root loc_b ... loc_target)
                                        ()))
                N-store
                Log)
-        (state (in-hole Ctx (dispatch-default E PDef (loc_root loc_b ...)))
+        (state (in-hole Ctx (dispatch-default E PDef loc_target))
                N-store
                Log)
         bubble-to-default)
@@ -781,7 +782,7 @@
    (--> (state (in-hole Ctx
                         (dispatch-default E_inner
                                           #t
-                                          (loc_inner ...)))
+                                          loc_target))
                N-store
                Log)
         (state (in-hole Ctx (debug-print "default-prevented"))
@@ -793,7 +794,7 @@
    (--> (state (in-hole Ctx
                         (dispatch-default E_inner
                                           #f
-                                          (loc_inner ...)))
+                                          loc_target))
                N-store
                Log)
         (state (in-hole Ctx (debug-print "default action!"))

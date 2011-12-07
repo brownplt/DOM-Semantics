@@ -169,7 +169,7 @@
 (define default-start
   (term (dispatch-default ,test-event
                           #f
-                          ,(list (term loc-parent) (term loc-child)))))
+                          loc-child)))
 (test DD default-start "default-start")
 
 (define ds-state
@@ -210,14 +210,14 @@
              "finished-listener")
 (test-schema (state (in-hole Ctx
                              (dispatch-next E parent P PDef SP #t 
-                                            (loc ...) (L ...)))
+                                            (loc ... loc_target) (L ...)))
                     N-store Log)
              (lambda (binds) 
                (term (state 
                       (in-hole ,(bind-ref binds 'Ctx)
                                (dispatch-default ,(bind-ref binds 'E)
                                                  ,(bind-ref binds 'PDef)
-                                                 ,(bind-ref binds 'loc)))
+                                                 ,(bind-ref binds 'loc_target)))
                       ,(bind-ref binds 'N-store)
                       ,(bind-ref binds 'Log))))
              "stop-immediate-called")
