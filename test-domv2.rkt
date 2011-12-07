@@ -316,6 +316,33 @@
 (test M add-remove-event-state-2 "add-remove-event-state-2")
 (test-log (list "L2" "L1" "default action!") add-remove-event-state-2 "add-remove-event-state-2")
 
+
+(define add-remove-event-state-3
+  (let ([l1 (term (debug-print "L1"))]
+        [l2 (term (debug-print "L2"))])
+  (term 
+   (state ,(foldr
+            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
+            #f
+            (list
+             (term (addEventListener loc_current "click" #t
+                                     ,l1))
+             (term (addEventListener loc_current "click" #t 
+                                     ,l2))
+             (term (addEventListener loc_current "click" #f
+                                     ,l1))
+             (term (removeEventListener loc_current "click" #f
+                                     ,l2))
+             (term (pre-dispatch loc_current ,empty 
+                                 (event "click" #t #t #t)))
+             ))
+          ((loc_current (node "child" ,empty ,empty loc_mid))
+           (loc_mid (node "middle" ,empty (loc_child) loc_parent))
+           (loc_parent (node "parent" ,empty (loc_mid) null)))
+          ,empty))))
+(test M add-remove-event-state-3 "add-remove-event-state-3")
+(test-log (list "L1" "L2" "L1" "default action!") add-remove-event-state-3 "add-remove-event-state-3")
+
 (define cancel-cancelable-state
   (let ([l1 (term prevent-default)])
   (term 
