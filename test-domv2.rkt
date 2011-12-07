@@ -359,9 +359,49 @@
           "log for cancel-uncancelable state")
 
 (define test-event-meta
-  (term (event "click" #t #t #t ,(list (list "k1" 'abcdefg)
+  (term (event "click" #t #f #t ,(list (list "k1" 'abcdefg)
                                        (list "k2" "hi there")
                                        (list "k3" 3000)
                                        (list "k4" 
                                              (cons 1 (cons 2 (cons 3 empty))))))))
 (test E test-event-meta "event with metadata")
+
+(define cancel-uncancelable-state-meta
+  (let ([l1 (term prevent-default)])
+  (term 
+   (state ,(foldr
+            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
+            #f
+            (list
+             (term (addEventListener loc_current "click" #t
+                                     ,l1))
+             (term (pre-dispatch loc_current ,empty 
+                                 ,test-event-meta))
+             ))
+          ((loc_current (node "child" ,empty ,empty loc_mid))
+           (loc_mid (node "middle" ,empty (loc_child) loc_parent))
+           (loc_parent (node "parent" ,empty (loc_mid) null)))
+          ,empty))))
+(test M cancel-uncancelable-state-meta "cancel-uncancelable-state-meta")
+(test-log (list "default action!") 
+          cancel-uncancelable-state-meta
+          "log for cancel-uncancelable state, with metadata event")
+
+;(define test-gda-state
+;  (term (state (pre-dispatch loc_current ,empty
+;                             (event "keydown" #t #t #t
+;                                    (("char" "a")
+;                                     ("key" "a")
+;                                     ("location" "Providence")
+;                                     ("altKey" #f)
+;                                     ("shiftKey" #f)
+;                                     ("ctrlKey" #f)
+;                                     ("metaKey" #f)
+;                                     ("repeat" #f)
+;                                     ("locale" "USA"))))
+;               ((loc_current (node "child" ,empty ,empty loc_mid))
+;                (loc_mid (node "middle" ,empty (loc_child) loc_parent))
+;                (loc_parent (node "parent" ,empty (loc_mid) null)))
+;               ,empty)))
+;(test M test-gda-state "test-gda-state")
+;(first (apply-reduction-relation* DOM-reduce test-gda-state))

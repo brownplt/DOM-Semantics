@@ -231,6 +231,111 @@
     (setHandlerHelper LS string_type target S_handler)
     string_type bubble S_handler)])
 
+; getDefaultAction
+; See 5.1.1 - List of DOM3 Event Types
+(define-metafunction DOM
+  [(getDefaultAction (event "abort" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "blur" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "click" #t #t Trusted Meta) loc)
+   (pre-dispatch loc () (event "DOMActivate" #t #t #f (("type" "click")
+                                                       ("fromscript" #f))))]
+  ; For trusted compositionstart event, return default action...
+  [(getDefaultAction (event "compositionstart" #t #t #t Meta) loc)
+   (debug-print "launching text composition system...BEEP BEEP BOOP...")]
+  ; ... for untrusted composition start event, do nothing
+  [(getDefaultAction (event "compositionstart" #t #t #f Meta) loc) skip]
+  [(getDefaultAction (event "compositionupdate" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "compositionend" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "dblclick" #t #f Trusted Meta) loc) skip]
+  ; TODO: handle activation behavior/activation trigger
+  [(getDefaultAction (event "DOMActivate"
+                            #t #t 
+                            #f
+                            (("type" "click") ("fromscript" #f)) loc))
+   (debug-print "DOMActivate from click, not not from script")]
+  [(getDefaultAction (event "DOMActivate"
+                            #t #t
+                            #f
+                            (("type" "click") ("fromscript" #t)) loc))
+   (debug-print "DOMActivate from click, from script")]
+  [(getDefaultAction (event "DOMActivate"
+                            #t #t 
+                            #f
+                            Meta) loc)
+   (debug-print "DOMActivate from non-click")]
+  [(getDefaultAction (event "DOMAttributeNameChanged" #t #f Trusted Meta) loc) 
+   skip]
+  [(getDefaultAction (event "DOMAttrModified" #t #f Trusted Meta) loc) 
+   skip]
+  [(getDefaultAction (event "DOMCharacterDataModified" #t #f Trusted Meta) loc) 
+   skip]
+  [(getDefaultAction (event "DOMElementNameChanged" #t #f Trusted Meta) loc) 
+   skip]
+  [(getDefaultAction (event "DOMFocusIn" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "DOMFocusOut" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "DOMNodeInserted" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "DOMNodeInsertedIntoDocument" #t #f Trusted Meta)
+                     loc) skip]
+  [(getDefaultAction (event "DOMNodeRemoved" #t #f Trusted Meta)
+                     loc) skip]
+  [(getDefaultAction (event "DOMNodeRemovedFromDocument" #t #f Trusted Meta)
+                     loc) skip]
+  [(getDefaultAction (event "DOMSubtreeModified" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "focus" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "focusin" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "focusout" #t #f Trusted Meta) loc) skip]
+  ; TODO: handle keydown possibilities
+  ; For trusted keydown event, return default action...
+  [(getDefaultAction (event "keydown" 
+                            #t #t #t
+                            (name Meta
+                                  (("char" string_char)
+                                   ("key" string_key)
+                                   ("location" string_location)
+                                   ("altKey" bool_alt)
+                                   ("shiftKey" bool_shift)
+                                   ("ctrlKey" bool_ctrl)
+                                   ("metaKey" bool_meta)
+                                   ("repeat" bool_repeat)
+                                   ("locale" string_locale)))) loc)
+   ,(handle-keydown (term Meta))]
+  ; ... for untrusted, do nothing
+  [(getDefaultAction (event "keydown" #t #t #f Meta) loc) skip]
+  ; TODO: handle keypress possibilities
+  ; For trusted keypress event, return default action ...
+  [(getDefaultAction (event "keypress"
+                            #t #t #t
+                            (name Meta
+                                  (("char" string_char)
+                                   ("key" string_key)
+                                   ("location" string_location)
+                                   ("altKey" bool_alt)
+                                   ("shiftKey" bool_shift)
+                                   ("ctrlKey" bool_ctrl)
+                                   ("metaKey" bool_meta)
+                                   ("repeat" bool_repeat)
+                                   ("locale" string_locale)))) loc)
+   ,(handle-keypress (term Meta))]
+  ; ... for untrusted, do nothing
+  [(getDefaultAction (event "keypress" #t #t #f Meta) loc) skip]
+  [(getDefaultAction (event "keyup" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mousedown" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mouseenter" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mouseleave" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mousemove" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mouseout" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mouseover" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mouseup" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "resize" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "select" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "textinput" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "unload" #f #f Trusted Meta) loc) skip])
+
+(define (handle-keydown meta)
+  (displayln "in handle-keydown!"))
+
+(define (handle-keypress meta)
+  (displayln "in handle-keypress!"))
 
 (define DOM-reduce
   (reduction-relation
