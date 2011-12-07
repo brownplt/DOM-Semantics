@@ -20,23 +20,34 @@
 
 ; Takes a JSON object, returns the listeners in that object as Redex values.
 (define (extract-listeners-as-redex json-obj)
-  ; TODO merge listener lists with the same type/phase pair
-  (map (lambda(l)
-         (let* ([type (cadr (list-ref (list-ref l 2) 2))]
-                [phase (if (eq? (first (list-ref (list-ref l 3) 2))
-                                'false)
-                           (term bubble)
-                           (term capture))]
-                [maybe-source (list-ref (list-ref l 1) 2)]
-                [source (if (eq? (first maybe-source) 'null)
-                            "null"
-                            (cadr maybe-source))])
-           (list (list type phase)
-                 (list (term (listener (debug-print ,source)))))))
-                 ; TODO ^^^ this part should translate JS into S steps
-                 ;          but instead it just makes debug-print terms
-       (unpack-json-list (list-ref json-obj 1))))
-
+  (define (merge-duplicate-tps ls)
+    (let ([unique-tps (remove-duplicates (map first ls))])
+      (map (lambda (tp)
+             (let ([listeners 
+                    (map second
+                         (filter (lambda (tp-l-pair)
+                                   (equal? (first tp-l-pair) tp))
+                                 ls))])
+               (list tp (foldr append '() listeners))))
+           unique-tps)))
+  (merge-duplicate-tps
+   (map (lambda(l)
+          (let* ([type (cadr (list-ref (list-ref l 2) 2))]
+                 [capture (eq? (first (list-ref (list-ref l 3) 2)) 'true)]
+                 [phase (if (eq? (first (list-ref (list-ref l 3) 2))
+                                 'false)
+                            (term bubble)
+                            (term capture))]
+                 [maybe-source (list-ref (list-ref l 1) 2)]
+                 [source (if (eq? (first maybe-source) 'null)
+                             "null"
+                             (cadr maybe-source))])
+            (list (list type phase)
+                  (list (term (listener ,capture (debug-print ,source)))))))
+        ; TODO ^^^ this part should translate JS into S steps
+        ;          but instead it just makes debug-print terms
+        (unpack-json-list (list-ref json-obj 1)))))
+  
 ; Creates a set of (loc->DOM) mappings in loc-to-node.
 (define (create-dom xml-obj json-obj parent-loc)
   (let* ([cur-loc (term ,(gensym 'loc_))]
