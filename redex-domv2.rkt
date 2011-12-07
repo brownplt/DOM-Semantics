@@ -18,7 +18,9 @@
   
   ; Events
   ; 4.1 - Event Interface
-  [E (event T Bubbles Cancels Trusted)]
+  [E (event T Bubbles Cancels Trusted Meta)]
+  ; Meta: event metadata
+  [Meta ((string any) ...)]
   ; T (event type):  readonly attribute DOMString type;
   ; The name of the event type. The name must be a DOMString. Specifications 
   ; that define events, content authors, and authoring tools must use 
@@ -299,14 +301,14 @@
    ; HTML5 Specification, Section 6.1.6.1 - Event handlers
    ; http://www.w3.org/TR/html5/webappapis.html#event-handler-attributes
    (--> (state (in-hole Ctx
-                        (dispatch (event T_event Bubbles Cancels Trusted)
+                        (dispatch (event T_event Bubbles Cancels Trusted Meta)
                                   parent P PDef SP SI
                                   (loc_child ...) (L ...)
                                   (handler (in-hole DispCtx (return bool)))))
                N-store
                Log)
         (state (in-hole Ctx
-                        (dispatch (event T_event Bubbles Cancels Trusted)
+                        (dispatch (event T_event Bubbles Cancels Trusted Meta)
                                   parent P PDef SP SI
                                   (loc_child ...) (L ...)
                                   (listener #f
@@ -433,14 +435,14 @@
         capture-to-target-collect)
    ; target->bubble & event bubbles
    (--> (state (in-hole Ctx
-                        (dispatch-next (event T_event #t Cancels Trusted)
+                        (dispatch-next (event T_event #t Cancels Trusted Meta)
                                        loc_child target PDef #f #f
                                        (loc_a ... loc_parent loc_child)
                                        ()))
                N-store
                Log)
         (state (in-hole Ctx
-                        (dispatch-collect (event T_event #t Cancels Trusted)
+                        (dispatch-collect (event T_event #t Cancels Trusted Meta)
                                           loc_parent bubble PDef #f #f
                                           (loc_a ... loc_parent loc_child)))
                N-store
@@ -451,14 +453,14 @@
    ; ... If the event type indicates that the event must not bubble, the event 
    ; object must halt after completion of this phase....
    (--> (state (in-hole Ctx
-                        (dispatch-next (event T_event #f Cancels Trusted)
+                        (dispatch-next (event T_event #f Cancels Trusted Meta)
                                        loc_child target PDef #f #f
                                        (loc_a ... loc_child)
                                        ()))
                N-store
                Log)
         (state (in-hole Ctx
-                        (dispatch-default (event T_event #f Cancels Trusted)
+                        (dispatch-default (event T_event #f Cancels Trusted Meta)
                                           PDef
                                           loc_child))
                N-store
@@ -499,7 +501,7 @@
 
    ; collecting listeners on current node, and listeners are found
    (--> (state (in-hole Ctx
-                        (dispatch-collect (event T_event Bubbles Cancels Trusted)
+                        (dispatch-collect (event T_event Bubbles Cancels Trusted Meta)
                                           loc_target P PDef #f #f
                                           (loc_a ... loc_target loc_b ...)))
                ((loc_c N_c) ...
@@ -513,7 +515,7 @@
                 (loc_d N_d) ...)
                Log)
         (state (in-hole Ctx
-                        (dispatch-next (event T_event Bubbles Cancels Trusted)
+                        (dispatch-next (event T_event Bubbles Cancels Trusted Meta)
                                        loc_target P PDef #f #f
                                        (loc_a ... loc_target loc_b ...)
                                        (L_wanted ...)))
@@ -531,7 +533,7 @@
    ; collecting listeners on current node, and listeners are not found
    (--> (side-condition
          (state (in-hole Ctx
-                         (dispatch-collect (event T_event Bubbles Cancels Trusted)
+                         (dispatch-collect (event T_event Bubbles Cancels Trusted Meta)
                                            loc_target P PDef #f #f
                                            (loc_a ... loc_target loc_b ...)))
                ((loc_c N_c) ...
@@ -544,7 +546,7 @@
                Log)
          (not-in? (term T_event) (term P) (term (TP_a ...))))
         (state (in-hole Ctx
-                        (dispatch-next (event T_event Bubbles Cancels Trusted)
+                        (dispatch-next (event T_event Bubbles Cancels Trusted Meta)
                                        loc_target P PDef #f #f
                                        (loc_a ... loc_target loc_b ...)
                                        ()))
@@ -738,7 +740,7 @@
    ; non-cancelable event must have no effect. If an event has more than one 
    ; default action, each cancelable default action must be canceled.
    (--> (state (in-hole Ctx
-                        (dispatch (name E (event T Bubbles #t Trusted)) 
+                        (dispatch (name E (event T Bubbles #t Trusted Meta)) 
                                   parent 
                                   P 
                                   PDef SP SI 
@@ -754,7 +756,7 @@
                Log)
         do-prevent-default-cancelable)
    (--> (state (in-hole Ctx
-                        (dispatch (name E (event T Bubbles #f Trusted)) 
+                        (dispatch (name E (event T Bubbles #f Trusted Meta)) 
                                   parent 
                                   P 
                                   PDef SP SI 

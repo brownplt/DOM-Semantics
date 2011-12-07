@@ -64,7 +64,7 @@
 ; Tests pd-build-path
 
 (define test-event
-  (term (event "click" #t #t #t)))
+  (term (event "click" #t #t #t ,empty)))
 (test E test-event "event")
 
 (define test-listener-cap
@@ -241,7 +241,7 @@
              (term (setEventHandler loc_parent "click"
                                     (debug-print "before 4")))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t)))
+                                 (event "click" #t #t #t ,empty)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
@@ -281,7 +281,7 @@
              (term (removeEventListener loc_current "click" #f
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t)))
+                                 (event "click" #t #t #t ,empty)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
@@ -307,7 +307,7 @@
              (term (removeEventListener loc_current "click" #t
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t)))
+                                 (event "click" #t #t #t ,empty)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
@@ -326,7 +326,7 @@
              (term (addEventListener loc_current "click" #t
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t)))
+                                 (event "click" #t #t #t ,empty)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
@@ -347,7 +347,7 @@
              (term (addEventListener loc_current "click" #t
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #f #t)))
+                                 (event "click" #t #f #t ,empty)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
@@ -357,3 +357,11 @@
 (test-log (list "default action!") 
           cancel-uncancelable-state 
           "log for cancel-uncancelable state")
+
+(define test-event-meta
+  (term (event "click" #t #t #t ,(list (list "k1" 'abcdefg)
+                                       (list "k2" "hi there")
+                                       (list "k3" 3000)
+                                       (list "k4" 
+                                             (cons 1 (cons 2 (cons 3 empty))))))))
+(test E test-event-meta "event with metadata")
