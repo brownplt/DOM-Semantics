@@ -334,7 +334,7 @@
              (term (removeEventListener loc_current "click" #f
                                      ,l2))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t)))
+                                 (event "click" #t #t #t ,empty)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
