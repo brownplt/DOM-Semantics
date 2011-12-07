@@ -1,0 +1,507 @@
+\documentclass[letterpaper,10pt,twocolumn]{article}
+%\usepackage{natbib}
+%\bibpunct{[}{]}{,}{a}{}{;}
+\let\citep\cite
+\let\citeyear\cite
+\let\citeyearpar\cite
+\usepackage{usenix}
+%\usepackage{endnotes}
+%\let\footnote\endnote
+\let\theendnotes\relax
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{xspace}
+\usepackage[hyphens]{url}
+\usepackage{extensions}
+\usepackage{microtype}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage[scaled=0.85]{beramono}
+\usepackage{ifthen}
+\usepackage{alltt}
+\usepackage[format=hang,indention=0cm]{subcaption}
+\usepackage{fixltx2e}
+\usepackage{tikz}
+\usetikzlibrary[fit,backgrounds,calc,chains,matrix,positioning,scopes,arrows,decorations,decorations.markings]
+% The sigplanconf document class uses hoffset and voffset to set
+% margins.  This is a poor way to do it, and it causes problems with
+% eso-pic.  This hack fixes things.
+\usepackage[final,nofancy,notoday]{svninfo}
+% \makeatletter
+% \if@svnInfoDraft@
+%   \usepackage{eso-pic}
+%   \newlength{\msgX}\setlength{\msgX}{5pt}\addtolength{\msgX}{-\hoffset}
+%   \newlength{\msgY}\setlength{\msgY}{5pt}\addtolength{\msgY}{\voffset}
+%   \AddToShipoutPicture{%
+%     \setlength{\unitlength}{1mm}%
+%     \put(\LenToUnit{\the\msgX},\LenToUnit{\the\msgY}){\tiny\svnInfoFile\quad\svnInfoRevision\quad\svnInfoDate%
+%       \quad\svnInfoTime\quad\svnInfoOwner}%
+%   }
+% \fi
+% \makeatother
+
+%\usepackage{setspace}
+%\usepackage{rotating}
+%\usepackage{ragged2e}
+
+
+
+\usepackage[implicit=true,%
+            bookmarks=false,%
+            bookmarksopen=false,%
+            pdfpagemode=UseNone,%
+            colorlinks=false,%
+            pdfborder={0 0 0},%
+            plainpages=false,%
+            pdfpagelabels=true,%
+            pdfpagelayout=SinglePage]{hyperref}
+\usepackage[capitalize]{cleveref}
+
+\makeatletter
+\newcommand{\paraemph}{\@startsection{paragraph}{4}{\z@}%
+  {3.25ex \@plus 1ex \@minus .2ex}{-1em}{\normalfont\normalsize\itshape}}
+\newcommand{\quot}{\mbox{\tt\char'042}}
+\newcommand{\wild}{\mbox{\tt\char'137}}
+\newcommand{\impl}[1]{{\def\_{\wild}\def\"{\quot}\tt#1}}
+\newcommand{\mimpl}[1]{\text{\impl{#1}}}
+\newcommand{\code}[1]{{\def\"{\quot}\ensuremath{\mathsf{#1}}}}
+\newcommand{\meta}[1]{{\def\"{\quot}\ensuremath{\mathrm{#1}}}}
+\newcommand{\kw}[1]{\ensuremath{\langle\mathit{#1}\rangle}}
+\newcommand{\setOf}[1]{\ensuremath{\left\lbrace#1\right\rbrace}}
+\usepackage{pifont}
+\newcommand{\CR}{\Pisymbol{psy}{191}}
+\DeclareRobustCommand{\spec}[1]{\textsf{#1}\xspace}
+\let\oldC=\C
+\DeclareRobustCommand\C{\@ifnextchar3\myC\CSharp}
+\DeclareRobustCommand\myC[1]{\spec{C3}}
+\DeclareRobustCommand\CSharp[1]{\ifthenelse{\equal{#1}{\#}}{\spec{C\textsuperscript{\#}}}{\oldC}}
+\DeclareRobustCommand\JS{\spec{JS}}
+\DeclareRobustCommand\CSS{\@ifnextchar2{\CSSTwo}{\@ifnextchar3{\CSSThree}{\spec{CSS}}}}
+\DeclareRobustCommand\CSSTwo[1]{\@ifnextchar.{\CSSTwoDot}{\spec{CSS\,2}}}
+\DeclareRobustCommand\CSSTwoDot[1]{\@ifnextchar1{\CSSTwoDotOne}{\spec{CSS\,2}}}
+\DeclareRobustCommand\CSSTwoDotOne[1]{\spec{CSS\,2.1}}
+\DeclareRobustCommand\CSSThree[1]{\spec{CSS\,3}}
+\DeclareRobustCommand\XBL{\@ifnextchar1{\XBLOne}{\@ifnextchar2{\XBLTwo}{\spec{XBL}}}}
+\DeclareRobustCommand\XBLOne[1]{\spec{XBL\,1}}
+\DeclareRobustCommand\XBLTwo[1]{\spec{XBL\,2.0}}
+\DeclareRobustCommand\XML{\spec{XML}}
+\DeclareRobustCommand\XUL{\spec{XUL}}
+\DeclareRobustCommand\ECMAScript{\@ifnextchar3{\ECMAScriptThree}{\@ifnextchar5{\ECMAScriptFive}{\spec{ECMAScript}}}}
+\DeclareRobustCommand\ECMAScriptFive[1]{\spec{ECMAScript\,5}}
+\DeclareRobustCommand\HTML{\@ifnextchar4{\HTMLFour}{\@ifnextchar5{\HTMLFive}{\spec{HTML}}}}
+\DeclareRobustCommand\HTMLFive[1]{\spec{HTML\,5}}
+\DeclareRobustCommand\HTMLFour[1]{\@ifnextchar.{\HTMLFourDot}{\spec{HTML\,4}}}
+\DeclareRobustCommand\HTMLFourDot[1]{\@ifnextchar0{\HTMLFourDotOh}{\spec{HTML\,4}.}}
+\DeclareRobustCommand\HTMLFourDotOh[1]{\@ifnextchar1{\HTMLFourDotOhOne}{\spec{HTML\,4.0}}}
+\DeclareRobustCommand\HTMLFourDotOhOne[1]{\spec{HTML\,4.01}}
+\makeatother
+
+\DeclareRobustCommand{\LJS}{\ensuremath{\lambda_\JS}\xspace}
+\usepackage{lipsum}
+\begin{document}
+
+\date{}
+
+\title{Featherweight DOM Events}
+\def\and{\hskip 1em}
+\author{%
+{\rm Matt Carroll \and Hannah Quay-de la Vallee \and Dan Kimmel}\\%
+{\rm Benjamin S. Lerner \and Shriram Krishnamurthi}\\%
+Brown University%
+}
+\maketitle
+
+%\thispagestyle{empty}
+
+\begin{abstract}
+  \lipsum[1]
+\end{abstract}
+
+\section{Introduction}\label{sec:introduction}
+Modern web applications are fluid collections of script and markup
+that respond and adapt to user interaction.  Because their programming
+model differs from classic desktop applications, the \emph{analysis}
+of such programs is still in its infancy.  To date, most efforts have
+focused on individual portions in isolation: huge progress has been
+made in clarifying the semantics of \JS [CITECITECITE], in modeling
+the tree structure of \HTML [CITECITECITE], and in understanding the
+overall behavior of the browser as a runtime environment
+[CITECITECITE].  But each of these approaches ignores the crucial
+element of reactivity: web programming is fundamentally
+\emph{event-driven}, and employs a powerful mechanism for event
+propagation.  Perhaps counterintuitively, the \JS loaded in web
+applications is largely \emph{inert}, and only executes when triggered
+by events dispatching through the \HTML structure in which it resides.
+To paraphrase Alan Guth's famous dictum, ``\HTML tells events how to
+propagate, and events tell \HTML how to evolve.''
+
+The ability to model web applications more accurately has widespread
+appeal.  Webapps are large codebases in languages with (currently)
+poor support for modularity: how can we assure ourselves that a
+program doesn't exhibit unintended behaviors?  Many webapps include
+semi- or untrusted content such as ads: how can we ensure that a
+program is robust in the face of the injected content's activity?  And
+for many web-like applications, foremost among them Firefox or
+Thunderbird, users avidly install extensions that deliberately and
+deeply modify the markup and script of the underlying program: what
+assurance do we have that the composite program will work correctly?
+Even those current tools which do attempt to model both the page
+structure and the code [CITECITECITE] are hampered by state-space
+explosion, as without a precise model the potential code paths grow
+beyond feasibility.
+
+Instead, we propose a simple, executable, testable model of event
+dispatch in web applications, in the style of \LJS
+[CITECITECITE].  Our model is engineered to hew closely to the
+structure of the spec [CITE], to build confidence in the model's
+adequacy.  For our purposes we abstract \JS and model only those APIs
+dealing with page structure or events; the model is easily extended to
+include \LJS directly.  Likewise we represent the page
+structure as a simple tree in a heap; again the model can be extended
+with a richer tree representation [CITECITE] for further precision.
+
+
+\subsection{Contributions}
+Specifically, this paper provides the following contributions:
+\begin{enumerate}
+\item A short, executable, and testable model of event dispatch.
+  Writing such a model clarifies potential sources of confusion in the
+  spec itself, provides an oracle against which future implementations
+  can be tested, and provides a foundation for future program analyses.
+\item Simple proofs using the model that clarify how and when script's
+  side effects can affect the dipatching of current and subsequent
+  events.  Thus far such claims were merely the \emph{intent} of the
+  lengthy, prose spec; now we can show the intended behaviros are upheld.
+\item An application of the model to ADsafe [CITE], to determine
+  whether ADsafe widgets in fact may still affect the control flow of
+  their host, despite the ADsafe sandbox.
+\item An application of the model to two Thunderbird extensions to
+  detect a real conflict between them.  Further, the model is used to
+  show that the fix (as implemented by one extension author)
+  suffices to correct the bug.
+\end{enumerate}
+Elaborating our model into a fully-fledged testing tool or model
+checker, which can scale to full-size programs, is an engineering
+effort left to future work.
+
+\section{Understanding web program control flow}\label{sec:c3-architecture}
+\textbf{It is naive to think of the execution of a web program as
+  merely an event loop alongside a tree-structured data store.
+  Rather, the structure of the tree influences the propagation of
+  events, and the side effects of events can modify the tree.
+  Understanding web program behavior therefore requires modeling all
+  the subtleties of event dispatch through the DOM.}
+
+\subsection{Event dispatch in $N$ easy stages}
+\paragraph{Static document structure, one event listener}
+\lipsum[1-2]
+\paragraph{Multiple listeners and the dispatch chain}
+\lipsum[3]
+\paragraph{Aborting event propagation}
+\lipsum[4]
+\paragraph{Dynamic document structure: no effect!}
+\lipsum[5]
+\paragraph{Dynamic listeners: some effect!}
+\lipsum[6]
+\paragraph{Dealing with legacy ``handlers''}
+\lipsum[7]
+\paragraph{Default actions}
+\textbf{Some events by default cause the construction and dispatching
+  of a followup event, but only when the event is ``trusted'' and
+  generated by the browser itself.  Because that event is a new
+  dispatch, any changes to the document are visible as the dispatch
+  chain is constructed.}
+
+\subsection{Non-trivial challenges}
+\subsubsection{Invited third-party code}
+\textbf{Many web apps incorporate code from third parties, such as
+  ads.  Those ads may integrate into the page, potentially triggering
+  new events that the original developer did not anticipate.}
+\lipsum[1]
+
+\textbf{Describe the ADsafe event propagation potential for confusion}
+\lipsum[2]
+
+\subsubsection{Uninvited third-party code}
+\textbf{Users flock to extensions, at the browser or webapp level,
+  which can drastically modify the way applications run. [find an
+  example of modding Gmail]  There is no way for app authors to
+  anticipate these modifications.  Instead, they must code defensively
+  in \emph{all} event listeners, but they must have a model of what
+  must be defended against.}
+\lipsum[1]
+
+\textbf{Describe the Nostalgy/Conversations conflict}
+\lipsum[3-6]
+
+\section{Featherweight DOM Events}
+\subsection{Modeling strategy}
+\begin{figure*}
+  \lipsum[1-3]
+  \caption{Key excerpts of the model}
+\end{figure*}
+\subsubsection{Stages of a dispatch} The Events spec defines the procedure
+for synchronously dispatching a single event in careful detail, and
+the prose is full of challenging nuances.  Conceptually, however,
+there are five steps to dispatching an event.
+
+\paragraph{1. Determining the propagation path.} For tree-based event
+sources (such as a page's DOM structure), the propagation path is the
+ordered list of nodes from a target node to the document
+root.\footnote{The document and window objects are also added to this
+  list; we ignore them here as they do not change the algorithm.}
+Once determined for a given dispatch, this list is immutable,
+regardless of any page mutations caused by listeners that are
+triggered during dispatch.  In our model, the computation of the
+propagation path is done in a \impl{pre-dispatch} context.  Once
+complete, the model transitions to states where the propagation path
+is never modified. 
+
+\paragraph{2. Determining the next listener.}  The flow of an event
+dispatch may be truncated in one of three ways: after the completion
+of the current listener, after the completion of any remaining
+listeners on the current node and phase, or the default action may be
+prevented.  Some events may not bubble; others may not be canceled.
+When any given listener completes execution, the dispatch algorithm
+must check whether any of these truncations have been signaled, and
+abort dispatch accordingly.  If none have, then dispatch proceeds to
+the next listener for the current node and phase or, if no such
+listener exists, begins collecting listeners for the next node and
+phase on the propagation path.  The logic for all these choices is
+modeled as a \impl{dispatch-next} context.
+
+\paragraph{3. Determining listeners for the current node and phase.}
+When dispatch reaches any given node on the propagation path, it
+copies the list of installed listeners for the current phase into the
+dispatch context.  This copy ensures that any changes to the installed
+listeners on the current node and phase \emph{will not take effect}
+until a subsequent dispatch.  However, any modifications to listeners
+installed on nodes for phases later in the current dispatch
+\emph{will} be visible.  (The spec also includes additional qualifiers
+that predicate when a given listener should run; these qualifiers are
+only necessary for a particular implementation strategy, and obscure
+the simpler semantic intent of dispatch.)  In our model, this step is
+done in a \impl{dispatch-collect} context; once finished, the model
+transitions back to \impl{dispatch-next}.
+
+\paragraph{4. Executing a listener.}  When \impl{dispatch-next}
+determines that a given listener should be executed, it transitions to
+a \impl{dispatch} context that records both the current listener and
+the remaining target nodes, and begins executing the listener body.
+While in this step, listeners may invoke additional (synchronous)
+event dispatches, may cancel the current event dispatch, or generally
+may modify the DOM however they choose.  Once a \impl{dispatch}
+context completes its listener body, it resumes with \impl{dispatch-next}.
+
+\paragraph{5. Default actions.}  When \impl{dispatch-next} reaches the
+end of the propagation path, or when the bubble phase would begin but
+the current event does not bubble, the algorithm must execute the
+\emph{default actions}, if any, for the given event and event target.
+We model this with a context \impl{dispatch-default} and a
+meta-function to compute the relevant default actions.  This
+meta-function is the only portion of the dispatch algorithm that
+inspects the detailed form of the event and target; everything else is
+agnostic.
+
+\begin{figure*}
+  \begin{subfigure}{0.375\textwidth}
+    \textbf{addEventListener} \begin{itemize}
+    \item[] Registers an event listener, depending on the
+      \impl{useCapture} parameter, \emph{on the capture phase of the
+        DOM event flow or its target and bubbling phases.}
+    \item[] \textbf{Parameters:} \begin{itemize}
+      \item[] \textbf{type} of type \impl{DOMString}: Specifies the \impl{Event.type} associated
+        with the event for which the user is registering.
+      \item[] \textbf{listener} of type \impl{EventListener}: \ldots
+      \item[] \textbf{useCapture} of type \impl{boolean}: If true,
+        \impl{useCapture} indicates that the user wishes to add the
+        event listener \emph{for the capture and target phases only},
+        i.e., this event listener will not be triggered during the
+        bubbling phase. If false, the event listener must \emph{only
+          be triggered during the target and bubbling phases.}
+      \end{itemize}
+    \end{itemize}
+    \caption{Excerpt from the specification of \impl{addEventListener};
+      emphasis added to highlight self-inconsistencies.}
+    \label{fig:aEL:spec}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.525\textwidth}
+\begin{syntax}
+P & \in & Phase & \ceqq & \kw{capture} \bnf| \kw{target} \bnf| \kw{bubble}
+\\
+L & \in & Listener & \ceqq & \impl{listener}\ S \\
+S & \in & Stmt & \ceqq & \impl{skip} \bnf| \impl{return}\ \mathit{bool} \bnf|
+S;S \\
+  &    &       & \bnf| & \text{\impl{stop-prop}} \bnf| \text{\impl{stop-immediate}} \\
+  &    &       & \bnf| & \text{\impl{prevent-default}} \\
+  &    &       & \bnf| & \impl{addEventListener} N \mathit{string}\
+  \mathit{bool}\ L \\
+  &    &       & \bnf| & \impl{remEventListener} N \mathit{string}\
+  \mathit{bool}\ L \\
+  &    &       & \bnf| & \text{\impl{debug-print}} \mathit{string} \\
+T & \in & EvtType & \ceqq & \impl{\"click\"} \bnf| \impl{\"keydown\"}
+\bnf| \cdots \\
+LS & \in & LMap & \ceqq & (T \times P) \rightharpoonup
+(\overrightarrow{\mathit{bool} \times L}) \\
+N & \in & Node & \ceqq & (\impl{node}\ name\ LS\ \ldots)
+\end{syntax}
+\begin{alltt}
+(define-metafunction DOM
+  [(addListener 
+      LS string_type bool_useCapture L)
+   (addListenerHelper 
+     (addListenerHelper
+       LS string_type target L)
+     string_type
+     ,(if (term bool_useCapture) 
+        (term capture) 
+        (term bubble))
+     L)])
+\end{alltt}
+    \caption{Excerpt from our Redex model of \impl{addEventListener}.
+      Note that the impact of the \impl{useCapture} is defined exactly
+      once, leaving no room for self-inconsistency.}
+    \label{fig:aEL:model}
+  \end{subfigure}
+  \caption{Defining and modeling \impl{addEventListener}}
+  \label{fig:aEL}
+\end{figure*}
+\subsubsection{Storing the event listener lists} 
+The precise storage for event listeners encodes several requirements
+culled from disparate portions of the spec.  We give the precise type in
+\cref{fig:aEL:model}, and explain its design in four stages.
+
+First, the spec mandates that event listeners installed for the same node,
+event type and dispatch phase must be called in the order they were
+installed.  Accordingly, every node contains a map ($LS$) from event
+type and phase to a vector of listeners.
+
+Second, the spec elsewhere states listeners may be installed for
+either \kw{capture} and \kw{target} phases, or \kw{target} and
+\kw{bubble} phases.  At first glance, it seems that we might simply
+maintain separate lists for \kw{capture}- and \kw{bubble}-phase
+listeners, but that runs afoul of the ordering requirement when
+dispatch reaches the \kw{target} phase.  Instead, we must also
+maintain a list of \kw{target}-phase listeners, and when adding a new
+listener, we must update two lists in our map: this is accomplied by
+the \impl{addListener} meta-function.
+
+Third, the spec requires that the triple of arguments
+$(\kw{eventType}, \kw{usesCapture}, \kw{listener})$ must be unique
+within each node: while a given function may be installed both as a
+capture-phase listener and as a bubble-phase listener on the same
+node, subsequent installations will have no effect.  In combination
+with the previous requirement, one implicit consequence is that a
+function may be called \emph{twice} during the \impl{target} phase;
+this is not immediately obvious from the spec wording, but is evident
+from our rules.
+
+Finally, the spec defines how event listeners may be removed from a
+node: again, from both capture and target phases, or from both target
+and bubble phases.  Thanks to the uniqueness requirement and our
+modeling of \impl{addEventListener}, we know that a given listener may
+be present twice in the target-phase list, so we must record
+\emph{which} target-phase listeners were also installed on the capture
+phase, and which were not, or else we might remove the wrong listener
+and violate the ordering requirement.  Consider the following program
+fragment:
+\begin{alltt}
+node.addEventListener("click", true, f1);
+node.addEventListener("click", true, f2);
+node.addEventListener("click", false, f1);
+node.removeEventListener("click", true, f1);
+\end{alltt}
+While it is obvious that the call to \impl{removeEventListener} must
+remove \impl{f1} in the \impl{capture} phase, it must also remove the
+\emph{corresponding} \impl{f1} in the target phase, i.e. the first
+one.  
+
+\paraemph{Remark: } In prior work one of the authors implemented
+the event dispatch algorithm, and read the documentation for
+\impl{addEventListener} too quickly; it is excerpted in
+\cref{fig:aEL:spec}.  Note the emphasized text: in fact, the specification
+is inconsistent in defining on which phases listeners may be
+installed!  By contrast, the meta-function in \cref{fig:aEL:model} uses
+the \impl{useCapture} flag exactly once, and hence avoids and resolves
+this error.
+
+\subsubsection{Extending the model}
+\paragraph{Event dispatch as a calling context} 
+The five steps of event dispatch are modeled as contexts, and this
+provides a great deal of flexibility.  In particular, systems such as
+\LJS model all of \JS with execution contexts,~[CITE] including one context
+for function calls.  In essence, event dispatch is a baroque form of a
+calling context, namely one that invokes multiple functions in
+sequence based indirectly on the DOM and the current event, rather
+than a simple function pointer.
+
+Immediately, we can enhance our model by discarding the simplified
+statement language in favor of true \JS statements.  Once we have done
+so, any program analysis over \JS can be extended to reason over event
+dispatch as well.  Without the structure provided by our model, an
+analysis of a web program necessarily would miss many flows that are
+not caused by explicit function calls in the program text.
+
+\paragraph{Modeling the DOM} Naturally, the precision of the proposed
+analysis in the preceding paragraph is limited by the precision of
+modeling the DOM structure.  In our model, the tree is modeled merely
+as a set of nodes connected by pointers, and nothing explicitly
+records that the structure is a tree rather than an arbitrary graph.
+We have engineered our model such that it should be straightforward,
+though not simple, to integrate more powerful tree logics such as
+separation or context logic~[CITECITECITE], and thereby improve the
+precision of the overall model.  We leave such efforts for future
+work.
+
+\subsection{Modeling challenge: adequacy}
+\lipsum[1-2]
+
+\subsection{Caveats and un-modeled features}
+\paragraph{Iframes and nested documents} \lipsum[8]
+\paragraph{Non-tree-based dispatch} \textbf{e.g. XMLHttpRequest}
+\lipsum[9]
+
+\section{Applications}
+\subsection{Provable properties of the model}
+\lipsum[1-8]
+\subsection{Always-present legacy handlers} \textbf{Because of the
+  wacky requirements of return values of handlers, and because
+  handlers are always present, do some events always fail to have a
+  default action?}
+\lipsum[1-3]
+
+\subsection{ADsafe event propagation} \textbf{Does ADsafe properly
+  protect events targeted within its subtree from bubbling out to the
+  main document?  What about capture phase?  What must developers do
+  to compensate?} \emph{I don't know what to say here, but it seems
+  important.}
+\lipsum[4-6]
+
+\subsection{Detecting real extension conflicts} \textbf{Resolving Conversations
+  and Nostalgy}
+\lipsum[7-9]
+
+\section{Conclusion}\label{sec:conclusion}
+\lipsum[1]
+
+%\appendix
+%\section{Appendix Title}
+%
+%This is the text of the appendix, if you need one.
+%
+
+%\acks
+%
+%Acknowledgments, if needed.
+%
+
+{\footnotesize \bibliographystyle{acm}
+\bibliography{safebrowser}
+\lipsum[1-3]}
+
+\theendnotes
+
+\end{document}
+
