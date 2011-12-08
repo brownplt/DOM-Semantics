@@ -133,7 +133,7 @@
       (seq ,(add-listener-to-everything el-storo "click" #t listener1)
            (seq ,(add-listener-to-everything el-storo "click" #f listener1)
                 (pre-dispatch loc_span ,empty 
-                              (event "click" #t #t #t))
+                              (event "click" #t #t #t ,empty skip))
                 ))
       ,el-storo
       ,empty))))
@@ -225,7 +225,7 @@
                 (seq ,(add-listener-to-everything el-storo "click" #t listener2)
                      (seq ,(add-listener-to-everything el-storo "click" #f listener2)
                           (pre-dispatch loc_span ,empty 
-                                        (event "click" #t #t #t))
+                                        (event "click" #t #t #t ,empty skip))
                           ))))
       ,el-storo
       ,empty))))
