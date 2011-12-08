@@ -157,9 +157,11 @@
           (map (lambda (test)
                  (displayln (third test))
                  (let ((output (apply-reduction-relation* DOM-reduce (second test))))
-                   (if (equal? (first test)
-                               (in-log "In listener2 on correct target and phase"
-                                       (first output)))
+                   (if (and
+                        (not (empty? (last (first output))))
+                        (equal? (first test)
+                                (in-log "In listener2 on correct target and phase"
+                                        (first output))))
                        (list "passed: " (third test))
                        (list "failed: " (third test) 
                              (first test)
@@ -249,9 +251,11 @@
           (map (lambda (test)
                  (displayln (third test))
                  (let ((output (apply-reduction-relation* DOM-reduce (second test))))
-                   (if (equal? (first test)
-                               (in-log "In listener2 on correct target and phase"
-                                       (first output)))
+                   (if (and
+                        (not (empty? (last (first output))))
+                        (equal? (first test)
+                                (in-log "In listener2 on correct target and phase"
+                                        (first output))))
                        (list "passed: " (third test))
                        (list "failed: " (third test) 
                              (first test)
