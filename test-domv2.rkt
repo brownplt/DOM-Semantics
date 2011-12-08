@@ -64,7 +64,7 @@
 ; Tests pd-build-path
 
 (define test-event
-  (term (event "click" #t #t #t ,empty)))
+  (term (event "click" #t #t #t ,empty skip)))
 (test E test-event "event")
 
 (define test-listener-cap
@@ -241,7 +241,7 @@
              (term (setEventHandler loc_parent "click"
                                     (debug-print "before 4")))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t ,empty)))
+                                 (event "click" #t #t #t ,empty skip)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_current) loc_parent))
@@ -262,7 +262,7 @@
                         (list (bind-ref binds 'string_new))))))
              "debug-print-logged")
 
-(first (apply-reduction-relation* DOM-reduce add-event-state))
+;(first (apply-reduction-relation* DOM-reduce add-event-state))
 
 (define add-remove-event-state-1
   (let ([l1 (term (debug-print "L1"))]
@@ -281,7 +281,7 @@
              (term (removeEventListener loc_current "click" #f
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t ,empty)))
+                                 (event "click" #t #t #t ,empty skip)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_current) loc_parent))
@@ -307,7 +307,7 @@
              (term (removeEventListener loc_current "click" #t
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t ,empty)))
+                                 (event "click" #t #t #t ,empty skip)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_current) loc_parent))
@@ -334,7 +334,7 @@
              (term (removeEventListener loc_current "click" #f
                                      ,l2))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t ,empty)))
+                                 (event "click" #t #t #t ,empty skip)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_current) loc_parent))
@@ -353,7 +353,7 @@
              (term (addEventListener loc_current "click" #t
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t ,empty)))
+                                 (event "click" #t #t #t ,empty skip)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_current loc_parent))
@@ -374,7 +374,7 @@
              (term (addEventListener loc_current "click" #t
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #f #t ,empty)))
+                                 (event "click" #t #f #t ,empty skip)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_current) loc_parent))
