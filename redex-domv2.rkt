@@ -18,7 +18,9 @@
   
   ; Events
   ; 4.1 - Event Interface
-  [E (event T Bubbles Cancels Trusted)]
+  [E (event T Bubbles Cancels Trusted Meta)]
+  ; Meta: event metadata
+  [Meta ((string any) ...)]
   ; T (event type):  readonly attribute DOMString type;
   ; The name of the event type. The name must be a DOMString. Specifications 
   ; that define events, content authors, and authoring tools must use 
@@ -80,7 +82,8 @@
   ; to the default action, or to terminate
   [DN (dispatch-next E parent P PDef SP SI (loc ...) (L ...))]
   ; dispatch-default executes the default action, unless prevented
-  [DD (dispatch-default E PDef (loc ...))]
+  ; event, defaultPrevented, target loc
+  [DD (dispatch-default E PDef loc)]
   ; dispatch-stupid handles the degenerate case of a single-node path
   [DS (dispatch-stupid loc E)]
   ; Listener steps
@@ -193,7 +196,7 @@
    (removeListenerHelper 
     (removeListenerHelper LS string_type target bool_useCapture S_listener)
     string_type
-    ,(if (term bool) (term capture) (term bubble))
+    ,(if (term bool_useCapture) (term capture) (term bubble))
     bool_useCapture
     S_listener)])
 
@@ -228,6 +231,111 @@
     (setHandlerHelper LS string_type target S_handler)
     string_type bubble S_handler)])
 
+; getDefaultAction
+; See 5.1.1 - List of DOM3 Event Types
+(define-metafunction DOM
+  [(getDefaultAction (event "abort" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "blur" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "click" #t #t Trusted Meta) loc)
+   (pre-dispatch loc () (event "DOMActivate" #t #t #f (("type" "click")
+                                                       ("fromscript" #f))))]
+  ; For trusted compositionstart event, return default action...
+  [(getDefaultAction (event "compositionstart" #t #t #t Meta) loc)
+   (debug-print "launching text composition system...BEEP BEEP BOOP...")]
+  ; ... for untrusted composition start event, do nothing
+  [(getDefaultAction (event "compositionstart" #t #t #f Meta) loc) skip]
+  [(getDefaultAction (event "compositionupdate" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "compositionend" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "dblclick" #t #f Trusted Meta) loc) skip]
+  ; TODO: handle activation behavior/activation trigger
+  [(getDefaultAction (event "DOMActivate"
+                            #t #t 
+                            #f
+                            (("type" "click") ("fromscript" #f)) loc))
+   (debug-print "DOMActivate from click, not not from script")]
+  [(getDefaultAction (event "DOMActivate"
+                            #t #t
+                            #f
+                            (("type" "click") ("fromscript" #t)) loc))
+   (debug-print "DOMActivate from click, from script")]
+  [(getDefaultAction (event "DOMActivate"
+                            #t #t 
+                            #f
+                            Meta) loc)
+   (debug-print "DOMActivate from non-click")]
+  [(getDefaultAction (event "DOMAttributeNameChanged" #t #f Trusted Meta) loc) 
+   skip]
+  [(getDefaultAction (event "DOMAttrModified" #t #f Trusted Meta) loc) 
+   skip]
+  [(getDefaultAction (event "DOMCharacterDataModified" #t #f Trusted Meta) loc) 
+   skip]
+  [(getDefaultAction (event "DOMElementNameChanged" #t #f Trusted Meta) loc) 
+   skip]
+  [(getDefaultAction (event "DOMFocusIn" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "DOMFocusOut" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "DOMNodeInserted" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "DOMNodeInsertedIntoDocument" #t #f Trusted Meta)
+                     loc) skip]
+  [(getDefaultAction (event "DOMNodeRemoved" #t #f Trusted Meta)
+                     loc) skip]
+  [(getDefaultAction (event "DOMNodeRemovedFromDocument" #t #f Trusted Meta)
+                     loc) skip]
+  [(getDefaultAction (event "DOMSubtreeModified" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "focus" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "focusin" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "focusout" #t #f Trusted Meta) loc) skip]
+  ; TODO: handle keydown possibilities
+  ; For trusted keydown event, return default action...
+  [(getDefaultAction (event "keydown" 
+                            #t #t #t
+                            (name Meta
+                                  (("char" string_char)
+                                   ("key" string_key)
+                                   ("location" string_location)
+                                   ("altKey" bool_alt)
+                                   ("shiftKey" bool_shift)
+                                   ("ctrlKey" bool_ctrl)
+                                   ("metaKey" bool_meta)
+                                   ("repeat" bool_repeat)
+                                   ("locale" string_locale)))) loc)
+   ,(handle-keydown (term Meta))]
+  ; ... for untrusted, do nothing
+  [(getDefaultAction (event "keydown" #t #t #f Meta) loc) skip]
+  ; TODO: handle keypress possibilities
+  ; For trusted keypress event, return default action ...
+  [(getDefaultAction (event "keypress"
+                            #t #t #t
+                            (name Meta
+                                  (("char" string_char)
+                                   ("key" string_key)
+                                   ("location" string_location)
+                                   ("altKey" bool_alt)
+                                   ("shiftKey" bool_shift)
+                                   ("ctrlKey" bool_ctrl)
+                                   ("metaKey" bool_meta)
+                                   ("repeat" bool_repeat)
+                                   ("locale" string_locale)))) loc)
+   ,(handle-keypress (term Meta))]
+  ; ... for untrusted, do nothing
+  [(getDefaultAction (event "keypress" #t #t #f Meta) loc) skip]
+  [(getDefaultAction (event "keyup" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mousedown" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mouseenter" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mouseleave" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mousemove" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mouseout" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mouseover" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "mouseup" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "resize" #f #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "select" #t #f Trusted Meta) loc) skip]
+  [(getDefaultAction (event "textinput" #t #t Trusted Meta) loc) skip]
+  [(getDefaultAction (event "unload" #f #f Trusted Meta) loc) skip])
+
+(define (handle-keydown meta)
+  (displayln "in handle-keydown!"))
+
+(define (handle-keypress meta)
+  (displayln "in handle-keypress!"))
 
 (define DOM-reduce
   (reduction-relation
@@ -298,14 +406,14 @@
    ; HTML5 Specification, Section 6.1.6.1 - Event handlers
    ; http://www.w3.org/TR/html5/webappapis.html#event-handler-attributes
    (--> (state (in-hole Ctx
-                        (dispatch (event T_event Bubbles Cancels Trusted)
+                        (dispatch (event T_event Bubbles Cancels Trusted Meta)
                                   parent P PDef SP SI
                                   (loc_child ...) (L ...)
                                   (handler (in-hole DispCtx (return bool)))))
                N-store
                Log)
         (state (in-hole Ctx
-                        (dispatch (event T_event Bubbles Cancels Trusted)
+                        (dispatch (event T_event Bubbles Cancels Trusted Meta)
                                   parent P PDef SP SI
                                   (loc_child ...) (L ...)
                                   (listener #f
@@ -337,11 +445,11 @@
    ;   ...
    (--> (state (in-hole Ctx
                         (dispatch-next E parent P PDef SP #t
-                                       (loc_child ...) (L ...)))
+                                       (loc_child ... loc_target) (L ...)))
                N-store
                Log)
         (state (in-hole Ctx
-                        (dispatch-default E PDef (loc_child ...)))
+                        (dispatch-default E PDef loc_target))
                N-store
                Log)
         stop-immediate-called)
@@ -367,11 +475,11 @@
                Log)
         stop-prop-called-more-to-do)
    (--> (state (in-hole Ctx
-                        (dispatch-next E parent P PDef #t #f (loc_child ...)
+                        (dispatch-next E parent P PDef #t #f (loc_child ... loc_target)
                                ()))
                N-store
                Log)
-        (state (in-hole Ctx (dispatch-default E PDef (loc_child ...)))
+        (state (in-hole Ctx (dispatch-default E PDef loc_target))
                N-store
                Log)
         stop-prop-called-done-with-node)
@@ -432,14 +540,14 @@
         capture-to-target-collect)
    ; target->bubble & event bubbles
    (--> (state (in-hole Ctx
-                        (dispatch-next (event T_event #t Cancels Trusted)
+                        (dispatch-next (event T_event #t Cancels Trusted Meta)
                                        loc_child target PDef #f #f
                                        (loc_a ... loc_parent loc_child)
                                        ()))
                N-store
                Log)
         (state (in-hole Ctx
-                        (dispatch-collect (event T_event #t Cancels Trusted)
+                        (dispatch-collect (event T_event #t Cancels Trusted Meta)
                                           loc_parent bubble PDef #f #f
                                           (loc_a ... loc_parent loc_child)))
                N-store
@@ -450,16 +558,16 @@
    ; ... If the event type indicates that the event must not bubble, the event 
    ; object must halt after completion of this phase....
    (--> (state (in-hole Ctx
-                        (dispatch-next (event T_event #f Cancels Trusted)
+                        (dispatch-next (event T_event #f Cancels Trusted Meta)
                                        loc_child target PDef #f #f
                                        (loc_a ... loc_child)
                                        ()))
                N-store
                Log)
         (state (in-hole Ctx
-                        (dispatch-default (event T_event #f Cancels Trusted)
+                        (dispatch-default (event T_event #f Cancels Trusted Meta)
                                           PDef
-                                          (loc_a ... loc_child)))
+                                          loc_child))
                N-store
                Log)
         target-to-default)
@@ -487,18 +595,18 @@
    ; bubble->default
    (--> (state (in-hole Ctx
                         (dispatch-next E loc_root bubble PDef #f #f
-                                       (loc_root loc_b ...)
+                                       (loc_root loc_b ... loc_target)
                                        ()))
                N-store
                Log)
-        (state (in-hole Ctx (dispatch-default E PDef (loc_root loc_b ...)))
+        (state (in-hole Ctx (dispatch-default E PDef loc_target))
                N-store
                Log)
         bubble-to-default)
 
    ; collecting listeners on current node, and listeners are found
    (--> (state (in-hole Ctx
-                        (dispatch-collect (event T_event Bubbles Cancels Trusted)
+                        (dispatch-collect (event T_event Bubbles Cancels Trusted Meta)
                                           loc_target P PDef #f #f
                                           (loc_a ... loc_target loc_b ...)))
                ((loc_c N_c) ...
@@ -512,7 +620,7 @@
                 (loc_d N_d) ...)
                Log)
         (state (in-hole Ctx
-                        (dispatch-next (event T_event Bubbles Cancels Trusted)
+                        (dispatch-next (event T_event Bubbles Cancels Trusted Meta)
                                        loc_target P PDef #f #f
                                        (loc_a ... loc_target loc_b ...)
                                        (L_wanted ...)))
@@ -530,7 +638,7 @@
    ; collecting listeners on current node, and listeners are not found
    (--> (side-condition
          (state (in-hole Ctx
-                         (dispatch-collect (event T_event Bubbles Cancels Trusted)
+                         (dispatch-collect (event T_event Bubbles Cancels Trusted Meta)
                                            loc_target P PDef #f #f
                                            (loc_a ... loc_target loc_b ...)))
                ((loc_c N_c) ...
@@ -543,7 +651,7 @@
                Log)
          (not-in? (term T_event) (term P) (term (TP_a ...))))
         (state (in-hole Ctx
-                        (dispatch-next (event T_event Bubbles Cancels Trusted)
+                        (dispatch-next (event T_event Bubbles Cancels Trusted Meta)
                                        loc_target P PDef #f #f
                                        (loc_a ... loc_target loc_b ...)
                                        ()))
@@ -737,7 +845,7 @@
    ; non-cancelable event must have no effect. If an event has more than one 
    ; default action, each cancelable default action must be canceled.
    (--> (state (in-hole Ctx
-                        (dispatch (name E (event T Bubbles #t Trusted)) 
+                        (dispatch (name E (event T Bubbles #t Trusted Meta)) 
                                   parent 
                                   P 
                                   PDef SP SI 
@@ -753,7 +861,7 @@
                Log)
         do-prevent-default-cancelable)
    (--> (state (in-hole Ctx
-                        (dispatch (name E (event T Bubbles #f Trusted)) 
+                        (dispatch (name E (event T Bubbles #f Trusted Meta)) 
                                   parent 
                                   P 
                                   PDef SP SI 
@@ -781,7 +889,7 @@
    (--> (state (in-hole Ctx
                         (dispatch-default E_inner
                                           #t
-                                          (loc_inner ...)))
+                                          loc_target))
                N-store
                Log)
         (state (in-hole Ctx (debug-print "default-prevented"))
@@ -793,7 +901,7 @@
    (--> (state (in-hole Ctx
                         (dispatch-default E_inner
                                           #f
-                                          (loc_inner ...)))
+                                          loc_target))
                N-store
                Log)
         (state (in-hole Ctx (debug-print "default action!"))

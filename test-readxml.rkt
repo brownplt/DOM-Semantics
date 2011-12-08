@@ -29,6 +29,13 @@
 ; Test the node store to make sure it satisfies the matching requirements.
 (test N-store loc-to-node "node store")
 
+(define passed (filter (lambda (loc-and-node)
+                         (redex-match DOM N (second loc-and-node)))
+                       loc-to-node))
+(define failed (filter (lambda (loc-and-node)
+                         (not (redex-match DOM N (second loc-and-node))))
+                       loc-to-node))
+
 ; Note: The listener list associated with a node will not always match
 ;       the LS pattern because some (type phase) pairs are the same for the
 ;       same nodes, and we should therefore be merging these lists. However,

@@ -64,7 +64,7 @@
 ; Tests pd-build-path
 
 (define test-event
-  (term (event "click" #t #t #t)))
+  (term (event "click" #t #t #t ,empty)))
 (test E test-event "event")
 
 (define test-listener-cap
@@ -169,7 +169,7 @@
 (define default-start
   (term (dispatch-default ,test-event
                           #f
-                          ,(list (term loc-parent) (term loc-child)))))
+                          loc-child)))
 (test DD default-start "default-start")
 
 (define ds-state
@@ -210,14 +210,14 @@
              "finished-listener")
 (test-schema (state (in-hole Ctx
                              (dispatch-next E parent P PDef SP #t 
-                                            (loc ...) (L ...)))
+                                            (loc ... loc_target) (L ...)))
                     N-store Log)
              (lambda (binds) 
                (term (state 
                       (in-hole ,(bind-ref binds 'Ctx)
                                (dispatch-default ,(bind-ref binds 'E)
                                                  ,(bind-ref binds 'PDef)
-                                                 ,(bind-ref binds 'loc)))
+                                                 ,(bind-ref binds 'loc_target)))
                       ,(bind-ref binds 'N-store)
                       ,(bind-ref binds 'Log))))
              "stop-immediate-called")
@@ -241,7 +241,7 @@
              (term (setEventHandler loc_parent "click"
                                     (debug-print "before 4")))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t)))
+                                 (event "click" #t #t #t ,empty)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
@@ -281,7 +281,7 @@
              (term (removeEventListener loc_current "click" #f
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t)))
+                                 (event "click" #t #t #t ,empty)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
@@ -307,7 +307,7 @@
              (term (removeEventListener loc_current "click" #t
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t)))
+                                 (event "click" #t #t #t ,empty)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
@@ -315,6 +315,33 @@
           ,empty))))
 (test M add-remove-event-state-2 "add-remove-event-state-2")
 (test-log (list "L2" "L1" "default action!") add-remove-event-state-2 "add-remove-event-state-2")
+
+
+(define add-remove-event-state-3
+  (let ([l1 (term (debug-print "L1"))]
+        [l2 (term (debug-print "L2"))])
+  (term 
+   (state ,(foldr
+            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
+            #f
+            (list
+             (term (addEventListener loc_current "click" #t
+                                     ,l1))
+             (term (addEventListener loc_current "click" #t 
+                                     ,l2))
+             (term (addEventListener loc_current "click" #f
+                                     ,l1))
+             (term (removeEventListener loc_current "click" #f
+                                     ,l2))
+             (term (pre-dispatch loc_current ,empty 
+                                 (event "click" #t #t #t ,empty)))
+             ))
+          ((loc_current (node "child" ,empty ,empty loc_mid))
+           (loc_mid (node "middle" ,empty (loc_child) loc_parent))
+           (loc_parent (node "parent" ,empty (loc_mid) null)))
+          ,empty))))
+(test M add-remove-event-state-3 "add-remove-event-state-3")
+(test-log (list "L1" "L2" "L1" "default action!") add-remove-event-state-3 "add-remove-event-state-3")
 
 (define cancel-cancelable-state
   (let ([l1 (term prevent-default)])
@@ -326,7 +353,7 @@
              (term (addEventListener loc_current "click" #t
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t)))
+                                 (event "click" #t #t #t ,empty)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
@@ -347,7 +374,7 @@
              (term (addEventListener loc_current "click" #t
                                      ,l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #f #t)))
+                                 (event "click" #t #f #t ,empty)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_child) loc_parent))
@@ -357,3 +384,51 @@
 (test-log (list "default action!") 
           cancel-uncancelable-state 
           "log for cancel-uncancelable state")
+
+(define test-event-meta
+  (term (event "click" #t #f #t ,(list (list "k1" 'abcdefg)
+                                       (list "k2" "hi there")
+                                       (list "k3" 3000)
+                                       (list "k4" 
+                                             (cons 1 (cons 2 (cons 3 empty))))))))
+(test E test-event-meta "event with metadata")
+
+(define cancel-uncancelable-state-meta
+  (let ([l1 (term prevent-default)])
+  (term 
+   (state ,(foldr
+            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
+            #f
+            (list
+             (term (addEventListener loc_current "click" #t
+                                     ,l1))
+             (term (pre-dispatch loc_current ,empty 
+                                 ,test-event-meta))
+             ))
+          ((loc_current (node "child" ,empty ,empty loc_mid))
+           (loc_mid (node "middle" ,empty (loc_child) loc_parent))
+           (loc_parent (node "parent" ,empty (loc_mid) null)))
+          ,empty))))
+(test M cancel-uncancelable-state-meta "cancel-uncancelable-state-meta")
+(test-log (list "default action!") 
+          cancel-uncancelable-state-meta
+          "log for cancel-uncancelable state, with metadata event")
+
+;(define test-gda-state
+;  (term (state (pre-dispatch loc_current ,empty
+;                             (event "keydown" #t #t #t
+;                                    (("char" "a")
+;                                     ("key" "a")
+;                                     ("location" "Providence")
+;                                     ("altKey" #f)
+;                                     ("shiftKey" #f)
+;                                     ("ctrlKey" #f)
+;                                     ("metaKey" #f)
+;                                     ("repeat" #f)
+;                                     ("locale" "USA"))))
+;               ((loc_current (node "child" ,empty ,empty loc_mid))
+;                (loc_mid (node "middle" ,empty (loc_child) loc_parent))
+;                (loc_parent (node "parent" ,empty (loc_mid) null)))
+;               ,empty)))
+;(test M test-gda-state "test-gda-state")
+;(first (apply-reduction-relation* DOM-reduce test-gda-state))
