@@ -5,6 +5,17 @@
 (require (planet neil/json-parsing:1:=2))
 (provide create-dom loc-to-node)
 
+; Takes a string of JavaScript and makes a mild attempt to get interesting
+; information out of it. Doesn't look for control structures yet and currently
+; does not attempt to "read into" function calls, although this will
+; eventually be necessary.
+;;;;; TODO list below
+; first: search for stopProp, stopImm, preventDefault, "return"
+; next: add/removeEventListener, setEventHandler
+; last: if-curTarget, if-phase
+(define (js->listener-step js)
+  (term (debug-print ,js)))
+
 ; When a JSON object is supposed to represent a list, it looks like this:
 ;   { "0" : A, "1" : B, ...}
 ; so each entry in the list looks like:
@@ -43,9 +54,7 @@
                              "null"
                              (cadr maybe-source))])
             (list (list type phase)
-                  (list (term (listener ,capture (debug-print ,source)))))))
-        ; TODO ^^^ this part should translate JS into S steps
-        ;          but instead it just makes debug-print terms
+                  (list (term (listener ,capture ,(js->listener-step source)))))))
         (unpack-json-list (list-ref json-obj 1)))))
 
 ; Creates a set of (loc->DOM) mappings in loc-to-node, returns root loc.
@@ -57,16 +66,17 @@
                                        "::"
                                        (symbol->string cur-loc))
                        ,listeners
-                       ; TODO ^^^ include handlers from XML attributes
-                       ;;;;; recursively call on all children of this node
+                       ;;;;; TODO ^^^ include handlers from XML attributes
+                       ; recursively call on all children of this node
                        ,(map (lambda(c) ; (list xml-children json-children)
                                (create-dom (first c)
                                            (second c)
                                            cur-loc))
-                             ;;;;; zip XML and JSON child lists together
+                             ; zip XML and JSON child lists together
                              (zip (filter (lambda(c)
                                             (and (not (string? c))
-                                                 (not (cdata? c)))) ; TODO include nested documents
+                                                 ; CDATA XML directives unused
+                                                 (not (cdata? c))))
                                           (rest (rest xml-obj)))
                                   (extract-children-as-json json-obj)))
                        ,parent-loc))])

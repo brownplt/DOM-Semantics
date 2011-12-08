@@ -21,10 +21,11 @@
 
 (create-dom test-xml (first test-json) (term null))
 
+; Note: these tests are eclipsed by the "N-store" check.
 ; Test each node to see if it satisfies the matching requirements.
-(for-each (lambda(loc-and-node)
-            (test N (second loc-and-node) "node"))
-          loc-to-node)
+;(for-each (lambda(loc-and-node)
+;            (test N (second loc-and-node) "node"))
+;          loc-to-node)
 
 ; Test the node store to make sure it satisfies the matching requirements.
 (test N-store loc-to-node "node store")
@@ -35,12 +36,6 @@
 (define failed (filter (lambda (loc-and-node)
                          (not (redex-match DOM N (second loc-and-node))))
                        loc-to-node))
-
-; Note: The listener list associated with a node will not always match
-;       the LS pattern because some (type phase) pairs are the same for the
-;       same nodes, and we should therefore be merging these lists. However,
-;       this is not what we talked about, so I am deferring the work until
-;       I can ask about it again.
 
 ; For use with the test data below.
 ;(extract-children-as-json   test-json)
