@@ -451,3 +451,29 @@
 ;               ,empty)))
 ;(test M test-gda-state "test-gda-state")
 ;(first (apply-reduction-relation* DOM-reduce test-gda-state))
+
+(define test-non-bubbling-state
+  (let ([l1 (term (debug-print "capture listener"))]
+        [l2 (term (debug-print "bubble listener"))])
+    (term 
+     (state ,(foldr
+              (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
+              #f
+              (list
+               (term (addEventListener loc_current "click" #t
+                                       ,l1))
+               (term (addEventListener loc_mid "click" #f
+                                       ,l2))
+               (term (pre-dispatch loc_current ,empty 
+                                   ; This click-esque event does not bubble
+                                   (event "click" #f #f #t ,empty skip)))
+               ))
+            ((loc_current (node "child" ,empty ,empty loc_mid))
+           (loc_mid (node "middle" ,empty (loc_current) loc_parent))
+           (loc_parent (node "parent" ,empty (loc_mid) null)))
+            ,empty))))
+(test M test-non-bubbling-state "test-non-bubbling-state")
+
+(test-log (list "capture listener" "default action!")
+          test-non-bubbling-state
+          "log for test-non-bubbling-state")
