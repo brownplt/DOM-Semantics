@@ -67,11 +67,9 @@
     ['if-phase (map-closure (fourth S) (map-closure (third S) ls-map))]
     ['if-curTarget (map-closure (fourth S) (map-closure (third S) ls-map))]
     ['addEventListener 
-     (begin
-       (displayln (hash-count ls-map))
-     (map-closure (fifth S) (hash-set ls-map (fifth S) (gensym "listener"))))]
+     (map-closure (fifth S) (hash-set ls-map (fifth S) (gensym "listener")))]
     ['removeEventListener 
-     (map-closure (fifth S (hash-set ls-map (fifth S) (gensym "listener"))))]
+     (map-closure (fifth S) (hash-set ls-map (fifth S) (gensym "listener")))]
     ['setEventHandler ls-map]
     ['listener
      (map-closure (third S) ls-map)] ; assuming this listener has already been added
@@ -173,7 +171,7 @@
 (define (handlers-if-any ls ls-map)
   (let* ([target-phases (or
                          (redex-match DOM ((TP_a (L_a ...)) ...
-                                           ((T target) ((handler S) (listener S_l) ...))
+                                           ((T target) ((handler S) (listener bool_l S_l) ...))
                                            (TP_b (L_b ...)) ...) ls)
                          empty)]
          [handlers (bind-refs target-phases (list 'T 'S))]
@@ -191,12 +189,12 @@
                                              ((T target) (L ...))
                                              (TP_b (L_b ...)) ...) flat-all-ls) (list 'L))]
          [all-targets (if (pair? binds) (apply append (apply append binds)) empty)]
-         [ls-map (make-immutable-hasheq (map (lambda (ls) 
+         [ls-map1 (make-immutable-hasheq (map (lambda (ls) 
                                                (if (equal? (first ls) 'listener)
                                                    (cons ls (gensym "listener"))
                                                    (cons ls (gensym "handler")))) all-targets))]
          [ls-map (foldl (lambda (key acc) (map-closure key acc))
-                        (map-closure program ls-map) (hash-keys ls-map))]
+                        (map-closure program ls-map1) (hash-keys ls-map1))]
          [top-node-matches (redex-match DOM 
                                         ((loc_a N_a) ...
                                          (loc_top (name node_top (node string LS (loc ...) null)))
@@ -227,13 +225,13 @@
            (lambda (ls-map)
              (hash-map
               ls-map
-              (lambda (listener key)
-                (let ((body (if (pair? listener)
-                                (case (first listener) 
-                                  ['listener (third listener)]
-                                  ['handler (second listener)]
-                                  [else listener])
-                                listener)))
+              (lambda (l key)
+                (let ((body (if (pair? l)
+                                (case (first l) 
+                                  ['listener (third l)]
+                                  ['handler (second l)]
+                                  [else l])
+                                l)))
                   (string-append "\nfunction " 
                                  (symbol->string key)
                                  "(event) {\n"
@@ -269,7 +267,7 @@
                                          (second target)))
                                   target-lists))
                      (listener-to-js 
-                      (lambda (type useCapture body listener)
+                      (lambda (type useCapture body l)
                         (let ((js (string-append "document.getElementById(\""
                                                   (symbol->string loc)
                                                   "\").addEventListener(\""
@@ -277,7 +275,7 @@
                                                   "\", "
                                                   (bool->string (term ,useCapture))
                                                   ", "
-                                                  (symbol->string (hash-ref ls-map listener 
+                                                  (symbol->string (hash-ref ls-map l 
                                                                             (gensym "unknownListener")))
                                                   ");\n")))
                           js)))
