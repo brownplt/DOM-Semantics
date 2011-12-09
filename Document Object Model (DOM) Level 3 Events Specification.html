@@ -741,9 +741,25 @@
           <em><span class="assert must">Next, the implementation must determine the current target's <em>candidate event listeners</em>. This must be the list of all event listeners that have been registered on the current target in their order of registration. </em>
           <br /><br />
           
-          [<cite><a class="informative" href="#references-HTML5">HTML5</a></cite>] defines the ordering of listeners registered through event handler attributes. Once determined, the candidate event listeners cannot be changed; adding or removing listeners does not affect the current target's candidate event listeners.</span>
+          <!-- setHandler -->
+          (<a href='#setHandler' class='redex-link'>[setHandler]</a>)<br />
+          <em>[<cite><a class="informative" href="#references-HTML5">HTML5</a></cite>] defines the ordering of listeners registered through event handler attributes. </em>
+          <br /><br />
+          
+          Once determined, the candidate event listeners cannot be changed; 
+           
+          <!-- addListener, removeListener -->
+          <br /><br />
+          (<a href='#addListener' class='redex-link'>[addListener]</a>, <a href='#removeListener' class='redex-link'>[removeListener]</a>)<br />
+          <em>adding or removing listeners does not affect the current target's candidate event listeners.</span></em>
+          <br /><br />
+
         </p>
         <p>
+          
+          <!-- more-to-do -->
+          (<a href='#more-to-do' class='redex-link'>[more-to-do]</a>)<br />
+          <em>
           <span class="assert must">Finally, the implementation must process all candidate event listeners in order and trigger each listener if all the following conditions are met:</span>
         </p>
         <ul>
@@ -755,6 +771,7 @@
           </li>
           <li>
             <span class="assert must">The listener has been registered for this <a class="def" href="#glossary-event-type">event type</a>.</span>
+            </em>
           </li>
         </ul>
         <p>
@@ -7885,6 +7902,38 @@ interface <a href="#events-MutationNameEvent">MutationNameEvent</a> : <a href="#
           <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L608">collect-found-listeners</a></cite>
           </dd>
           <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L639">collect-found-no-listeners</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="setHandler">
+            <strong class="informref">[setHandler]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L204">setHandler</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="addListener">
+            <strong class="informref">[addListener]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L127">addListener</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="removeListener">
+            <strong class="informref">[removeListener]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L174">removeListener</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="more-to-do">
+            <strong class="informref">[more-to-do]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L487">removeListener</a></cite>
           </dd>
         </dl>
     </div>
