@@ -125,18 +125,22 @@
                                       ,check-elem
                                       "click" 
                                       ,(equal? check-phase (term capture))
-                                      ,listener2))
+                                      loc-listener2))
                                     skip)
                           skip)
             prevent-default))])
     (term 
      (state 
-      (seq ,(add-listener-to-everything el-storo "click" #t listener1)
-           (seq ,(add-listener-to-everything el-storo "click" #f listener1)
+      (seq ,(add-listener-to-everything el-storo "click" #t (term loc-listener1))
+           (seq ,(add-listener-to-everything el-storo "click" #f (term loc-listener1))
                 (pre-dispatch loc_span ,empty 
-                              (event "click" #t #t #t ,empty skip))
+                              (event "click" #t #t #t ,empty loc-clickDefault))
                 ))
-      ,el-storo
+      ,(append el-storo
+               (list 
+                (term (loc-listener1 ,listener1))
+                (term (loc-listener2 ,listener2))
+                (term (loc-clickDefault skip))))
       ,empty))))
 
 (define (oracle-add-listener trigger-elem trigger-phase check-elem check-phase)
@@ -152,8 +156,8 @@
         (not (not (member (list check-elem check-phase) (rest later-phases))))
         #f)))
 
-(let ([nodes empty];(list (term loc_div) (term loc_p) (term loc_span))]
-      [phases empty]);(list (term capture) (term target) (term bubble))])
+(let ([nodes (list (term loc_div) (term loc_p) (term loc_span))]
+      [phases (list (term capture) (term target) (term bubble))])
   (lambda (result) (equal? (first result) "failed: "))
           (map (lambda (test)
                  (displayln (third test))
@@ -215,20 +219,24 @@
                                       ,check-elem
                                       "click" 
                                       ,(equal? check-phase (term capture))
-                                      ,listener2))
+                                      loc-listener2))
                                     skip)
                           skip)
             prevent-default))])
     (term 
      (state 
-      (seq ,(add-listener-to-everything el-storo "click" #t listener1)
-           (seq ,(add-listener-to-everything el-storo "click" #f listener1)
-                (seq ,(add-listener-to-everything el-storo "click" #t listener2)
-                     (seq ,(add-listener-to-everything el-storo "click" #f listener2)
+      (seq ,(add-listener-to-everything el-storo "click" #t (term loc-listener1))
+           (seq ,(add-listener-to-everything el-storo "click" #f (term loc-listener1))
+                (seq ,(add-listener-to-everything el-storo "click" #t (term loc-listener2))
+                     (seq ,(add-listener-to-everything el-storo "click" #f (term loc-listener2))
                           (pre-dispatch loc_span ,empty 
-                                        (event "click" #t #t #t ,empty skip))
+                                        (event "click" #t #t #t ,empty loc-clickDefault))
                           ))))
-      ,el-storo
+      ,(append el-storo
+               (list 
+                (term (loc-listener1 ,listener1))
+                (term (loc-listener2 ,listener2))
+                (term (loc-clickDefault skip))))
       ,empty))))
 
 (define (oracle-remove-listener trigger-elem trigger-phase check-elem check-phase)
@@ -246,8 +254,8 @@
                                                             earlier-phases
                                                             dispatch-indices)))))))
 
-(let ([nodes empty];(list (term loc_div) (term loc_p) (term loc_span))]
-      [phases empty]);(list (term capture) (term target) (term bubble))])
+(let ([nodes (list (term loc_div) (term loc_p) (term loc_span))]
+      [phases (list (term capture) (term target) (term bubble))])
   (lambda (result) (equal? (first result) "failed: "))
           (map (lambda (test)
                  (displayln (third test))
@@ -305,16 +313,20 @@
                                       ,check-elem
                                       "click" 
                                       ,(equal? check-phase (term capture))
-                                      ,listener2))
+                                      loc-listener2))
                                     skip)
                           skip)
             prevent-default))])
     (term 
      (state 
-      (seq ,(add-listener-to-everything el-storo "click" #t listener1)
-           ,(add-listener-to-everything el-storo "click" #f listener1)
+      (seq ,(add-listener-to-everything el-storo "click" #t (term loc-listener1))
+           ,(add-listener-to-everything el-storo "click" #f (term loc-listener1))
            )
-      ,el-storo
+      ,(append el-storo
+               (list 
+                (term (loc-listener1 ,listener1))
+                (term (loc-listener2 ,listener2))
+                (term (loc-clickDefault skip))))
       ,empty))))
 
 (let* ([state (state-add-listener-dont-run-maker (term loc_div) (term capture) (term loc_span) (term target))]
