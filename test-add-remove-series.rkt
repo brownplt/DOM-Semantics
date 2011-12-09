@@ -1,6 +1,7 @@
 #lang racket
 (require redex)
 (require "redex-domv2.rkt")
+(require "dom-to-html.rkt")
 
 ;The naming scheme here represents 
 ;"current node-current phase-node to add to-phase to do the add"
@@ -151,8 +152,8 @@
         (not (not (member (list check-elem check-phase) (rest later-phases))))
         #f)))
 
-(let ([nodes (list (term loc_div) (term loc_p) (term loc_span))]
-      [phases (list (term capture) (term target) (term bubble))])
+(let ([nodes empty];(list (term loc_div) (term loc_p) (term loc_span))]
+      [phases empty]);(list (term capture) (term target) (term bubble))])
   (lambda (result) (equal? (first result) "failed: "))
           (map (lambda (test)
                  (displayln (third test))
@@ -245,8 +246,8 @@
                                                             earlier-phases
                                                             dispatch-indices)))))))
 
-(let ([nodes (list (term loc_div) (term loc_p) (term loc_span))]
-      [phases (list (term capture) (term target) (term bubble))])
+(let ([nodes empty];(list (term loc_div) (term loc_p) (term loc_span))]
+      [phases empty]);(list (term capture) (term target) (term bubble))])
   (lambda (result) (equal? (first result) "failed: "))
           (map (lambda (test)
                  (displayln (third test))
@@ -276,3 +277,46 @@
                                             nodes)) 
                               phases))
                 nodes)))
+
+(define (state-add-listener-dont-run-maker trigger-elem trigger-phase check-elem check-phase)
+  (let* ([listener2
+         (term
+          (if-curTarget ,check-elem
+                        (if-phase ,check-phase
+                                  (debug-print "In listener2 on correct target and phase")
+                                  (debug-print "In listener2 on correct target but wrong phase"))
+                        (debug-print "In listener2 on wrong target")))]
+         [listener1 
+          (term
+           (seq
+            (if-curTarget ,trigger-elem
+                          (if-phase ,trigger-phase
+                                    (seq
+                                     (debug-print ,(string-append
+                                                    "Adding listener2 to "
+                                                    (symbol->string check-elem)
+                                                    " and "
+                                                    (symbol->string check-phase)
+                                                    " while in "
+                                                    (symbol->string trigger-elem)
+                                                    " and "
+                                                    (symbol->string trigger-phase)))
+                                     (addEventListener 
+                                      ,check-elem
+                                      "click" 
+                                      ,(equal? check-phase (term capture))
+                                      ,listener2))
+                                    skip)
+                          skip)
+            prevent-default))])
+    (term 
+     (state 
+      (seq ,(add-listener-to-everything el-storo "click" #t listener1)
+           ,(add-listener-to-everything el-storo "click" #f listener1)
+           )
+      ,el-storo
+      ,empty))))
+
+(let* ([state (state-add-listener-dont-run-maker (term loc_div) (term capture) (term loc_span) (term target))]
+       [done-state (first (apply-reduction-relation* DOM-reduce state))])
+  (displayln (xexp->html (model->xexp state))))
