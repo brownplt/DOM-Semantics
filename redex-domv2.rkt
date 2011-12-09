@@ -19,7 +19,7 @@
   ; Events
   ; 4.1 - Event Interface
   ; event: type, bubbles, cancelable, trusted, metadata, default action
-  [E (event T Bubbles Cancels Trusted Meta S)]
+  [E (event T Bubbles Cancels Trusted Meta loc)]
   ; Meta: event metadata
   [Meta ((string any) ...)]
   ; T (event type):  readonly attribute DOMString type;
@@ -50,8 +50,9 @@
   [P capture target bubble]
   
   ; Locations are like pointers.  The machine state maintains
-  ; a list of (location, DOM node) pairs.
-  [loc (variable-prefix loc)]
+  ; a list of (location, DOM node) pairs, followed by a list of (location, Statement) pairs.
+  [loc (variable-prefix loc)
+       (variable-prefix fun)]
   ; parent is possibly null (parent of root node)
   [parent null loc]
 
@@ -61,11 +62,13 @@
   ; TP: event type, phase
   [TP (T P)]
   ; LS: a list of (TP, listener list) pairs
-  [LS (side-condition (((name tp TP) (L ...)) ...)
+  [LS (side-condition (((name tp TP) (HL ...)) ...)
                       (all-unique? (term (tp ...))))]
   
   ; Event Listeners
   ; 4.4 - EventListener interface
+  [HL (listener bool loc)
+      (handler S)]
   [L (listener bool S) ;was this installed with useCapture?
      (handler S)]
   ; Predispatch: target node, path root->target, event
@@ -96,8 +99,8 @@
      prevent-default
      mutate
      (debug-print string)
-     (addEventListener loc string bool S)
-     (removeEventListener loc string bool S)
+     (addEventListener loc string bool loc)
+     (removeEventListener loc string bool loc)
      (setEventHandler loc string S)
      (if-phase P S S)
      (if-curTarget loc S S)
@@ -120,40 +123,57 @@
        (dispatch E parent P PDef SP SI (loc ...) (L ...) LCtx)]
   
   ; Machine state
-  [N-store ((loc_!_ N) ...)]
+  [N-store ((loc_!_n N) ... (loc_!_s S) ...)]
   [Log (string ...)]
   [M (state S N-store Log)])
+
+
+(define-metafunction DOM
+  [(lookup-listeners ((handler S) HL_wanted ...) ((loc_a S_a) ...))
+   ((handler S) (lookup-listeners (HL_wanted ...) ((loc_a S_a) ...)))]
+  [(lookup-listeners ((listener bool loc_listener) HL_wanted ...)
+                     ((loc_a S_a) ...
+                      (loc_listener S_listener)
+                      (loc_b S_b) ...))
+   ,(cons (term (listener bool S_listener)) 
+          (term (lookup-listeners (HL_wanted ...)
+                                  ((loc_a S_a) ...
+                                   (loc_listener S_listener)
+                                   (loc_b S_b) ...))))]
+  [(lookup-listeners () ((loc S) ...))
+   ()])
+                                                
 
 ; addEventListener
 ; 4.3 - EventTargetInterface
 ; Registers an event listener, depending on the useCapture parameter, on the
 ; capture phase of the DOM event flow or its target and bubbling phases.
 (define-metafunction DOM
-  [(addListenerHelper ((TP_a (L_a ...)) ...
-                       ((string_type P) (L_p ...))
-                       (TP_b (L_b ...)) ...) 
+  [(addListenerHelper ((TP_a (HL_a ...)) ...
+                       ((string_type P) (HL_p ...))
+                       (TP_b (HL_b ...)) ...) 
                       string_type P bool_useCapture
-                      S_listener)
-   ((TP_a (L_a ...)) ...
-    ((string_type P) (L_p ... (listener bool_useCapture S_listener)))
-    (TP_b (L_b ...)) ...)] ;when (string_type P) is present
-  [(addListenerHelper ((TP_a (L_a ...)) ...) 
+                      loc_listener)
+   ((TP_a (HL_a ...)) ...
+    ((string_type P) (HL_p ... (listener bool_useCapture loc_listener)))
+    (TP_b (HL_b ...)) ...)] ;when (string_type P) is present
+  [(addListenerHelper ((TP_a (HL_a ...)) ...) 
                       string_type P bool_useCapture
-                      S_listener)
-   ((TP_a (L_a ...)) ...
-    ((string_type P) ((listener bool_useCapture S_listener))))]) ;when (string_type P) is absent
+                      loc_listener)
+   ((TP_a (HL_a ...)) ...
+    ((string_type P) ((listener bool_useCapture loc_listener))))]) ;when (string_type P) is absent
 
 (define-metafunction DOM
-  [(listenerPresent ((TP_a (L_a ...)) ...
-                     ((string_type P) (L_p ... (listener bool_useCapture S) L_q ...))
-                     (TP_b (L_b ...)) ...)
-                    string_type P bool_useCapture S)
+  [(listenerPresent ((TP_a (HL_a ...)) ...
+                     ((string_type P) (HL_p ... (listener bool_useCapture loc) HL_q ...))
+                     (TP_b (HL_b ...)) ...)
+                    string_type P bool_useCapture loc)
    #t]
-  [(listenerPresent LS string P bool_useCapture S)
+  [(listenerPresent LS string P bool_useCapture loc)
    #f])
 
 (define-metafunction DOM
-  [(addListener LS string_type bool_useCapture S_listener)
+  [(addListener LS string_type bool_useCapture loc_listener)
    ; From spec of addEventListener, sec 4.3 para 3
    ; when the listener is already present, do nothing
    ,(let ([outerPhase
@@ -162,14 +182,14 @@
                                  string_type
                                  ,outerPhase
                                  bool_useCapture
-                                 S_listener))
+                                 loc_listener))
         (term LS)
         (term (addListenerHelper 
-               (addListenerHelper LS string_type target bool_useCapture S_listener)
+               (addListenerHelper LS string_type target bool_useCapture loc_listener)
                string_type
                ,outerPhase
                bool_useCapture
-               S_listener))))])
+               loc_listener))))])
 
 ; removeEventListener
 ; 4.3 - EventTargetInterface
@@ -177,29 +197,29 @@
 ; do not identify any currently registered EventListener on the EventTarget has
 ; no effect.
 (define-metafunction DOM
-  [(removeListenerHelper ((TP_a (L_a ...)) ...
-                          ((string_type P) (L_p ... (listener bool_useCapture S_listener) L_q ...))
-                          (TP_b (L_b ...)) ...) 
+  [(removeListenerHelper ((TP_a (HL_a ...)) ...
+                          ((string_type P) (HL_p ... (listener bool_useCapture loc_listener) HL_q ...))
+                          (TP_b (HL_b ...)) ...) 
                          string_type P
                          bool_useCapture
-                         S_listener)
-   ((TP_a (L_a ...)) ...
-    ((string_type P) (L_p ... L_q ...))
-    (TP_b (L_b ...)) ...)] ;when (string_type P) is present
-  [(removeListenerHelper ((TP_a (L_a ...)) ...)
+                         loc_listener)
+   ((TP_a (HL_a ...)) ...
+    ((string_type P) (HL_p ... HL_q ...))
+    (TP_b (HL_b ...)) ...)] ;when (string_type P) is present
+  [(removeListenerHelper ((TP_a (HL_a ...)) ...)
                          string_type P
                          bool_useCapture
-                         S_listener)
-   ((TP_a (L_a ...)) ...)]) ;when (string_type P) is already absent
+                         loc_listener)
+   ((TP_a (HL_a ...)) ...)]) ;when (string_type P) is already absent
 
 (define-metafunction DOM
-  [(removeListener LS string_type bool_useCapture S_listener)
+  [(removeListener LS string_type bool_useCapture loc_listener)
    (removeListenerHelper 
-    (removeListenerHelper LS string_type target bool_useCapture S_listener)
+    (removeListenerHelper LS string_type target bool_useCapture loc_listener)
     string_type
     ,(if (term bool_useCapture) (term capture) (term bubble))
     bool_useCapture
-    S_listener)])
+    loc_listener)])
 
 ; TODO(matt) - comment/annotate setHandler(Helper)
 (define-metafunction DOM
@@ -354,13 +374,15 @@
                ((loc_b N_b) ...
                 (loc_current
                  (node string LS (loc_children ...) parent))
-                (loc_a N_a) ...)
+                (loc_a N_a) ...
+                (loc_c S_c) ...)
                Log)
         (state (in-hole Ctx (pre-dispatch parent (loc_current loc ...) E))
                ((loc_b N_b) ...
                 (loc_current
                  (node string LS (loc_children ...) parent))
-                (loc_a N_a) ...)
+                (loc_a N_a) ...
+                (loc_c S_c) ...)
                Log)
         pd-build-path)
 
@@ -541,14 +563,14 @@
         capture-to-target-collect)
    ; target->bubble & event bubbles
    (--> (state (in-hole Ctx
-                        (dispatch-next (event T_event #t Cancels Trusted Meta S_default)
+                        (dispatch-next (event T_event #t Cancels Trusted Meta loc_default)
                                        loc_child target PDef #f #f
                                        (loc_a ... loc_parent loc_child)
                                        ()))
                N-store
                Log)
         (state (in-hole Ctx
-                        (dispatch-collect (event T_event #t Cancels Trusted Meta S_default)
+                        (dispatch-collect (event T_event #t Cancels Trusted Meta loc_default)
                                           loc_parent bubble PDef #f #f
                                           (loc_a ... loc_parent loc_child)))
                N-store
@@ -559,14 +581,14 @@
    ; ... If the event type indicates that the event must not bubble, the event 
    ; object must halt after completion of this phase....
    (--> (state (in-hole Ctx
-                        (dispatch-next (event T_event #f Cancels Trusted Meta S_default)
+                        (dispatch-next (event T_event #f Cancels Trusted Meta loc_default)
                                        loc_child target PDef #f #f
                                        (loc_a ... loc_child)
                                        ()))
                N-store
                Log)
         (state (in-hole Ctx
-                        (dispatch-default (event T_event #f Cancels Trusted Meta S_default)
+                        (dispatch-default (event T_event #f Cancels Trusted Meta loc_default)
                                           PDef
                                           loc_child))
                N-store
@@ -607,62 +629,66 @@
 
    ; collecting listeners on current node, and listeners are found
    (--> (state (in-hole Ctx
-                        (dispatch-collect (event T_event Bubbles Cancels Trusted Meta S_default)
+                        (dispatch-collect (event T_event Bubbles Cancels Trusted Meta loc_default)
                                           loc_target P PDef #f #f
                                           (loc_a ... loc_target loc_b ...)))
                ((loc_c N_c) ...
                 (loc_target
                  (node string
-                       ((TP_a (L_a ...)) ...
-                        ((T_event P) (L_wanted ...))
-                        (TP_b (L_b ...)) ...)
+                       ((TP_a (HL_a ...)) ...
+                        ((T_event P) (HL_wanted ...))
+                        (TP_b (HL_b ...)) ...)
                        (loc_kids ...)
                        parent))
-                (loc_d N_d) ...)
+                (loc_d N_d) ...
+                (loc_e S_e) ...)
                Log)
         (state (in-hole Ctx
-                        (dispatch-next (event T_event Bubbles Cancels Trusted Meta S_default)
+                        (dispatch-next (event T_event Bubbles Cancels Trusted Meta loc_default)
                                        loc_target P PDef #f #f
                                        (loc_a ... loc_target loc_b ...)
-                                       (L_wanted ...)))
+                                       (lookup-listeners (HL_wanted ...) ((loc_e S_e) ...))))
                ((loc_c N_c) ...
                 (loc_target
                  (node string
-                       ((TP_a (L_a ...)) ...
-                        ((T_event P) (L_wanted ...))
-                        (TP_b (L_b ...)) ...)
+                       ((TP_a (HL_a ...)) ...
+                        ((T_event P) (HL_wanted ...))
+                        (TP_b (HL_b ...)) ...)
                        (loc_kids ...)
                        parent))
-                (loc_d N_d) ...)
+                (loc_d N_d) ...
+                (loc_e S_e) ...)
                Log)
         collect-found-listeners)
    ; collecting listeners on current node, and listeners are not found
    (--> (side-condition
          (state (in-hole Ctx
-                         (dispatch-collect (event T_event Bubbles Cancels Trusted Meta S_default)
+                         (dispatch-collect (event T_event Bubbles Cancels Trusted Meta loc_default)
                                            loc_target P PDef #f #f
                                            (loc_a ... loc_target loc_b ...)))
                ((loc_c N_c) ...
                 (loc_target
                  (node string
-                       ((TP_a (L_a ...)) ...)
+                       ((TP_a (HL_a ...)) ...)
                        (loc_kids ...)
                        parent))
-                (loc_d N_d) ...)
+                (loc_d N_d) ...
+                (loc_e S_e) ...)
                Log)
          (not-in? (term T_event) (term P) (term (TP_a ...))))
         (state (in-hole Ctx
-                        (dispatch-next (event T_event Bubbles Cancels Trusted Meta S_default)
+                        (dispatch-next (event T_event Bubbles Cancels Trusted Meta loc_default)
                                        loc_target P PDef #f #f
                                        (loc_a ... loc_target loc_b ...)
                                        ()))
                ((loc_c N_c) ...
                 (loc_target
                  (node string
-                       ((TP_a (L_a ...)) ...)
+                       ((TP_a (HL_a ...)) ...)
                        (loc_kids ...)
                        parent))
-                (loc_d N_d) ...)
+                (loc_d N_d) ...
+                (loc_e S_e) ...)
                Log)
         collect-found-no-listeners)
 
@@ -681,7 +707,7 @@
    ; capture phase of the DOM event flow or its target and bubbling phases.
    (--> (state (in-hole Ctx
                         (addEventListener
-                         loc_target string_type bool S_listener))
+                         loc_target string_type bool loc_listener))
                ((loc_a N_a) ...
                 (loc_target
                  (node
@@ -689,16 +715,22 @@
                   LS
                   (loc_kids ...)
                   parent_node))
-                (loc_b N_b) ...)
+                (loc_b N_b) ...
+                (loc_c S_c) ...
+                (loc_listener S_listener)
+                (loc_d S_d) ...)
                Log)
         (state (in-hole Ctx skip)
                ((loc_a N_a) ...
                 (loc_target
                  (node string_name
-                       (addListener LS string_type bool S_listener)
+                       (addListener LS string_type bool loc_listener)
                        (loc_kids ...)
                        parent_node))
-                (loc_b N_b) ...)
+                (loc_b N_b) ...
+                (loc_c S_c) ...
+                (loc_listener S_listener)
+                (loc_d S_d) ...)
                Log)
         do-addEventListener)
    
@@ -709,7 +741,7 @@
    ; EventTarget has no effect.
    (--> (state (in-hole Ctx
                         (removeEventListener
-                         loc_target string_type bool S_listener))
+                         loc_target string_type bool loc_listener))
                ((loc_a N_a) ...
                 (loc_target
                  (node
@@ -717,16 +749,22 @@
                   LS
                   (loc_kids ...)
                   parent_node))
-                (loc_b N_b) ...)
+                (loc_b N_b) ...
+                (loc_c S_c) ...
+                (loc_listener S_listener)
+                (loc_d S_d) ...)
                Log)
         (state (in-hole Ctx skip)
                ((loc_a N_a) ...
                 (loc_target
                  (node string_name
-                       (removeListener LS string_type bool S_listener)
+                       (removeListener LS string_type bool loc_listener)
                        (loc_kids ...)
                        parent_node))
-                (loc_b N_b) ...)
+                (loc_b N_b) ...
+                (loc_c S_c) ...
+                (loc_listener S_listener)
+                (loc_d S_d) ...)
                Log)
         do-removeEventListener)
    
@@ -741,7 +779,8 @@
                   LS
                   (loc_kids ...)
                   parent_node))
-                (loc_b N_b) ...)
+                (loc_b N_b) ...
+                (loc_c S_c) ...)
                Log)
         (state (in-hole Ctx skip)
                ((loc_a N_a) ...
@@ -750,7 +789,8 @@
                        (setHandler LS string_type S_listener)
                        (loc_kids ...)
                        parent_node))
-                (loc_b N_b) ...)
+                (loc_b N_b) ...
+                (loc_c S_c) ...)
                Log)
         do-setEventHandler)
 
@@ -846,7 +886,7 @@
    ; non-cancelable event must have no effect. If an event has more than one 
    ; default action, each cancelable default action must be canceled.
    (--> (state (in-hole Ctx
-                        (dispatch (name E (event T Bubbles #t Trusted Meta S_default)) 
+                        (dispatch (name E (event T Bubbles #t Trusted Meta loc_default)) 
                                   parent 
                                   P 
                                   PDef SP SI 
@@ -862,7 +902,7 @@
                Log)
         do-prevent-default-cancelable)
    (--> (state (in-hole Ctx
-                        (dispatch (name E (event T Bubbles #f Trusted Meta S_default)) 
+                        (dispatch (name E (event T Bubbles #f Trusted Meta loc_default)) 
                                   parent 
                                   P 
                                   PDef SP SI 
@@ -900,13 +940,19 @@
    
    ; dispatch-default-not-prevented
    (--> (state (in-hole Ctx
-                        (dispatch-default E_inner
+                        (dispatch-default (name E_inner (event T Bubbles Cancels Trusted Meta loc_default))
                                           #f
                                           loc_target))
-               N-store
+               ((loc_a N_a) ...
+                (loc_b S_b) ...
+                (loc_default S_default)
+                (loc_c S_c) ...)
                Log)
-        (state (in-hole Ctx (debug-print "default action!"))
-               N-store
+        (state (in-hole Ctx S_default)
+               ((loc_a N_a) ...
+                (loc_b S_b) ...
+                (loc_default S_default)
+                (loc_c S_c) ...)
                Log)
         dispatch-not-default-prevented)
 

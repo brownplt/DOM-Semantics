@@ -30,9 +30,9 @@
            (begin
              (displayln (string-append name ": FAILED"))
              (displayln "Got:")
-             (displayln log)
+             (displayln out)
              (displayln "Expected:")
-             (displayln out))))]))     
+             (displayln log))))]))     
 
 (define-syntax test-schema
   (syntax-rules ()
@@ -64,16 +64,16 @@
 ; Tests pd-build-path
 
 (define test-event
-  (term (event "click" #t #t #t ,empty skip)))
+  (term (event "click" #t #t #t ,empty loc_skip)))
 (test E test-event "event")
 
-(define test-listener-cap
-  (term (listener #t mutate)))
-(test L test-listener-cap "listener-cap")
+(define test-heap-listener-cap
+  (term (listener #t loc-mutate)))
+(test HL test-heap-listener-cap "heap-listener-cap")
 
-(define test-listener-bub
-  (term (listener #f mutate)))
-(test L test-listener-bub "listener-bub")
+(define test-heap-listener-bub
+  (term (listener #f loc-mutate)))
+(test HL test-heap-listener-bub "heap-listener-bub")
 
 (define root
   (term (node "root"
@@ -83,19 +83,21 @@
 (test N root "root node")
 
 (define test-tp-cap
-  (list "click" (term capture)))
+  (term ("click" capture)))
 (test TP test-tp-cap "test-tp-cap")
 
 (define child
   (term (node "child"
-              ,(list (list test-tp-cap
-                           (list test-listener-cap)))
+              ((,test-tp-cap
+                (,test-heap-listener-cap)))
               ,empty
               loc-parent)))
 (test N child "child node")
 
 (define store
-  (term ((loc-child ,child) (loc-parent ,root))))
+  (term ((loc-child ,child) 
+         (loc-parent ,root)
+         (loc-mutate mutate))))
 (test N-store store "node store")
 
 (define test-init-pd
@@ -228,24 +230,25 @@
             (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
             #f
             (list
-             (term (addEventListener loc_parent "click" #t
-                                     (debug-print "1")))
-             (term (addEventListener loc_current "click" #t 
-                                     (seq (debug-print "2") prevent-default)))
-             (term (setEventHandler loc_current "click"
+             (term (addEventListener loc_parent "click" #t loc_parent1))
+             (term (addEventListener loc_current "click" #t loc_current2))
+             (term (setEventHandler loc_current "click" 
                                     (if-phase target (debug-print "before 2") (debug-print "unknown phase"))))
-             (term (addEventListener loc_current "click" #f 
-                                     (debug-print "3")))
-             (term (addEventListener loc_parent "click" #f 
-                                     (debug-print "4")))
-             (term (setEventHandler loc_parent "click"
+             (term (addEventListener loc_current "click" #f loc_current3))
+             (term (addEventListener loc_parent "click" #f loc_parent4))
+             (term (setEventHandler loc_parent "click" 
                                     (debug-print "before 4")))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t ,empty skip)))
+                                 (event "click" #t #t #t ,empty loc_clickDefault)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_current) loc_parent))
-           (loc_parent (node "parent" ,empty (loc_mid) null)))
+           (loc_parent (node "parent" ,empty (loc_mid) null))
+           (loc_parent1 (debug-print "1"))
+           (loc_current2 (seq (debug-print "2") prevent-default))
+           (loc_current3 (debug-print "3"))
+           (loc_parent4 (debug-print "4"))
+           (loc_clickDefault skip))
           ,empty)))
 (test M add-event-state "add-event-state")
 
@@ -273,19 +276,22 @@
             #f
             (list
              (term (addEventListener loc_current "click" #t
-                                     ,l1))
+                                     loc-l1))
              (term (addEventListener loc_current "click" #t 
-                                     ,l2))
+                                     loc-l2))
              (term (addEventListener loc_current "click" #f
-                                     ,l1))
+                                     loc-l1))
              (term (removeEventListener loc_current "click" #f
-                                     ,l1))
+                                     loc-l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t ,empty skip)))
+                                 (event "click" #t #t #t ,empty loc-clickDefault)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_current) loc_parent))
-           (loc_parent (node "parent" ,empty (loc_mid) null)))
+           (loc_parent (node "parent" ,empty (loc_mid) null))
+           (loc-l1 ,l1)
+           (loc-l2 ,l2)
+           (loc-clickDefault (debug-print "default action!")))
           ,empty))))
 (test M add-remove-event-state-1 "add-remove-event-state-1")
 (test-log (list "L1" "L2" "default action!") add-remove-event-state-1 "add-remove-event-state-1")
@@ -299,19 +305,22 @@
             #f
             (list
              (term (addEventListener loc_current "click" #t
-                                     ,l1))
+                                     loc-l1))
              (term (addEventListener loc_current "click" #t 
-                                     ,l2))
+                                     loc-l2))
              (term (addEventListener loc_current "click" #f
-                                     ,l1))
+                                     loc-l1))
              (term (removeEventListener loc_current "click" #t
-                                     ,l1))
+                                     loc-l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t ,empty skip)))
+                                 (event "click" #t #t #t ,empty loc-clickDefault)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_current) loc_parent))
-           (loc_parent (node "parent" ,empty (loc_mid) null)))
+           (loc_parent (node "parent" ,empty (loc_mid) null))
+           (loc-l1 ,l1)
+           (loc-l2 ,l2)
+           (loc-clickDefault (debug-print "default action!")))
           ,empty))))
 (test M add-remove-event-state-2 "add-remove-event-state-2")
 (test-log (list "L2" "L1" "default action!") add-remove-event-state-2 "add-remove-event-state-2")
@@ -326,19 +335,22 @@
             #f
             (list
              (term (addEventListener loc_current "click" #t
-                                     ,l1))
+                                     loc-l1))
              (term (addEventListener loc_current "click" #t 
-                                     ,l2))
+                                     loc-l2))
              (term (addEventListener loc_current "click" #f
-                                     ,l1))
+                                     loc-l1))
              (term (removeEventListener loc_current "click" #f
-                                     ,l2))
+                                     loc-l2))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t ,empty skip)))
+                                 (event "click" #t #t #t ,empty loc-clickDefault)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_current) loc_parent))
-           (loc_parent (node "parent" ,empty (loc_mid) null)))
+           (loc_parent (node "parent" ,empty (loc_mid) null))
+           (loc-l1 ,l1)
+           (loc-l2 ,l2)
+           (loc-clickDefault (debug-print "default action!")))
           ,empty))))
 (test M add-remove-event-state-3 "add-remove-event-state-3")
 (test-log (list "L1" "L2" "L1" "default action!") add-remove-event-state-3 "add-remove-event-state-3")
@@ -351,13 +363,15 @@
             #f
             (list
              (term (addEventListener loc_current "click" #t
-                                     ,l1))
+                                     loc-l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #t #t ,empty skip)))
+                                 (event "click" #t #t #t ,empty loc-clickDefault)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
-           (loc_mid (node "middle" ,empty (loc_current loc_parent))
-           (loc_parent (node "parent" ,empty (loc_mid) null)))
+           (loc_mid (node "middle" ,empty (loc_current) loc_parent))
+           (loc_parent (node "parent" ,empty (loc_mid) null))
+           (loc-l1 ,l1)
+           (loc-clickDefault (debug-print "default action!")))
           ,empty))))
 (test M cancel-cancelable-state "cancel-cancelable-state")
 (test-log (list "default-prevented") 
@@ -372,13 +386,15 @@
             #f
             (list
              (term (addEventListener loc_current "click" #t
-                                     ,l1))
+                                     loc-l1))
              (term (pre-dispatch loc_current ,empty 
-                                 (event "click" #t #f #t ,empty skip)))
+                                 (event "click" #t #f #t ,empty loc-clickDefault)))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_current) loc_parent))
-           (loc_parent (node "parent" ,empty (loc_mid) null)))
+           (loc_parent (node "parent" ,empty (loc_mid) null))
+           (loc-l1 ,l1)
+           (loc-clickDefault (debug-print "default action!")))
           ,empty))))
 (test M cancel-uncancelable-state "cancel-uncancelable-state")
 (test-log (list "default action!") 
@@ -390,7 +406,8 @@
                                        (list "k2" "hi there")
                                        (list "k3" 3000)
                                        (list "k4" 
-                                             (cons 1 (cons 2 (cons 3 empty))))))))
+                                             (cons 1 (cons 2 (cons 3 empty)))))
+               loc-clickDefault)))
 (test E test-event-meta "event with metadata")
 
 (define cancel-uncancelable-state-meta
@@ -401,13 +418,15 @@
             #f
             (list
              (term (addEventListener loc_current "click" #t
-                                     ,l1))
+                                     loc-l1))
              (term (pre-dispatch loc_current ,empty 
                                  ,test-event-meta))
              ))
           ((loc_current (node "child" ,empty ,empty loc_mid))
            (loc_mid (node "middle" ,empty (loc_currrent) loc_parent))
-           (loc_parent (node "parent" ,empty (loc_mid) null)))
+           (loc_parent (node "parent" ,empty (loc_mid) null))
+           (loc-l1 ,l1)
+           (loc-clickDefault (debug-print "default action!")))
           ,empty))))
 (test M cancel-uncancelable-state-meta "cancel-uncancelable-state-meta")
 (test-log (list "default action!") 
