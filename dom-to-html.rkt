@@ -41,18 +41,21 @@
    ((loc_child
     (node
      "child"
-     ((("click" target) ((listener #t (seq (debug-print "L1") skip)) (listener #f (debug-print "L2"))))
-      (("click" capture) ((listener #t (debug-print "L1")) (listener #f (debug-print "L2"))))
+     ((("click" target) ((listener #t loc-l1) (listener #f loc-l2)))
+      (("click" capture) ((listener #t loc-l1) (listener #f loc-l2)))
       (("click" bubble) ()))
      ()
      loc_mid))
    (loc_mid (node "middle" 
-                  ((("keydown" target) ((handler (debug-print "H3")) (listener #t skip)))
+                  ((("keydown" target) ((handler (debug-print "H3")) (listener #t loc-skip)))
                    (("keyup" target) ((handler (debug-print "H4")))))
                   (loc_child) loc_parent))
    (loc_parent (node "parent" 
                      ()
-                     (loc_mid) null)))))
+                     (loc_mid) null))
+   (loc-l1 (seq (debug-print "L1") skip))
+   (loc-l2 (debug-print "L2"))
+   (loc-skip skip))))
    
 
 
@@ -61,151 +64,148 @@
 (define (bool->string b)
   (if b "true" "false"))
 
-(define (map-closure S ls-map)
-  (case (if (pair? S) (first S) S)
-    ['seq (map-closure (third S) (map-closure (second S) ls-map))]
-    ['if-phase (map-closure (fourth S) (map-closure (third S) ls-map))]
-    ['if-curTarget (map-closure (fourth S) (map-closure (third S) ls-map))]
-    ['addEventListener 
-     (map-closure (fifth S) (hash-set ls-map (fifth S) (gensym "listener")))]
-    ['removeEventListener 
-     (map-closure (fifth S) (hash-set ls-map (fifth S) (gensym "listener")))]
-    ['setEventHandler ls-map]
-    ['listener
-     (map-closure (third S) ls-map)] ; assuming this listener has already been added
-    ['handler
-     ls-map] ; handlers aren't functions, just strings...
-    [else
-     ls-map]))
- 
-(define (s->js S ls-map)
-  (case (if (pair? S) (first S) S)
-    ['seq
-     (string-append (s->js (second S) ls-map) "\n" (s->js (third S) ls-map))]
-    ['return
-     (string-append "return " (bool->string (second S)) ";")]
-    ['skip
-     "/* skip */"]
-    ['stop-prop
-     "event.stopPropagation();"]
-    ['stop-immediate
-     "event.stopImmediatePropagation();"]
-    ['prevent-default
-     "event.preventDefault();"]
-    ['mutate
-     "debug.print(\"mutation\");"]
-    ['debug-print
-     (string-append "debug.print(\"" (second S) "\");")]
-    ['addEventListener
-     (string-append 
-      "document.getElementById(\""
-      (symbol->string (second S))
-      "\").addEventListener(\""
-      (third S)
-      "\", "
-      (bool->string (fourth S))
-      ", "
-      (symbol->string (hash-ref ls-map (fifth S) (gensym "unknownAddListener")))
-      ");")]
-    ['removeEventListener
-     (string-append 
-      "document.getElementById(\""
-      (symbol->string (second S))
-      "\").removeEventListener(\""
-      (third S)
-      "\", "
-      (bool->string (fourth S))
-      ", "
-      (symbol->string (hash-ref ls-map (fifth S) (gensym "unknownRemListener")))
-      ");")]  
-    ['setEventHandler
-     (string-append 
-      "document.getElementById(\""
-      (symbol->string (second S))
-      "\").setAttribute(\"on"
-      (third S)
-      "\", "
-      (s->js (fourth S) ls-map)
-      ");")]
-    ['if-phase
-     (string-append
-      "if (event.eventPhase === "
-      (case (second S)
-        [(term capture) "Event.CAPTURING_PHASE"]
-        [(term target) "Event.AT_TARGET"]
-        [(term bubble) "Event.BUBBLING_PHASE"])
-      ") {\n"
-      (indent (s->js (third S) ls-map))
-      "\n} else {\n"
-      (indent (s->js (fourth S) ls-map))
-      "\n}")]
-    ['if-curTarget
-     (string-append
-      "if (event.curTarget === document.getElementById(\""
-      (symbol->string (second S))
-      "\") {\n"
-      (indent (s->js (third S) ls-map))
-      "\n} else {\n"
-      (indent (s->js (fourth S) ls-map))
-      "\n}")]
-    ['pre-dispatch
-     (let ((E (fourth S)))
-       (string-append
-        "var evt = document.createEvent(\"" (second E) "\");\n"
-        "evt.initEvent(\"" (second E) "\", "
-        (bool->string (third E))
-        ", "
-        (bool->string (fourth E))
-        ");\n"
-        "document.getElementById(\"" (symbol->string (second S)) "\").dispatchEvent(evt);\n"))]
-    [else
-     (let* ((string (open-output-string))
-            (stmt-as-string (begin (displayln S string) (get-output-string string))))
-       (string-append
-        "/* unknown internal statement */\n"
-        "/*\n  "
-        stmt-as-string
-        "*/"))]
-  ))
-   
-(define (handlers-if-any ls ls-map)
+;(define-metafunction DOM
+;  [(map-closure (seq S_1 S_2) any_lsmap)
+;   (map-closure S_2 (map-closure S_1 any_lsmap))]
+;  [(map-closure (if-phase P S_t S_f) any_lsmap)
+;   (map-closure S_f (map-closure S_t any_lsmap))]
+;  [(map-closure (if-curTarget loc S_t S_f) any_lsmap)
+;   (map-closure S_f (map-closure S_t any_lsmap))]
+;  [(map-closure (addEventListener loc_target T bool loc_listener)
+;                (any ...
+;                 (loc_listener S_listener)
+;                 any ...))
+;   (map-closure S_listener ,(hash-set (term any_lsmap) (term loc_listener) (gensym "listener")))]
+;  [(map-closure (removeEventListener loc_target T bool loc_listener)
+;                (any ...
+;                 (loc_listener S_listener)
+;                 any ...))
+;   (map-closure S_listener ,(hash-set (term any_lsmap) (term loc_listener) (gensym "listener")))]    
+;  [(map-closure (setEventHandler loc T S_listener) any_lsmap)
+;   (map-closure S_listener any_lsmap)]
+;  [(map-closure any any_lsmap)
+;   any_lsmap])
+
+(define-metafunction DOM
+  [(s->js (seq S_1 S_2))
+   ,(string-append (term (s->js S_1)) "\n" (term (s->js S_2)))]
+  [(s->js (return bool))
+   ,(string-append "return " (bool->string (term bool)) ";")]
+  [(s->js skip)
+   "/* skip */"]
+  [(s->js stop-prop)
+   "event.stopPropagation();"]
+  [(s->js stop-immediate)
+   "event.stopImmediatePropagation();"]
+  [(s->js prevent-default)
+   "event.preventDefault();"]
+  [(s->js mutate)
+   "debug.print(\"mutation\");"]
+  [(s->js (debug-print string))
+   ,(string-append "debug.print(\"" (term string) "\");")]
+  [(s->js (addEventListener loc_target T bool loc_listener))
+   ,(string-append 
+     "document.getElementById(\""
+     (symbol->string (term loc_target))
+     "\").addEventListener(\""
+     (term T)
+     "\", "
+     (bool->string (term bool))
+     ", "
+     (symbol->string (term loc_listener))
+     ");")]
+  [(s->js (removeEventListener loc_target T bool loc_listener))
+   ,(string-append 
+     "document.getElementById(\""
+     (symbol->string (term loc_target))
+     "\").removeEventListener(\""
+     (term T)
+     "\", "
+     (bool->string (term bool))
+     ", "
+     (symbol->string (term loc_listener))
+     ");")]  
+  [(s->js (setEventHandler loc_target T S))
+   ,(string-append 
+     "document.getElementById(\""
+     (symbol->string (term loc_target))
+     "\").setAttribute(\"on"
+     (term T)
+     "\", "
+     (term (s->js S))
+     ");")]
+  [(s->js (if-phase P S_t S_f))
+   ,(string-append
+     "if (event.eventPhase === "
+     (case (term P)
+       [(term capture) "Event.CAPTURING_PHASE"]
+       [(term target) "Event.AT_TARGET"]
+       [(term bubble) "Event.BUBBLING_PHASE"])
+     ") {\n"
+     (indent (term (s->js S_t)))
+     "\n} else {\n"
+     (indent (term (s->js S_f)))
+     "\n}")]
+  [(s->js (if-curTarget loc S_t S_f))
+   ,(string-append
+     "if (event.curTarget === document.getElementById(\""
+     (symbol->string (term loc))
+     "\") {\n"
+     (indent (term (s->js S_t)))
+     "\n} else {\n"
+     (indent (term (s->js S_f)))
+     "\n}")]
+  [(s->js (pre-dispatch loc () (event T Bubbles Cancels Trusted Meta loc_default)))
+   ,(string-append
+     "var evt = document.createEvent(\"" (term T) "\");\n"
+     "evt.initEvent(\"" (term T) "\", "
+     (bool->string (term Bubbles))
+     ", "
+     (bool->string (term Cancels))
+     ");\n"
+     "document.getElementById(\"" (symbol->string (term loc)) "\").dispatchEvent(evt);\n")]
+  [(s->js any)
+   ,(let* ((string (open-output-string))
+           (stmt-as-string (begin (displayln (term any) string) (get-output-string string))))
+      (string-append
+       "/* unknown internal statement */\n"
+       "/*\n  "
+       stmt-as-string
+       "*/"))]
+  )
+
+(define (handlers-if-any ls)
   (let* ([target-phases (or
-                         (redex-match DOM ((TP_a (L_a ...)) ...
-                                           ((T target) ((handler S) (listener bool_l S_l) ...))
-                                           (TP_b (L_b ...)) ...) ls)
+                         (redex-match DOM ((TP_a (HL_a ...)) ...
+                                           ((T target) ((handler S) (listener bool_l loc_l) ...))
+                                           (TP_b (HL_b ...)) ...) ls)
                          empty)]
          [handlers (bind-refs target-phases (list 'T 'S))]
          [handlerAttrs (map (lambda (h) (list (string->symbol (string-append "on" (first h)))
-                                              (s->js (second h) ls-map))) handlers)])
+                                              (term (s->js ,(second h))))) handlers)])
     handlerAttrs)
   )
 
 (define (model->xexp model)
-  (let* ([store (third model)]
-         [program (second model)]
-         [all-ls (bind-ref (redex-match DOM ((loc (node string LS (loc_kid ...) parent)) ...) store) 'LS)]
-         [flat-all-ls (if (pair? all-ls) (apply append all-ls) empty)]
-         [binds (bind-refs (redex-match DOM ((TP_a (L_a ...)) ...
-                                             ((T target) (L ...))
-                                             (TP_b (L_b ...)) ...) flat-all-ls) (list 'L))]
-         [all-targets (if (pair? binds) (apply append (apply append binds)) empty)]
-         [ls-map1 (make-immutable-hasheq (map (lambda (ls) 
-                                               (if (equal? (first ls) 'listener)
-                                                   (cons ls (gensym "listener"))
-                                                   (cons ls (gensym "handler")))) all-targets))]
-         [ls-map (foldl (lambda (key acc) (map-closure key acc))
-                        (map-closure program ls-map1) (hash-keys ls-map1))]
+  (let* ([program (second model)]
+         [store (third model)]
          [top-node-matches (redex-match DOM 
                                         ((loc_a N_a) ...
                                          (loc_top (name node_top (node string LS (loc ...) null)))
-                                         (loc_b N_b) ...)
+                                         (loc_b N_b) ...
+                                         (loc_c S_c) ...)
                                         store)]
-         [all-locs (map first store)]
+         [all-locs (bind-ref (redex-match DOM 
+                                           ((loc_a N_a) ...
+                                            (loc_c S_c)...)
+                                           store) 'loc_a)]
          [top-locs (map (lambda (m) (bind-exp
                                      (findf (lambda (v) (equal? (bind-name v) 'loc_top))
                                             (match-bindings m)))) top-node-matches)]
          [lookup-node (lambda (loc)
                         (second (findf (lambda (p) (equal? (first p) loc)) store)))]
+         [lookup-listener (lambda (loc) ;same as lookup-node's implementation
+                            (second (findf (lambda (p) (equal? (first p) loc)) store)))]
          [node-to-xexp 
           (letrec ((node-to-xexp
                     (lambda (loc)
@@ -217,76 +217,77 @@
                              (append
                               (list '@)
                               (list (list 'id (symbol->string loc)))
-                              (handlers-if-any (bind-ref binds 'LS) ls-map)))
+                              (handlers-if-any (bind-ref binds 'LS))))
                             (map node-to-xexp (bind-ref binds 'loc_kid)))
                            ))))
             node-to-xexp)]
+         [listeners (bind-ref (redex-match DOM 
+                                           ((loc_a N_a) ...
+                                            (name ls (loc_c S_c)) ...)
+                                           store) 'ls)]
          [define-listeners
-           (lambda (ls-map)
-             (hash-map
-              ls-map
-              (lambda (l key)
-                (let ((body (if (pair? l)
-                                (case (first l) 
-                                  ['listener (third l)]
-                                  ['handler (second l)]
-                                  [else l])
-                                l)))
+           (map
+              (lambda (l)
+                (let ([loc (first l)]
+                      [body (second l)])
                   (string-append "\nfunction " 
-                                 (symbol->string key)
+                                 (symbol->string loc)
                                  "(event) {\n"
-                                 (indent (s->js body ls-map))
+                                 (indent (term (s->js ,body)))
                                  "\n}\n")))
-             ))]
+              listeners
+             )]
          [install-listeners 
           (lambda (loc)
-            (let* ((node (lookup-node loc))
-                     (binds (redex-match DOM (node string_name LS (loc_kid ...) parent) node))
-                     (all-targets (or
-                                   (redex-match DOM ((TP_a (L_a ...)) ...
-                                                     ((T target) ((handler S_h) L ...))
-                                                     (TP_b (L_b ...)) ...) (bind-ref binds 'LS))
-                                   (redex-match DOM ((TP_a (L_a ...)) ...
-                                                     ((T target) (L ...))
-                                                     (TP_b (L_b ...)) ...) (bind-ref binds 'LS))
-                                   empty))
-                     (target-lists (bind-refs all-targets (list 'T 'L)))
-                     (targets 
-                      (append-map (lambda (target)
+            (let* ([node (lookup-node loc)]
+                   [binds (redex-match DOM (node string_name LS (loc_kid ...) parent) node)]
+                   [all-targets (or
+                                 (redex-match DOM ((TP_a (HL_a ...)) ...
+                                                   ((T target) ((handler S_h) HL ...))
+                                                   (TP_b (HL_b ...)) ...) (bind-ref binds 'LS))
+                                 (redex-match DOM ((TP_a (HL_a ...)) ...
+                                                   ((T target) (HL ...))
+                                                   (TP_b (HL_b ...)) ...) (bind-ref binds 'LS))
+                                 empty)]
+                   [target-lists (bind-refs all-targets (list 'T 'HL))]
+                   [targets 
+                    (append-map (lambda (target)
+                                  (let ([type (first target)]
+                                        [listeners (second target)])
                                     (map (lambda (t)
                                            (append-map 
                                             (lambda (parts) 
                                               (let ((ret (list 
-                                                          (first target)
+                                                          type
                                                           (first parts)
-                                                          (second parts)
-                                                          t)))
+                                                          (lookup-listener (second parts))
+                                                          (symbol->string (second parts))
+                                                          )))
                                                 ret))
-                                            (bind-refs (redex-match DOM (listener bool S) t)
-                                                       (list 'bool 'S))))
-                                         (second target)))
-                                  target-lists))
-                     (listener-to-js 
-                      (lambda (type useCapture body l)
-                        (let ((js (string-append "document.getElementById(\""
-                                                  (symbol->string loc)
-                                                  "\").addEventListener(\""
-                                                  type
-                                                  "\", "
-                                                  (bool->string (term ,useCapture))
-                                                  ", "
-                                                  (symbol->string (hash-ref ls-map l 
-                                                                            (gensym "unknownListener")))
-                                                  ");\n")))
-                          js)))
+                                            (bind-refs (redex-match DOM (listener bool loc) t)
+                                                       (list 'bool 'loc))))
+                                         listeners)))
+                                target-lists)]
+                   [listener-to-js 
+                    (lambda (type useCapture body fnName)
+                      (let ((js (string-append "document.getElementById(\""
+                                               (symbol->string loc)
+                                               "\").addEventListener(\""
+                                               type
+                                               "\", "
+                                               (bool->string (term ,useCapture))
+                                               ", "
+                                               fnName
+                                               ");\n")))
+                        js))]
                      )
               (apply string-append (map (lambda (t) (if (null? t) "" (apply listener-to-js t))) targets))))])
     (append
      (list (string->symbol "html"))
      (map node-to-xexp top-locs)
-     (list (list 'script (apply string-append (define-listeners ls-map))))
+     (list (list 'script (apply string-append define-listeners)))
      (list (list 'script (string-append "\n" (apply string-append (map install-listeners all-locs)))))
-     (list (list 'script (string-append "\n" (s->js program ls-map)))))))
+     (list (list 'script (string-append "\n" (term (s->js ,program))))))))
 
 (define seq (lambda S
   (foldr (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
