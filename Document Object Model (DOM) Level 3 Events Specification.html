@@ -787,11 +787,31 @@
         <h3><a id="event-flow-default-cancel" href="#event-flow-default-cancel">3.2 Default actions and cancelable events</a></h3>
 
         <p>Event objects may have one or more <a class="def" href="#glossary-default-action">default actions</a> associated with them.  These are actions the implementation must perform in combination with the dispatch of the event object.  An example is the [<cite><a class="informative" href="#references-HTML5">HTML5</a></cite>] form element. When the user submits the form (e.g., by pressing on a submit button), the HTML event <code class="eventtype">submit</code> will be dispatched to the element and the <a class="def" href="#glossary-default-action">default action</a> for this <a class="def" href="#glossary-event-type">event type</a> will be generally to send a request to a Web server with the parameters from the form.</p>
-        <p><a class="def" href="#glossary-default-action">Default actions</a> should be performed after the event dispatch has been completed, but in exceptional cases also immediately before the event is dispatched.</p>
+        <!-- dispatch-not-default-prevented -->
+        <p>(<a href='#dispatch-not-default-prevented' class='redex-link'>[dispatch-not-default-prevented]</a>)<br />
+        <em><a class="def" href="#glossary-default-action">Default actions</a> should be performed after the event dispatch has been completed, </em><br /><br />but in exceptional cases also immediately before the event is dispatched.</p>
         <!-- <span class="issue"><strong>Issue:</strong> insert example here: &lt;input type="checkbox"&gt;'s .checked handling comes to mind.
         .checked is changed just before 'click' event is dispatched, and if
         default action is prevented, .checked is set to its original value.</span> -->
-        <p id="events-dt-cancelable-event">Some event objects are <em>cancelable</em>, meaning the <a class="def" href="#glossary-default-action">default action</a> can be prevented from occuring, or, if the <a class="def" href="#glossary-default-action">default action</a> is carried out before the dispatch, its effect may be reversed. Whether an event object is cancelable must be indicated by the <a href="#events-event-type-canCancel"><code>Event.cancelable</code></a> attribute. Event listeners can cancel <a class="def" href="#glossary-default-action">default actions</a> of cancelable event objects by invoking the <a href="#events-event-type-preventDefault"><code>Event.preventDefault()</code></a> method, and determine whether an event has been canceled through the <a href="#events-event-type-defaultPrevented"><code>Event.defaultPrevented</code></a> attribute while the object is being dispatched, or from the return value of the <a href="#events-EventTarget-dispatchEvent"><code>EventTarget.dispatchEvent()</code></a> method for event objects dispatched by the <a class="def" href="#glossary-DOM-application">DOM application</a> itself.</p>
+        <p id="events-dt-cancelable-event">
+        
+        <!-- Cancels -->
+        (<a href='#Cancels' class-'redex-link'>[Cancels]</a>)<br />
+        <em>Some event objects are <em>cancelable</em>, meaning the <a class="def" href="#glossary-default-action">default action</a> can be prevented from occuring, </em><br /><br />
+        
+        or, if the <a class="def" href="#glossary-default-action">default action</a> is carried out before the dispatch, its effect may be reversed. Whether an event object is cancelable must be indicated by the <a href="#events-event-type-canCancel"><code>Event.cancelable</code></a> attribute. 
+        
+        
+        <!-- do-prevent-default -->
+        <br /><br />
+        (<a href='#do-prevent-default' class='redex-link'>[do-prevent-default]</a>)<br />
+        <em>Event listeners can cancel <a class="def" href="#glossary-default-action">default actions</a> of cancelable event objects by invoking the <a href="#events-event-type-preventDefault"><code>Event.preventDefault()</code></a> method,</em>
+        <br /><br />
+        
+        and determine whether an event has been canceled through the <a href="#events-event-type-defaultPrevented"><code>Event.defaultPrevented</code></a> attribute while the object is being dispatched, or from the return value of the <a href="#events-EventTarget-dispatchEvent"><code>EventTarget.dispatchEvent()</code></a> method for event objects dispatched by the <a class="def" href="#glossary-DOM-application">DOM application</a> itself.</p>
+
+
+
         <p>This specification does not offer features to programatically query if an event object has any <a class="def" href="#glossary-default-action">default action</a> associated with it, or to associate new <a class="def" href="#glossary-default-action">default actions</a> with an event object. Other specifications may define what default actions, if any, are associated with certain event objects. Further, implementations may associate <a class="def" href="#glossary-default-action">default actions</a> with events as necessary and appropriate for that implementation. As an example, one implementation might scroll a document view by a certain amount as <a class="def" href="#glossary-default-action">default action</a> of a mouse wheel event, while another implementation might instead zoom the document as its <a class="def" href="#glossary-default-action">default action</a> for a mouse wheel event.</p>
       </div>
 <!-- div2 sync-async -->
@@ -822,7 +842,14 @@
       <div>
         <h3><a id="trusted-events" href="#trusted-events">3.4 Trusted events</a></h3>
 
-        <p>Events that are generated by the user agent, either as a result of user interaction, or as a direct result of changes to the DOM, are trusted by the user agent with privileges that are not afforded to events generated by script through the <a href="#events-DocumentEvent-createEvent"><code>DocumentEvent.createEvent("Event")</code></a> method, modified using the <a href="#events-event-type-initEvent"><code>Event.initEvent()</code></a> method, or dispatched via the <a href="#events-EventTarget-dispatchEvent"><code>EventTarget.dispatchEvent()</code></a> method.  The <a href="#events-event-type-isTrusted"><code>isTrusted</code></a> attribute of trusted events has a value of <code>true</code>, while untrusted events have a <a href="#events-event-type-isTrusted"><code>isTrusted</code></a> attribute value of <code>false</code>.</p>
+        <p>Events that are generated by the user agent, either as a result of user interaction, or as a direct result of changes to the DOM, are trusted by the user agent with privileges that are not afforded to events generated by script through the <a href="#events-DocumentEvent-createEvent"><code>DocumentEvent.createEvent("Event")</code></a> method, modified using the <a href="#events-event-type-initEvent"><code>Event.initEvent()</code></a> method, or dispatched via the <a href="#events-EventTarget-dispatchEvent"><code>EventTarget.dispatchEvent()</code></a> method.  
+        
+        <!-- Trusted -->
+        <br /><br /> 
+        (<a href='#Trusted' class='redex-link'>[Trusted]</a>)<br />
+        <em>The <a href="#events-event-type-isTrusted"><code>isTrusted</code></a> attribute of trusted events has a value of <code>true</code>, while untrusted events have a <a href="#events-event-type-isTrusted"><code>isTrusted</code></a> attribute value of <code>false</code>.</p></em>
+
+
         <p>Most untrusted events should not trigger <a class="def" href="#glossary-default-action">default actions</a>, with the exception of <a class="eventtype" href="#event-type-click"><code>click</code></a> or <a class="eventtype" href="#event-type-DOMActivate"><code>DOMActivate</code></a> events which have been synthesized and are managed by the <a class="def" href="#glossary-user-agent">user agents</a> event as the <a class="def" href="#glossary-default-action">default action</a> of an <a class="def" href="#glossary-activation-trigger">activation trigger</a> (see <a href="#event-flow-activation">Activation triggers and behaviors</a> for more details); these <a class="def" href="#glossary-user-agent">user-agent</a>-managed synthesized events have an <a href="#events-event-type-isTrusted"><code>isTrusted</code></a> attribute value of <code>false</code>, but still initiate any <a class="def" href="#glossary-default-action">default actions</a>.  All other untrusted events must behave as if the <a href="#events-event-type-preventDefault"><code>Event.preventDefault()</code></a> method had been called on that event.</p>
         <p>For security reasons, a <a class="def" href="#glossary-host-language">host language</a> should not define events which are not cancelable (see <a href="#event-flow-default-cancel">Default actions and cancelable events</a>), but also have <a class="def" href="#glossary-default-action">default actions</a>, since these <a class="def" href="#glossary-default-action">default actions</a> may be initiated by untrusted events.</p>
       </div>
@@ -7934,6 +7961,36 @@ interface <a href="#events-MutationNameEvent">MutationNameEvent</a> : <a href="#
             <strong class="informref">[more-to-do]</strong>
           </dt>
           <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L509">more-to-do</a></cite>
+          </dd>
+        </dl>
+        <dl>
+          <dt id="dispatch-not-default-prevented">
+            <strong class="informref">[dispatch-not-default-prevented]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L941">dispatch-not-default-prevented</a></cite>
+          </dd>
+        </dl>
+        <dl>
+          <dt id="Cancels">
+            <strong class="informref">[Cancels]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L34">Cancels</a></cite>
+          </dd>
+        </dl>
+        <dl>
+          <dt id="do-prevent-default">
+            <strong class="informref">[do-prevent-default]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L879">do-prevent-default-cancelable</a></cite>
+          </dd>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L904">do-prevent-default-not-cancelable</a></cite>
+          </dd>
+        </dl>
+        <dl>
+          <dt id="Trusted">
+            <strong class="informref">[Trusted]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L40">Trusted</a></cite>
           </dd>
         </dl>
     </div>
