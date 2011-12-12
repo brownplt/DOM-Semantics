@@ -460,20 +460,90 @@
               (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
               #f
               (list
-               (term (addEventListener loc_current "click" #t
-                                       ,l1))
-               (term (addEventListener loc_mid "click" #f
-                                       ,l2))
-               (term (pre-dispatch loc_current ,empty 
-                                   ; This click-esque event does not bubble
-                                   (event "click" #f #f #t ,empty skip)))
-               ))
+               (term (addEventListener loc_current "nobubble" #t
+                                       loc_l1))
+               (term (addEventListener loc_mid "nobubble" #f
+                                       loc_l2))
+               (term (pre-dispatch loc_current ,empty
+                                   ; This event does not bubble
+                                   (event "nobubble"
+                                          #f #f #t
+                                          ,empty
+                                          loc_default)))))
             ((loc_current (node "child" ,empty ,empty loc_mid))
-           (loc_mid (node "middle" ,empty (loc_current) loc_parent))
-           (loc_parent (node "parent" ,empty (loc_mid) null)))
+             (loc_mid (node "middle" ,empty (loc_current) loc_parent))
+             (loc_parent (node "parent" ,empty (loc_mid) null))
+             (loc_default (debug-print "nobubble default action"))
+             (loc_l1 ,l1)
+             (loc_l2 ,l2))
             ,empty))))
 (test M test-non-bubbling-state "test-non-bubbling-state")
 
-(test-log (list "capture listener" "default action!")
+(test-log (list "capture listener" "nobubble default action")
           test-non-bubbling-state
           "log for test-non-bubbling-state")
+(define pd-untrusted
+  (term (pre-dispatch loc_current 
+                      ,empty
+                      (event "untrusted" #t #t #f ,empty loc_untrusted))))
+(test PD pd-untrusted "pd-untrusted")
+
+(define test-skip-untrusted-default
+  (term 
+   (state 
+    ,pd-untrusted
+   ((loc_current (node "child" ,empty ,empty loc_mid))
+    (loc_mid (node "middle" ,empty (loc_current) loc_parent))
+    (loc_parent (node "parent" ,empty (loc_mid) null))
+    (loc_untrusted (debug-print "untrusted DA")))
+   ,empty)))
+(test M test-skip-untrusted-default "test-skip-untrusted-default")
+
+(test-log (list "untrusted event, default action skipped") 
+          test-skip-untrusted-default 
+          "log for test-skip-untrusted-default")
+
+(define pd-untrusted-click
+  (term
+   (pre-dispatch loc_current
+                 ,empty
+                 (event "click" #t #t #f (("fromscript" #f)) loc_clickaction))))
+
+(test PD pd-untrusted-click "pd-untrusted-click")
+
+(define test-do-untrusted-click
+  (term 
+   (state
+    ,pd-untrusted-click
+    ((loc_current (node "child" ,empty ,empty loc_mid))
+     (loc_mid (node "middle" ,empty (loc_current) loc_parent))
+     (loc_parent (node "parent" ,empty (loc_mid) null))
+     (loc_clickaction (debug-print "click default action")))
+    ,empty)))
+(test M test-do-untrusted-click "test-do-untrusted-click")
+
+(test-log (list "click default action")
+          test-do-untrusted-click
+          "log for test-do-untrusted-click")
+
+(define pd-untrusted-trusted-click
+  (term
+   (pre-dispatch loc_current
+                 ,empty
+                 (event "click" #t #t #f (("fromscript" #t)) loc_clickaction))))
+(test PD pd-untrusted-trusted-click "pd-untrusted-trusted-click")
+
+(define test-skip-untrusted-click
+  (term
+   (state
+    ,pd-untrusted-trusted-click
+    ((loc_current (node "child" ,empty ,empty loc_mid))
+     (loc_mid (node "middle" ,empty (loc_current) loc_parent))
+     (loc_parent (node "parent" ,empty (loc_mid) null))
+     (loc_clickaction (debug-print "click default action")))
+    ,empty)))
+(test M test-skip-untrusted-click "test-skip-untrusted-click")
+
+(test-log (list "click or DOMActivate from script, skipped DA")
+          test-skip-untrusted-click
+          "log for test-skip-untrusted-click")
