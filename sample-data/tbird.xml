@@ -1,0 +1,2755 @@
+<?xml-stylesheet href="chrome://messenger/skin/mailWindow1.css" type="text/css"?>
+<?xml-stylesheet href="chrome://gloda/content/glodacomplete.css" type="text/css"?>
+<?xul-overlay href="chrome://communicator/content/utilityOverlay.xul"?>
+<?xul-overlay href="chrome://messenger/content/msgHdrViewOverlay.xul"?>
+<?xul-overlay href="chrome://messenger/content/mailWindowOverlay.xul"?>
+<?xul-overlay href="chrome://messenger/content/extraCustomizeItems.xul"?>
+<?xul-overlay href="chrome://messenger/content/mailOverlay.xul"?>
+<?xul-overlay href="chrome://messenger/content/editContactOverlay.xul"?>
+<?xul-overlay href="chrome://messenger/content/specialTabs.xul"?>
+<?xul-overlay href="chrome://messenger/content/quickFilterBar.xul"?>
+<?xml-stylesheet href="chrome://messenger/skin/messageHeader.css" type="text/css"?>
+<?xml-stylesheet href="chrome://messenger/skin/attachmentList.css" type="text/css"?>
+<?xml-stylesheet href="chrome://messenger/skin/folderMenus.css" type="text/css"?>
+<?xul-overlay href="chrome://communicator/content/utilityOverlay.xul"?>
+<?xul-overlay href="chrome://global/content/charsetOverlay.xul"?>
+<?xul-overlay href="chrome://messenger/content/baseMenuOverlay.xul"?>
+<?xml-stylesheet href="chrome://messenger/skin/searchBox.css" type="text/css"?>
+<?xml-stylesheet href="chrome://messenger/skin/editContactOverlay.css"?>
+<?xml-stylesheet href="chrome://messenger/skin/quickFilterBar.css" type="text/css"?>
+<?xml-stylesheet href="chrome://messenger/skin/smime/msgReadSMIMEOverlay.css" type="text/css"?>
+<?xml-stylesheet href="chrome://messenger/skin/smime/msgHdrViewSMIMEOverlay.css" type="text/css"?>
+<?xul-overlay href="chrome://messenger/content/mailOverlay.xul"?>
+<window id="messengerWindow" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" title="Inbox - Mozilla Thunderbird" titlemodifier="Mozilla Thunderbird" titlemenuseparator=" - " onload="OnLoadMessenger()" onunload="OnUnloadMessenger()" screenX="0" screenY="0" persist="width height screenX screenY sizemode" toggletoolbar="true" windowtype="mail:3pane" lightweightthemes="true" lightweightthemesfooter="status-bar" sizemode="normal" width="1024" height="1080" chromehidden="">
+  <data id="mail-bar2" persist="currentset iconsize labelalign" defaultset="button-getmsg,button-newmsg,button-address,separator,button-reply,button-replyall,button-replylist,button-forward,separator,button-tag,button-delete,button-junk,button-print,separator,button-goback,button-goforward,spring,gloda-search"/>
+  <stringbundleset id="stringbundleset">
+    <stringbundle id="bundle_brand" src="chrome://branding/locale/brand.properties"/>
+    <stringbundle id="bundle_search" src="chrome://messenger/locale/search.properties"/>
+    <stringbundle id="bundle_multimessages" src="chrome://messenger/locale/multimessageview.properties"/>
+    <stringbundle id="bundle_messenger" src="chrome://messenger/locale/messenger.properties"/>
+    <stringbundle id="bundle_offlinePrompts" src="chrome://messenger/locale/offline.properties"/>
+    <stringbundle id="bundle_editContact" src="chrome://messenger/locale/editContactOverlay.properties"/>
+    <stringbundle id="bundle_read_smime" src="chrome://messenger-smime/locale/msgReadSMIMEOverlay.properties"/>
+  </stringbundleset>
+  <script type="application/javascript" src="chrome://global/content/globalOverlay.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/widgetglue.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/commandglue.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/shareglue.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/msgViewNavigation.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/mailWindow.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/selectionsummaries.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/msgMail3PaneWindow.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/specialTabs.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/glodaFacetTab.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/searchBar.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/mail3PaneWindowCommands.js"/>
+  <script type="application/javascript" src="chrome://global/content/contentAreaUtils.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/nsContextMenu.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/mailContextMenus.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/accountUtils.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/folderPane.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/phishingDetector.js"/>
+  <script type="application/javascript" src="chrome://communicator/content/contentAreaClick.js"/>
+  <script type="application/javascript" src="chrome://global/content/nsDragAndDrop.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/editContactOverlay.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/threadPane.js"/>
+  <commandset id="mailCommands">
+    <commandset commandupdater="true" events="create-menu-file" oncommandupdate="goUpdateMailMenuItems(this)" id="mailFileMenuItems">
+      <command id="cmd_getNewMessages" oncommand="goDoCommand('cmd_getNewMessages')" disabled="true"/>
+      <command id="cmd_open" oncommand="goDoCommand('cmd_open')"/>
+      <command id="cmd_emptyTrash" oncommand="goDoCommand('cmd_emptyTrash')" disabled="true"/>
+      <command id="cmd_compactFolder" oncommand="goDoCommand('cmd_compactFolder')" disabled="true"/>
+      <command id="cmd_printSetup" oncommand="goDoCommand('cmd_printSetup')" disabled="true"/>
+      <command id="cmd_print" oncommand="goDoCommand('cmd_print')" disabled="true"/>
+      <command id="cmd_printpreview" oncommand="goDoCommand('cmd_printpreview')" disabled="true"/>
+      <command id="cmd_saveAsFile" oncommand="goDoCommand('cmd_saveAsFile')" disabled="true"/>
+      <command id="cmd_saveAsTemplate" oncommand="goDoCommand('cmd_saveAsTemplate')" disabled="true"/>
+      <command id="cmd_getNextNMessages" oncommand="goDoCommand('cmd_getNextNMessages')" disabled="true"/>
+      <command id="cmd_deleteFolder" oncommand="goDoCommand('cmd_deleteFolder')"/>
+      <command id="cmd_renameFolder" oncommand="goDoCommand('cmd_renameFolder')"/>
+      <command id="cmd_sendUnsentMsgs" oncommand="goDoCommand('cmd_sendUnsentMsgs')"/>
+      <command id="cmd_synchronizeOffline" oncommand="goDoCommand('cmd_synchronizeOffline')" disabled="true"/>
+      <command id="cmd_downloadFlagged" oncommand="goDoCommand('cmd_downloadFlagged')" disabled="true"/>
+      <command id="cmd_downloadSelected" oncommand="goDoCommand('cmd_downloadSelected')" disabled="true"/>
+      <command id="cmd_settingsOffline" oncommand="goDoCommand('cmd_settingsOffline')" disabled="true"/>
+    </commandset>
+    <commandset commandupdater="true" events="create-menu-view" oncommandupdate="goUpdateMailMenuItems(this)" id="mailViewMenuItems">
+      <command id="cmd_viewPageSource" oncommand="goDoCommand('cmd_viewPageSource')" disabled="true"/>
+      <command id="cmd_setFolderCharset" oncommand="goDoCommand('cmd_setFolderCharset')"/>
+      <command id="cmd_expandAllThreads" oncommand="goDoCommand('cmd_expandAllThreads')" disabled="true"/>
+      <command id="cmd_collapseAllThreads" oncommand="goDoCommand('cmd_collapseAllThreads')" disabled="true"/>
+      <command id="cmd_viewClassicMailLayout" oncommand="goDoCommand('cmd_viewClassicMailLayout')" disabled="true"/>
+      <command id="cmd_viewWideMailLayout" oncommand="goDoCommand('cmd_viewWideMailLayout')" disabled="true"/>
+      <command id="cmd_viewVerticalMailLayout" oncommand="goDoCommand('cmd_viewVerticalMailLayout')" disabled="true"/>
+      <command id="cmd_toggleMessagePane" oncommand="goDoCommand('cmd_toggleMessagePane')" disabled="true"/>
+      <command id="cmd_viewAllMsgs" oncommand="goDoCommand('cmd_viewAllMsgs')" disabled="true"/>
+      <command id="cmd_viewUnreadMsgs" oncommand="goDoCommand('cmd_viewUnreadMsgs')" disabled="true"/>
+      <command id="cmd_viewThreadsWithUnread" oncommand="goDoCommand('cmd_viewThreadsWithUnread')" disabled="true"/>
+      <command id="cmd_viewWatchedThreadsWithUnread" oncommand="goDoCommand('cmd_viewWatchedThreadsWithUnread')" disabled="true"/>
+      <command id="cmd_viewIgnoredThreads" oncommand="goDoCommand('cmd_viewIgnoredThreads')" disabled="true"/>
+      <commandset id="viewZoomCommands" commandupdater="true" events="create-menu-view" oncommandupdate="goUpdateMailMenuItems(this);">
+        <command id="cmd_fullZoomReduce" oncommand="goDoCommand('cmd_fullZoomReduce');"/>
+        <command id="cmd_fullZoomEnlarge" oncommand="goDoCommand('cmd_fullZoomEnlarge');"/>
+        <command id="cmd_fullZoomReset" oncommand="goDoCommand('cmd_fullZoomReset');"/>
+        <command id="cmd_fullZoomToggle" oncommand="goDoCommand('cmd_fullZoomToggle');"/>
+      </commandset>
+      <command id="cmd_showQuickFilterBar" oncommand="goDoCommand('cmd_showQuickFilterBar');"/>
+      <command id="cmd_toggleQuickFilterBar" oncommand="goDoCommand('cmd_toggleQuickFilterBar');"/>
+      <command id="cmd_popQuickFilterBarStack" oncommand="goDoCommand('cmd_popQuickFilterBarStack');"/>
+      <command id="cmd_viewSecurityStatus" oncommand="showMessageReadSecurityInfo();" disabled="true"/>
+    </commandset>
+    <commandset commandupdater="true" events="create-menu-edit" oncommandupdate="goUpdateMailMenuItems(this)" id="mailEditMenuItems">
+      <command id="cmd_undo" valueDeleteMsg="Undo Delete Message" valueMoveMsg="Undo Move Message" valueCopyMsg="Undo Copy Message" valueUnmarkAllMsgs="Undo Mark All Read" valueDefault="Undo" oncommand="goDoCommand('cmd_undo')" disabled="true" label="Undo"/>
+      <command id="cmd_redo" valueDeleteMsg="Redo Delete Message" valueMoveMsg="Redo Move Message" valueCopyMsg="Redo Copy Message" valueUnmarkAllMsgs="Redo Mark All Read" valueDefault="Redo" oncommand="goDoCommand('cmd_redo')" disabled="true" label="Redo"/>
+      <command oncommand="goDoCommand('cmd_cut')" disabled="true" id="cmd_cut"/>
+      <command oncommand="goDoCommand('cmd_copy')" disabled="true" id="cmd_copy"/>
+      <command id="cmd_paste" oncommand="goDoCommand('cmd_paste')"/>
+      <command id="cmd_delete" valueFolder="Delete Folder" valueFolderAccessKey="D" valueNewsgroup="Unsubscribe" valueNewsgroupAccessKey="n" valueMessage="Delete Message" valueMessageAccessKey="D" valueIMAPDeletedMessage="Undelete Message" valueIMAPDeletedMessageAccessKey="d" valueMessages="Delete Selected Messages" valueMessagesAccessKey="D" valueIMAPDeletedMessages="Undelete Selected Messages" valueIMAPDeletedMessagesAccessKey="d" oncommand="goDoCommand('cmd_delete')" valueDefault="Delete" valueDefaultAccessKey="D" label="Delete Message" accesskey="D" disabled="true"/>
+      <command id="cmd_cancel" oncommand="goDoCommand('cmd_cancel')"/>
+      <command id="cmd_selectAll" oncommand="goDoCommand('cmd_selectAll')"/>
+      <command id="cmd_selectThread" oncommand="goDoCommand('cmd_selectThread')"/>
+      <command id="cmd_selectFlagged" oncommand="goDoCommand('cmd_selectFlagged')"/>
+      <command id="cmd_properties" oncommand="goDoCommand('cmd_properties')" valueNewsgroup="Newsgroup Properties…" valueFolder="Folder Properties…" valueGeneric="Properties…"/>
+      <command id="cmd_find" oncommand="goDoCommand('cmd_find')" disabled="true"/>
+      <command id="cmd_findAgain" oncommand="goDoCommand('cmd_findAgain')" disabled="true"/>
+      <command id="cmd_findPrevious" oncommand="goDoCommand('cmd_findPrevious')" disabled="true"/>
+      <command id="cmd_stop" oncommand="goDoCommand('cmd_stop')"/>
+      <command id="cmd_reload" oncommand="goDoCommand('cmd_reload')"/>
+    </commandset>
+    <commandset id="mailEditContextMenuItems">
+      <command oncommand="goDoCommand('cmd_copyLink')" disabled="false" id="cmd_copyLink"/>
+      <command oncommand="goDoCommand('cmd_copyImage')" disabled="false" id="cmd_copyImage"/>
+    </commandset>
+    <commandset id="mailSearchMenuItems"/>
+    <commandset commandupdater="true" events="create-menu-go" oncommandupdate="goUpdateMailMenuItems(this)" id="mailGoMenuItems">
+      <command id="cmd_nextMsg" oncommand="goDoCommand('cmd_nextMsg')" disabled="true"/>
+      <command id="cmd_nextUnreadMsg" oncommand="goDoCommand('cmd_nextUnreadMsg')" disabled="true"/>
+      <command id="cmd_nextFlaggedMsg" oncommand="goDoCommand('cmd_nextFlaggedMsg')" disabled="true"/>
+      <command id="cmd_nextUnreadThread" oncommand="goDoCommand('cmd_nextUnreadThread')" disabled="true"/>
+      <command id="cmd_previousMsg" oncommand="goDoCommand('cmd_previousMsg')" disabled="true"/>
+      <command id="cmd_previousUnreadMsg" oncommand="goDoCommand('cmd_previousUnreadMsg')" disabled="true"/>
+      <command id="cmd_previousFlaggedMsg" oncommand="goDoCommand('cmd_previousFlaggedMsg')" disabled="true"/>
+      <command id="cmd_goStartPage" oncommand="goDoCommand('cmd_goStartPage');"/>
+      <command id="cmd_undoCloseTab" oncommand="goDoCommand('cmd_undoCloseTab');"/>
+      <command id="cmd_goForward" oncommand="goDoCommand('cmd_goForward')" disabled="true"/>
+      <command id="cmd_goBack" oncommand="goDoCommand('cmd_goBack')" disabled="true"/>
+    </commandset>
+    <commandset commandupdater="true" events="create-menu-message" oncommandupdate="goUpdateMailMenuItems(this)" id="mailMessageMenuItems">
+      <command id="cmd_archive" oncommand="goDoCommand('cmd_archive')"/>
+      <command id="cmd_reply" oncommand="goDoCommand('cmd_reply')"/>
+      <command id="cmd_replySender" oncommand="goDoCommand('cmd_replySender')"/>
+      <command id="cmd_replyGroup" oncommand="goDoCommand('cmd_replyGroup')"/>
+      <command id="cmd_replyall" oncommand="goDoCommand('cmd_replyall')"/>
+      <command id="cmd_replylist" oncommand="goDoCommand('cmd_replylist')"/>
+      <command id="cmd_forward" oncommand="goDoCommand('cmd_forward')"/>
+      <command id="cmd_forwardInline" oncommand="goDoCommand('cmd_forwardInline')"/>
+      <command id="cmd_forwardAttachment" oncommand="goDoCommand('cmd_forwardAttachment')"/>
+      <command id="cmd_editAsNew" oncommand="goDoCommand('cmd_editAsNew')"/>
+      <command id="cmd_openMessage" oncommand="goDoCommand('cmd_openMessage')"/>
+      <command id="cmd_openConversation" oncommand="goDoCommand('cmd_openConversation')"/>
+      <command id="cmd_moveToFolderAgain" oncommand="goDoCommand('cmd_moveToFolderAgain')"/>
+      <command id="cmd_createFilterFromMenu" oncommand="goDoCommand('cmd_createFilterFromMenu')"/>
+      <command id="cmd_killThread" oncommand="goDoCommand('cmd_killThread')"/>
+      <command id="cmd_killSubthread" oncommand="goDoCommand('cmd_killSubthread')"/>
+      <command id="cmd_watchThread" oncommand="goDoCommand('cmd_watchThread')"/>
+    </commandset>
+    <commandset commandupdater="true" events="mail-toolbar" oncommandupdate="goUpdateMailMenuItems(this)" id="mailToolbarItems">
+      <command id="button_reply"/>
+      <command id="button_replyall"/>
+      <command id="button_replylist" disabled="true"/>
+      <command id="button_archive"/>
+      <command id="button_forward"/>
+      <command id="button_delete"/>
+      <command id="button_mark"/>
+      <command id="cmd_tag"/>
+      <command id="button_getNewMessages"/>
+      <command id="button_print"/>
+      <command id="button_previous"/>
+      <command id="button_next"/>
+      <command id="button_goBack" disabled="true"/>
+      <command id="button_goForward" disabled="true"/>
+      <command id="button_file"/>
+      <command id="cmd_delete"/>
+      <command id="button_junk"/>
+      <command id="button_compact"/>
+    </commandset>
+    <commandset commandupdater="true" events="create-menu-getMsgToolbar,create-menu-file" oncommandupdate="goUpdateMailMenuItems(this)" id="mailGetMsgMenuItems">
+      <command id="cmd_getMsgsForAuthAccounts" oncommand="goDoCommand('cmd_getMsgsForAuthAccounts'); event.stopPropagation()" disabled="true"/>
+    </commandset>
+    <commandset commandupdater="true" events="create-menu-mark" oncommandupdate="goUpdateMailMenuItems(this)" id="mailMarkMenuItems">
+      <command id="cmd_toggleRead" oncommand="goDoCommand('cmd_toggleRead'); event.stopPropagation()" disabled="true"/>
+      <command id="cmd_markAsRead" oncommand="goDoCommand('cmd_markAsRead'); event.stopPropagation()" disabled="true"/>
+      <command id="cmd_markAsUnread" oncommand="goDoCommand('cmd_markAsUnread'); event.stopPropagation()" disabled="true"/>
+      <command id="cmd_markAllRead" oncommand="goDoCommand('cmd_markAllRead'); event.stopPropagation()" disabled="true"/>
+      <command id="cmd_markThreadAsRead" oncommand="goDoCommand('cmd_markThreadAsRead'); event.stopPropagation()" disabled="true"/>
+      <command id="cmd_markReadByDate" oncommand="goDoCommand('cmd_markReadByDate');" disabled="true"/>
+      <command id="cmd_markAsFlagged" oncommand="goDoCommand('cmd_markAsFlagged'); event.stopPropagation()" disabled="true"/>
+      <command id="cmd_markAsJunk" oncommand="goDoCommand('cmd_markAsJunk'); event.stopPropagation()" disabled="true"/>
+      <command id="cmd_markAsNotJunk" oncommand="goDoCommand('cmd_markAsNotJunk'); event.stopPropagation()" disabled="true"/>
+      <command id="cmd_recalculateJunkScore" oncommand="goDoCommand('cmd_recalculateJunkScore');" disabled="true"/>
+      <command id="cmd_viewAllHeader" oncommand="goDoCommand('cmd_viewAllHeader');" disabled="true"/>
+      <command id="cmd_viewNormalHeader" oncommand="goDoCommand('cmd_viewNormalHeader');" disabled="true"/>
+    </commandset>
+    <commandset commandupdater="true" events="create-menu-tasks" oncommandupdate="goUpdateMailMenuItems(this)" id="mailToolsMenuItems">
+      <command id="cmd_displayMsgFilters" oncommand="goDoCommand('cmd_displayMsgFilters');" disabled="true"/>
+      <command id="cmd_applyFilters" oncommand="goDoCommand('cmd_applyFilters');" disabled="true"/>
+      <command id="cmd_applyFiltersToSelection" oncommand="goDoCommand('cmd_applyFiltersToSelection');" disabled="true" valueSelection="Run Filters on Selected Messages" valueSelectionAccessKey="u" valueMessage="Run Filters on Message" valueMessageAccessKey="u"/>
+      <command id="cmd_runJunkControls" oncommand="goDoCommand('cmd_runJunkControls');" disabled="true"/>
+      <command id="cmd_deleteJunk" oncommand="goDoCommand('cmd_deleteJunk');" disabled="true"/>
+      <command id="cmd_search" oncommand="goDoCommand('cmd_search')"/>
+    </commandset>
+    <commandset commandupdater="true" events="focus" oncommandupdate="goUpdateGlobalEditMenuItems()" id="globalEditMenuItems"/>
+    <commandset commandupdater="true" events="select" oncommandupdate="goUpdateSelectEditMenuItems()" id="selectEditMenuItems"/>
+    <commandset commandupdater="true" events="clipboard" oncommandupdate="goUpdatePasteMenuItems()" id="clipboardEditMenuItems"/>
+    <commandset id="FocusRingUpdate_Mail" commandupdater="true" events="focus" oncommandupdate="FocusRingUpdate_Mail()"/>
+    <commandset id="tasksCommands">
+      <command id="cmd_newMessage" oncommand="goOpenNewMessage();"/>
+      <command id="cmd_newCard" oncommand="openNewCardDialog()"/>
+      <command id="cmd_nostalgyconfig" label="Nostalgy..." oncommand="openDialog('chrome://nostalgy/content/edit_prefs.xul', 'nostalgy', 'resizable');"/>
+      <command id="Tasks:Inspector" oncommand="inspectDOMDocument();"/>
+      <command id="Tasks:InspectPage" oncommand="inspectDOMDocument(content ? content.document : document);"/>
+    </commandset>
+    <command id="cmd_close" oncommand="CloseTabOrWindow();"/>
+    <command id="cmd_quit" oncommand="goQuitApplication()"/>
+    <command id="cmd_createFilterFromPopup"/>
+    <command id="cmd_pageSetup"/>
+    <command id="cmd_CustomizeMailToolbar" oncommand="CustomizeMailToolbar('mail-toolbox', 'CustomizeMailToolbar')"/>
+  </commandset>
+  <keyset id="mailKeys">
+    <keyset id="tasksKeys">
+      <key id="key_newMessage" key="M" command="cmd_newMessage" modifiers="accel"/>
+      <key id="key_newMessage2" key="N" command="cmd_newMessage" modifiers="accel"/>
+      <key id="key_inspectPage" key="i" modifiers="accel,shift" command="Tasks:InspectPage"/>
+    </keyset>
+    <key id="space" key=" " modifiers="shift any" oncommand="SpaceHit(event);"/>
+    <key key="W" command="cmd_close" modifiers="accel" id="key_close"/>
+    <key id="key_close2" keycode="VK_F4" modifiers="accel" command="cmd_close"/>
+    <key id="key_renameFolder" keycode="VK_F2" oncommand="goDoCommand('cmd_renameFolder')"/>
+    <key key="Z" modifiers="accel" id="key_undo"/>
+    <key key="Y" modifiers="accel" id="key_redo"/>
+    <key key="X" modifiers="accel" id="key_cut"/>
+    <key key="C" modifiers="accel" id="key_copy"/>
+    <key key="V" modifiers="accel" id="key_paste"/>
+    <key id="key_delete" keycode="VK_DELETE" oncommand="goDoCommand('cmd_delete');" command="cmd_delete"/>
+    <key id="cmd_shiftDelete" keycode="VK_DELETE" oncommand="goDoCommand('cmd_shiftDelete');" modifiers="shift"/>
+    <key key="A" modifiers="accel" id="key_selectAll"/>
+    <key id="key_selectThread" key="a" oncommand="goDoCommand('cmd_selectThread');" modifiers="accel, shift"/>
+    <key id="key_toggleRead" key="m" oncommand="goDoCommand('cmd_toggleRead');"/>
+    <key id="key_toggleFlagged" key="S" oncommand="goDoCommand('cmd_markAsFlagged');"/>
+    <key id="key_markJunk" key="j" oncommand="goDoCommand('cmd_markAsJunk');"/>
+    <key id="key_markNotJunk" key="j" oncommand="goDoCommand('cmd_markAsNotJunk');" modifiers="shift"/>
+    <key id="key_markAllRead" key="c" oncommand="goDoCommand('cmd_markAllRead');" modifiers="shift"/>
+    <key id="key_markThreadAsRead" key="r" oncommand="goDoCommand('cmd_markThreadAsRead')"/>
+    <key id="key_markReadByDate" key="c" oncommand="goDoCommand('cmd_markReadByDate')"/>
+    <key id="key_nextMsg" key="f" oncommand="goDoCommand('cmd_nextMsg')"/>
+    <key id="key_nextUnreadMsg" key="n" oncommand="goDoCommand('cmd_nextUnreadMsg')"/>
+    <key id="key_expandAllThreads" key="*" oncommand="goDoCommand('cmd_expandAllThreads')"/>
+    <key key="*" modifiers="shift" oncommand="goDoCommand('cmd_expandAllThreads')"/>
+    <key id="key_collapseAllThreads" key="\" oncommand="goDoCommand('cmd_collapseAllThreads')"/>
+    <key key="\" modifiers="shift" oncommand="goDoCommand('cmd_collapseAllThreads')"/>
+    <key id="key_nextUnreadThread" key="t" oncommand="goDoCommand('cmd_nextUnreadThread')"/>
+    <key id="key_previousMsg" key="b" oncommand="goDoCommand('cmd_previousMsg')"/>
+    <key id="key_previousUnreadMsg" key="p" oncommand="goDoCommand('cmd_previousUnreadMsg')"/>
+    <key id="key_archive" key="a" oncommand="goDoCommand('cmd_archive')"/>
+    <key id="key_goForward" key="]" oncommand="goDoCommand('cmd_goForward')"/>
+    <key id="key_goBack" key="[" oncommand="goDoCommand('cmd_goBack')"/>
+    <key id="key_goStartPage" keycode="VK_HOME" oncommand="goDoCommand('cmd_goStartPage')" modifiers="alt"/>
+    <key id="key_undoCloseTab" key="T" oncommand="goDoCommand('cmd_undoCloseTab')" modifiers="accel, shift"/>
+    <key id="key_reply" key="r" oncommand="goDoCommand('cmd_reply')" modifiers="accel"/>
+    <key id="key_replyall" key="r" oncommand="goDoCommand('cmd_replyall')" modifiers="accel, shift"/>
+    <key id="key_replylist" key="l" oncommand="goDoCommand('cmd_replylist')" modifiers="accel, shift"/>
+    <key id="key_forward" key="l" oncommand="goDoCommand('cmd_forward')" modifiers="accel"/>
+    <key id="key_editAsNew" key="e" oncommand="goDoCommand('cmd_editAsNew')" modifiers="accel"/>
+    <key id="key_watchThread" key="w" oncommand="goDoCommand('cmd_watchThread')"/>
+    <key id="key_killThread" key="k" oncommand="goDoCommand('cmd_killThread')"/>
+    <key id="key_killSubthread" key="k" oncommand="goDoCommand('cmd_killSubthread')" modifiers="shift"/>
+    <key id="key_openMessage" key="o" oncommand="goDoCommand('cmd_openMessage')" modifiers="accel"/>
+    <key id="key_openConversation" key="o" oncommand="goDoCommand('cmd_openConversation')" modifiers="accel, shift"/>
+    <key id="key_moveToFolderAgain" key="m" oncommand="goDoCommand('cmd_moveToFolderAgain')" modifiers="accel, shift"/>
+    <key id="key_print" key="p" oncommand="goDoCommand('cmd_print')" modifiers="accel"/>
+    <key id="key_saveAsFile" key="s" oncommand="goDoCommand('cmd_saveAsFile')" modifiers="accel"/>
+    <key id="key_viewPageSource" key="u" oncommand="goDoCommand('cmd_viewPageSource')" modifiers="accel"/>
+    <key id="key_getNewMessages" keycode="VK_F5" oncommand="goDoCommand('cmd_getNewMessages');"/>
+    <key id="key_getAllNewMessages" keycode="VK_F5" modifiers="shift" oncommand="goDoCommand('cmd_getMsgsForAuthAccounts');"/>
+    <key id="key_find" key="f" oncommand="goDoCommand('cmd_find')" modifiers="accel"/>
+    <key id="key_findAgain" key="g" oncommand="goDoCommand('cmd_findAgain')" modifiers="accel"/>
+    <key id="key_findPrev" key="g" oncommand="goDoCommand('cmd_findPrevious')" modifiers="accel, shift"/>
+    <key keycode="VK_F3" oncommand="goDoCommand('cmd_findAgain')"/>
+    <key keycode="VK_F3" oncommand="goDoCommand('cmd_findPrevious')" modifiers="shift"/>
+    <key id="key_quickSearchFocus" key="k" oncommand="QuickSearchFocus()" modifiers="accel"/>
+    <keyset id="viewZoomKeys">
+      <key id="key_fullZoomReduce" key="-" command="cmd_fullZoomReduce" modifiers="accel"/>
+      <key key="" command="cmd_fullZoomReduce" modifiers="accel"/>
+      <key id="key_fullZoomEnlarge" key="+" command="cmd_fullZoomEnlarge" modifiers="accel"/>
+      <key key="=" command="cmd_fullZoomEnlarge" modifiers="accel"/>
+      <key key="" command="cmd_fullZoomEnlarge" modifiers="accel"/>
+      <key id="key_fullZoomReset" key="0" command="cmd_fullZoomReset" modifiers="accel"/>
+      <key key="" command="cmd_fullZoomReset" modifiers="accel"/>
+    </keyset>
+    <key keycode="VK_TAB" oncommand="SwitchPaneFocus(event);" modifiers="control,shift"/>
+    <key keycode="VK_TAB" oncommand="SwitchPaneFocus(event);" modifiers="control"/>
+    <key keycode="VK_F6" oncommand="SwitchPaneFocus(event);" modifiers="control,shift"/>
+    <key keycode="VK_F6" oncommand="SwitchPaneFocus(event);" modifiers="control"/>
+    <key keycode="VK_F6" oncommand="SwitchPaneFocus(event);" modifiers="shift"/>
+    <key keycode="VK_F6" oncommand="SwitchPaneFocus(event);"/>
+    <key id="key_toggleMessagePane" keycode="VK_F8" oncommand="goDoCommand('cmd_toggleMessagePane');"/>
+    <key id="key_tag0" key="0" modifiers="shift any" oncommand="goDoCommand('cmd_removeTags');"/>
+    <key id="key_tag1" key="1" modifiers="shift any" oncommand="goDoCommand('cmd_tag1');"/>
+    <key id="key_tag2" key="2" modifiers="shift any" oncommand="goDoCommand('cmd_tag2');"/>
+    <key id="key_tag3" key="3" modifiers="shift any" oncommand="goDoCommand('cmd_tag3');"/>
+    <key id="key_tag4" key="4" modifiers="shift any" oncommand="goDoCommand('cmd_tag4');"/>
+    <key id="key_tag5" key="5" modifiers="shift any" oncommand="goDoCommand('cmd_tag5');"/>
+    <key id="key_tag6" key="6" modifiers="shift any" oncommand="goDoCommand('cmd_tag6');"/>
+    <key id="key_tag7" key="7" modifiers="shift any" oncommand="goDoCommand('cmd_tag7');"/>
+    <key id="key_tag8" key="8" modifiers="shift any" oncommand="goDoCommand('cmd_tag8');"/>
+    <key id="key_tag9" key="9" modifiers="shift any" oncommand="goDoCommand('cmd_tag9');"/>
+    <key id="key_searchMail" key="f" oncommand="goDoCommand('cmd_search')" modifiers="accel, shift"/>
+    <key id="key_addressbook" key="B" modifiers="accel, shift" oncommand="toAddressBook();"/>
+    <key id="key_savedFiles" key="j" modifiers="accel" oncommand="openSavedFilesWnd();"/>
+    <key id="key_mail" oncommand="focusOnMail(0, event);" key="1" modifiers="accel"/>
+    <key id="key_selectTab2" oncommand="focusOnMail(1, event);" key="2" modifiers="accel"/>
+    <key id="key_selectTab3" oncommand="focusOnMail(2, event);" key="3" modifiers="accel"/>
+    <key id="key_selectTab4" oncommand="focusOnMail(3, event);" key="4" modifiers="accel"/>
+    <key id="key_selectTab5" oncommand="focusOnMail(4, event);" key="5" modifiers="accel"/>
+    <key id="key_selectTab6" oncommand="focusOnMail(5, event);" key="6" modifiers="accel"/>
+    <key id="key_selectTab7" oncommand="focusOnMail(6, event);" key="7" modifiers="accel"/>
+    <key id="key_selectTab8" oncommand="focusOnMail(7, event);" key="8" modifiers="accel"/>
+    <key id="key_selectLastTab" oncommand="focusOnMail(-1, event);" key="9" modifiers="accel"/>
+    <keyset id="baseMenuKeyset">
+      <key id="key_openHelp" oncommand="openSupportURL();" keycode="VK_F1"/>
+    </keyset>
+    <key id="key_qfb_escape" keycode="VK_ESCAPE" command="cmd_popQuickFilterBarStack"/>
+    <key id="key_qfb_show" key="k" modifiers="accel,shift" command="cmd_showQuickFilterBar"/>
+    <key keycode="VK_LEFT" modifiers="control" oncommand="NostalgyScrollMsg(-50);"/>
+    <key keycode="VK_RIGHT" modifiers="control" oncommand="NostalgyScrollMsg(50);"/>
+    <key keycode="VK_LEFT" modifiers="shift" oncommand="NostalgyScrollMsg(-50);"/>
+    <key keycode="VK_RIGHT" modifiers="shift" oncommand="NostalgyScrollMsg(50);"/>
+  </keyset>
+  <popupset id="mainPopupSet">
+    <panel orient="vertical" ignorekeys="true" hidden="true" aria-labelledby="editContactPanelTitle" onpopuphidden="editContactInlineUI.onPopupHidden(event);" onpopupshown="editContactInlineUI.onPopupShown(event);" onkeypress="editContactInlineUI.onKeyPress(event, true);" id="editContactPanel">
+      <hbox flex="1" align="top">
+        <image id="editContactPanelIcon"/>
+        <label id="editContactPanelTitle" flex="1"/>
+        <button id="editContactPanelDeleteContactButton" label="Delete" accesskey="l" oncommand="editContactInlineUI.deleteContact();" onkeypress="editContactInlineUI.onKeyPress(event, false);"/>
+      </hbox>
+      <vbox id="editContactContent">
+        <grid id="editContactGrid" flex="1">
+          <columns>
+            <column/>
+            <column flex="1"/>
+          </columns>
+          <rows>
+            <row align="center" id="editContactNameRow">
+              <label value="Name:" class="editContactPanel_rowLabel" accesskey="N" control="editContactName"/>
+              <textbox id="editContactName" class="editContactTextbox" onkeypress="editContactInlineUI.onKeyPress(event, true);"/>
+            </row>
+            <row align="center" id="editContactEmailRow">
+              <label value="Email:" class="editContactPanel_rowLabel" accesskey="E" control="editContactEmail"/>
+              <textbox id="editContactEmail" readonly="true" class="editContactTextbox" onkeypress="editContactInlineUI.onKeyPress(event, true);"/>
+            </row>
+            <row align="center" id="editContactABRow">
+              <label id="editContactAddressBook" class="editContactPanel_rowLabel" value="Address Book:" accesskey="A" control="editContactAddressBookList"/>
+              <menulist id="editContactAddressBookList" flex="1">
+                <menupopup id="editContactAddressBookList-menupopup" class="addrbooksPopup"/>
+              </menulist>
+            </row>
+            <row>
+              <hbox/>
+              <description id="contactMoveDisabledText" collapsed="true">You can't change the address book because the contact is in a mailing list.</description>
+            </row>
+          </rows>
+        </grid>
+      </vbox>
+      <vbox>
+        <hbox flex="1" id="editContactPanelBottomButtons">
+          <button id="editContactPanelEditDetailsButton" oncommand="editContactInlineUI.editDetails();" onkeypress="editContactInlineUI.onKeyPress(event, false);"/>
+          <spacer flex="1"/>
+          <button id="editContactPanelDoneButton" label="Done" accesskey="D" default="true" oncommand="editContactInlineUI.saveChanges();" onkeypress="editContactInlineUI.onKeyPress(event, false);"/>
+          <button id="editContactPanelCancelButton" label="Cancel" accesskey="C" oncommand="editContactInlineUI.panel.hidePopup();" onkeypress="editContactInlineUI.onKeyPress(event, false);"/>
+        </hbox>
+      </vbox>
+    </panel>
+    <panel type="autocomplete" id="PopupAutoComplete" noautofocus="true" ignorekeys="true" level="top"/>
+    <tooltip id="qfb-text-search-upsell" level="parent" style="background-color: #ffeeee;">
+      <vbox>
+        <label id="qfb-upsell-line-one" class="header" fmt="Continue this search across all folders" value="Continue this search across all folders"/>
+        <label id="qfb-upsell-line-two" fmt="Press 'Enter' again to continue your search for: #1" value="Press 'Enter' again to continue your search for: neal"/>
+      </vbox>
+    </tooltip>
+  </popupset>
+  <menupopup onpopupshowing="return fillMailContextMenu(event);" onpopuphiding="mailContextOnPopupHiding(event);" id="mailContext">
+    <menuitem id="mailContext-spell-no-suggestions" disabled="true" label="(No Spelling Suggestions)"/>
+    <menuitem id="mailContext-spell-add-to-dictionary" label="Add to Dictionary" accesskey="o" oncommand="gSpellChecker.addToDictionary();"/>
+    <menuseparator id="mailContext-spell-suggestions-separator"/>
+    <menuitem id="mailContext-openInBrowser" label="Open In Browser" accesskey="O" oncommand="gContextMenu.openInBrowser();"/>
+    <menuitem id="mailContext-openLinkInBrowser" label="Open Link In Browser" accesskey="O" oncommand="gContextMenu.openLinkInBrowser();"/>
+    <menuseparator id="mailContext-sep-open-browser"/>
+    <menuitem id="mailContext-reload" label="Reload" accesskey="R" command="cmd_reload"/>
+    <menuitem id="mailContext-stop" label="Stop" accesskey="S" command="cmd_stop"/>
+    <menuseparator id="mailContext-sep-link"/>
+    <menuitem id="mailContext-undo" label="Undo" accesskey="U" command="cmd_undo"/>
+    <menuseparator id="mailContext-sep-undo"/>
+    <menuitem id="mailContext-cut" label="Cut" accesskey="t" command="cmd_copy"/>
+    <menuitem id="mailContext-copy" label="Copy" accesskey="c" command="cmd_copy"/>
+    <menuitem id="mailContext-paste" label="Paste" accesskey="p" command="cmd_paste"/>
+    <menuseparator id="mailContext-sep-clipboard"/>
+    <menuitem id="mailContext-selectall" label="Select All" accesskey="a" command="cmd_selectAll"/>
+    <menuseparator id="mailContext-spell-separator"/>
+    <menuitem id="mailContext-spell-check-enabled" label="Check Spelling" type="checkbox" accesskey="S" oncommand="gSpellChecker.toggleEnabled();"/>
+    <menuitem id="mailContext-spell-add-dictionaries-main" label="Add Dictionaries…" accesskey="A" oncommand="gContextMenu.addDictionaries();"/>
+    <menu id="mailContext-spell-dictionaries" label="Languages" accesskey="l">
+      <menupopup id="mailContext-spell-dictionaries-menu">
+        <menuseparator id="mailContext-spell-language-separator"/>
+        <menuitem id="mailContext-spell-add-dictionaries" label="Add Dictionaries…" accesskey="A" oncommand="gContextMenu.addDictionaries();"/>
+      </menupopup>
+    </menu>
+    <menuseparator id="mailContext-sep-open"/>
+    <menuitem id="mailContext-media-play" label="Play" accesskey="P" oncommand="gContextMenu.mediaCommand('play');"/>
+    <menuitem id="mailContext-media-pause" label="Pause" accesskey="P" oncommand="gContextMenu.mediaCommand('pause');"/>
+    <menuitem id="mailContext-media-mute" label="Mute" accesskey="M" oncommand="gContextMenu.mediaCommand('mute');"/>
+    <menuitem id="mailContext-media-unmute" label="Unmute" accesskey="m" oncommand="gContextMenu.mediaCommand('unmute');"/>
+    <menuitem id="mailContext-openNewWindow" label="Open Message in New Window" accesskey="W" oncommand="MsgOpenNewWindowForMessage();"/>
+    <menuitem id="threadPaneContext-openNewTab" label="Open Message in New Tab" accesskey="T" oncommand="OpenMessageInNewTab(event);"/>
+    <menuitem id="mailContext-openConversation" label="Open Message in Conversation" accesskey="n" oncommand="gConversationOpener.openConversationForMessages(gFolderDisplay.selectedMessages);"/>
+    <menuseparator id="mailContext-sep-open2"/>
+    <menuitem id="mailContext-replyNewsgroup" label="Reply to Newsgroup" accesskey="y" oncommand="MsgReplyGroup(event);"/>
+    <menuitem id="mailContext-replySender" label="Reply to Sender Only" accesskey="R" oncommand="MsgReplySender(event);"/>
+    <menuitem id="mailContext-replyAll" label="Reply to All" accesskey="A" oncommand="MsgReplyToAllMessage(event);"/>
+    <menuitem id="mailContext-replyList" label="Reply to List" accesskey="L" oncommand="MsgReplyToListMessage(event);"/>
+    <menuitem id="mailContext-forward" label="Forward" accesskey="F" oncommand="MsgForwardMessage(event);"/>
+    <menuitem id="mailContext-forwardAsAttachment" label="Forward as Attachments" accesskey="o" oncommand="MsgForwardAsAttachment(event);"/>
+    <menuitem id="mailContext-editAsNew" label="Edit As New…" accesskey="E" oncommand="MsgEditMessageAsNew();"/>
+    <menuseparator id="mailContext-sep-reply"/>
+    <menu id="mailContext-tags" label="Tag" accesskey="g">
+      <menupopup id="mailContext-tagpopup" onpopupshowing="InitMessageTags(this)">
+        <menuitem id="addNewTag" label="New Tag…" accesskey="N" oncommand="AddTag();"/>
+        <menuseparator id="mailContext-sep-afterTagAddNew"/>
+        <menuitem id="mailContext-tagRemoveAll" oncommand="RemoveAllMessageTags();"/>
+        <menuseparator id="mailContext-sep-afterTagRemoveAll"/>
+      </menupopup>
+    </menu>
+    <menu id="mailContext-mark" label="Mark" accesskey="k">
+      <menupopup id="mailContext-markPopup" onpopupshowing="InitMessageMark()">
+        <menuitem id="mailContext-markRead" label="As Read" accesskey="R" command="cmd_markAsRead"/>
+        <menuitem id="mailContext-markUnread" label="As Unread" accesskey="U" command="cmd_markAsUnread"/>
+        <menuitem id="mailContext-markThreadAsRead" label="Thread As Read" accesskey="T" command="cmd_markThreadAsRead"/>
+        <menuitem id="mailContext-markReadByDate" label="As Read by Date…" accesskey="D" command="cmd_markReadByDate"/>
+        <menuitem id="mailContext-markAllRead" label="All Read" accesskey="A" command="cmd_markAllRead"/>
+        <menuseparator id="mailContext-sep-afterMarkAllRead"/>
+        <menuitem id="mailContext-markFlagged" type="checkbox" label="Add Star" accesskey="S" command="cmd_markAsFlagged"/>
+        <menuseparator id="mailContext-sep-afterMarkFlagged"/>
+        <menuitem id="mailContext-markAsJunk" label="As Junk" accesskey="J" command="cmd_markAsJunk"/>
+        <menuitem id="mailContext-markAsNotJunk" label="As Not Junk" accesskey="N" command="cmd_markAsNotJunk"/>
+        <menuitem id="mailContext-recalculateJunkScore" label="Run Junk Mail Controls" accesskey="C" command="cmd_recalculateJunkScore"/>
+      </menupopup>
+    </menu>
+    <menuseparator id="mailContext-sep-afterMarkMenu"/>
+    <menuitem id="mailContext-copyMessageUrl" label="Copy Message Location" accesskey="M" oncommand="CopyMessageUrl()"/>
+    <menuitem id="mailContext-archive" label="Archive" accesskey="h" oncommand="MsgArchiveSelectedMessages(event);"/>
+    <menu id="mailContext-moveMenu" label="Move To" accesskey="M" oncommand="MsgMoveMessage(event.target._folder)">
+      <menupopup id="mailContext-fileHereMenu" type="folder" mode="filing" showFileHereLabel="true" showRecent="true" fileHereLabel="File Here" fileHereAccessKey="F" recentLabel="Recent" recentAccessKey="R"/>
+    </menu>
+    <menu id="mailContext-copyMenu" label="Copy To" accesskey="C" oncommand="MsgCopyMessage(event.target._folder)">
+      <menupopup id="mailContext-copyHereMenu" type="folder" mode="filing" showFileHereLabel="true" showRecent="true" fileHereLabel="Copy Here" fileHereAccessKey="C" recentLabel="Recent" recentAccessKey="R"/>
+    </menu>
+    <menuitem id="mailContext-moveToFolderAgain" command="cmd_moveToFolderAgain" label="Move Again" accesskey="i"/>
+    <menuseparator id="paneContext-afterMove"/>
+    <menuitem id="mailContext-saveAs" label="Save As…" accesskey="S" oncommand="MsgSaveAsFile();"/>
+    <menuitem id="mailContext-printpreview" label="Print Preview" accesskey="v" observes="cmd_printpreview" command="cmd_printpreview" disabled="true" oncommand="goDoCommand('cmd_printpreview')"/>
+    <menuitem id="mailContext-print" label="Print…" accesskey="P" observes="cmd_print" command="cmd_print" disabled="true" oncommand="goDoCommand('cmd_print')"/>
+    <menuitem id="mailContext-delete" command="cmd_delete"/>
+    <menuitem id="downloadSelected" label="Get Selected Messages" accesskey="l" command="cmd_downloadSelected"/>
+    <menuseparator id="mailContext-sep-edit"/>
+    <menuitem id="mailContext-copylink" label="Copy Link Location" accesskey="C" command="cmd_copyLink"/>
+    <menuitem id="mailContext-copyimage" label="Copy Image" accesskey="I" command="cmd_copyImage"/>
+    <menuitem id="mailContext-addemail" label="Add to Address Book…" accesskey="B" oncommand="addEmail();"/>
+    <menuitem id="mailContext-composeemailto" label="Compose Message To" accesskey="s" oncommand="composeEmailTo();"/>
+    <menuitem id="mailContext-copyemail" label="Copy Email Address" accesskey="E" oncommand="gContextMenu.copyEmail();"/>
+    <menuseparator id="mailContext-sep-copy"/>
+    <menuitem id="mailContext-savelink" label="Save Link As…" accesskey="k" oncommand="gContextMenu.saveLink();"/>
+    <menuitem id="mailContext-saveimage" label="Save Image As…" accesskey="v" oncommand="gContextMenu.saveImage();"/>
+    <menuseparator id="mailContext-sep-reportPhishing"/>
+    <menuitem id="mailContext-reportPhishingURL" label="Report Email Scam" accesskey="o" oncommand="gPhishingDetector.reportPhishingURL(gContextMenu.linkURL);"/>
+  </menupopup>
+  <menupopup onpopupshowing="return fillFolderPaneContextMenu();" onpopuphiding="if (event.target == this) folderPaneOnPopupHiding();" id="folderPaneContext">
+    <menuitem id="folderPaneContext-getMessages" label="Get Messages" accesskey="G" oncommand="MsgGetMessage();"/>
+    <menuitem id="folderPaneContext-openNewWindow" label="Open" accesskey="O" oncommand="MsgOpenNewWindowForFolder(null,-1);"/>
+    <menuitem id="folderPaneContext-openNewTab" label="Open in New Tab" accesskey="T" oncommand="FolderPaneContextMenuNewTab(event);"/>
+    <menuitem id="folderPaneContext-searchMessages" label="Search…" accesskey="S" oncommand="gFolderTreeController.searchMessages();"/>
+    <menuitem id="folderPaneContext-subscribe" label="Subscribe…" accesskey="b" oncommand="MsgSubscribe();"/>
+    <menuitem id="folderPaneContext-newsUnsubscribe" label="Unsubscribe" accesskey="U" oncommand="MsgUnsubscribe();"/>
+    <menuseparator id="folderPaneContext-sep1"/>
+    <menuitem id="folderPaneContext-new" label="New Subfolder…" accesskey="N" oncommand="gFolderTreeController.newFolder();"/>
+    <menuitem id="folderPaneContext-remove" label="Delete" accesskey="D" oncommand="gFolderTreeController.deleteFolder();"/>
+    <menuitem id="folderPaneContext-rename" label="Rename" accesskey="R" oncommand="gFolderTreeController.renameFolder();"/>
+    <menuseparator id="folderPaneContext-sep2"/>
+    <menuitem id="folderPaneContext-compact" label="Compact" accesskey="C" oncommand="gFolderTreeController.compactFolders();"/>
+    <menuitem id="folderPaneContext-markMailFolderAllRead" label="Mark Folder Read" accesskey="k" oncommand="MsgMarkAllRead();"/>
+    <menuitem id="folderPaneContext-markNewsgroupAllRead" label="Mark Newsgroup Read" accesskey="k" oncommand="MsgMarkAllRead();"/>
+    <menuitem id="folderPaneContext-emptyTrash" label="Empty Trash" accesskey="y" oncommand="gFolderTreeController.emptyTrash();"/>
+    <menuitem id="folderPaneContext-emptyJunk" label="Empty Junk" accesskey="J" oncommand="gFolderTreeController.emptyJunk();"/>
+    <menuitem id="folderPaneContext-sendUnsentMessages" label="Send Unsent Messages" accesskey="d" oncommand="goDoCommand('cmd_sendUnsentMsgs')"/>
+    <menuseparator id="folderPaneContext-sep3"/>
+    <menuitem id="folderPaneContext-favoriteFolder" type="checkbox" label="Favorite Folder" accesskey="a" check="false" oncommand="ToggleFavoriteFolderFlag();"/>
+    <menuitem id="folderPaneContext-properties" label="Properties…" accesskey="P" oncommand="gFolderTreeController.editFolder();"/>
+    <menuitem id="folderPaneContext-settings" label="Settings…" accesskey="e" oncommand="gFolderTreeController.editFolder();"/>
+  </menupopup>
+  <menupopup id="attachmentListContext" onpopupshowing="return onShowAttachmentListContextMenu(event);">
+    <menuitem id="context-openAllAttachments" label="Open All…" accesskey="O" oncommand="HandleAllAttachments('open');"/>
+    <menuitem id="context-saveAllAttachments" label="Save All…" accesskey="S" oncommand="HandleAllAttachments('save');"/>
+    <menuseparator id="context-menu-separator-all"/>
+    <menuitem id="context-detachAllAttachments" label="Detach All…" accesskey="D" oncommand="HandleAllAttachments('detach');"/>
+    <menuitem id="context-deleteAllAttachments" label="Delete All…" accesskey="E" oncommand="HandleAllAttachments('delete');"/>
+  </menupopup>
+  <menupopup onpopupshowing="return onShowAttachmentItemContextMenu();" onpopuphiding="return onHideAttachmentItemContextMenu();" id="attachmentItemContext">
+    <menuitem id="context-openAttachment" label="Open" accesskey="O" oncommand="HandleMultipleAttachments(this.parentNode.attachments, 'open');"/>
+    <menuitem id="context-saveAttachment" label="Save As…" accesskey="A" oncommand="HandleMultipleAttachments(this.parentNode.attachments, 'saveAs');"/>
+    <menuseparator id="context-menu-separator"/>
+    <menuitem id="context-detachAttachment" label="Detach…" accesskey="T" oncommand="HandleMultipleAttachments(this.parentNode.attachments, 'detach');"/>
+    <menuitem id="context-deleteAttachment" label="Delete" accesskey="L" oncommand="HandleMultipleAttachments(this.parentNode.attachments, 'delete');"/>
+  </menupopup>
+  <menupopup id="header-toolbar-context-menu">
+    <menuitem id="CustomizeHeaderToolbar" oncommand="CustomizeMailToolbar('header-view-toolbox', 'CustomizeHeaderToolbar')" label="Customize…" accesskey="C"/>
+  </menupopup>
+  <menupopup id="attachment-toolbar-context-menu">
+    <menuitem id="CustomizeAttachmentToolbar" oncommand="CustomizeMailToolbar('attachment-view-toolbox', 'CustomizeAttachmentToolbar')" label="Customize…" accesskey="C"/>
+  </menupopup>
+  <menupopup id="copyUrlPopup" popupanchor="bottomleft">
+    <menuitem label="Copy Link Location" accesskey="C" oncommand="CopyWebsiteAddress(document.popupNode)"/>
+  </menupopup>
+  <menupopup id="toolbar-context-menu" onpopupshowing="onViewToolbarsPopupShowing(event, 'mail-toolbox');">
+    <menuseparator id="customizeMailToolbarMenuSeparator"/>
+    <menuitem id="CustomizeMailToolbar" command="cmd_CustomizeMailToolbar" label="Customize…" accesskey="C"/>
+  </menupopup>
+  <tooltip id="attachmentListTooltip"/>
+  <menupopup id="emailAddressPopup" position="after_start" class="emailAddressPopup" onpopupshowing="setupEmailAddressPopup(findEmailNodeFromPopupNode(document.popupNode, 'emailAddressPopup')); goUpdateCommand('cmd_createFilterFromPopup')" onpopuphiding="hideEmailNewsPopup(findEmailNodeFromPopupNode(document.popupNode, 'emailAddressPopup'));">
+    <menuitem id="emailAddressPlaceHolder" disabled="true"/>
+    <menuseparator/>
+    <menuitem id="addToAddressBookItem" label="Add to Address Book" accesskey="B" oncommand="AddContact(findEmailNodeFromPopupNode(document.popupNode, 'emailAddressPopup'))"/>
+    <menuitem id="editContactItem" label="Edit Contact…" hidden="true" accesskey="E" oncommand="EditContact(findEmailNodeFromPopupNode(document.popupNode, 'emailAddressPopup'))"/>
+    <menuitem id="viewContactItem" label="View Contact" hidden="true" accesskey="V" oncommand="EditContact(findEmailNodeFromPopupNode(document.popupNode, 'emailAddressPopup'))"/>
+    <menuitem id="sendMailToItem" label="Compose Message To" accesskey="s" oncommand="SendMailToNode(findEmailNodeFromPopupNode(document.popupNode, 'emailAddressPopup'))"/>
+    <menuitem id="copyEmailAddressItem" label="Copy Email Address" accesskey="C" oncommand="CopyEmailNewsAddress(findEmailNodeFromPopupNode(document.popupNode, 'emailAddressPopup'))"/>
+    <menuseparator/>
+    <menuitem id="createFilterFromItem" label="Create Filter From…" accesskey="F" oncommand="CreateFilter(findEmailNodeFromPopupNode(document.popupNode, 'emailAddressPopup'))" observes="cmd_createFilterFromPopup"/>
+  </menupopup>
+  <menupopup id="copyPopup">
+    <menuitem id="copyMenuitem" label="Copy" accesskey="c" tooltiptext="Copy" oncommand="Components.classes['@mozilla.org/widget/clipboardhelper;1']                           .getService(Components.interfaces.nsIClipboardHelper)                           .copyString(window.getSelection().isCollapsed ?                               document.popupNode.textContent :                               window.getSelection().toString());"/>
+  </menupopup>
+  <menupopup id="newsgroupPopup" position="after_start" class="newsgroupPopup" onpopupshowing="setupNewsgroupPopup(findEmailNodeFromPopupNode(document.popupNode, 'newsgroupPopup')); goUpdateCommand('cmd_createFilterFromPopup')" onpopuphiding="hideEmailNewsPopup(findEmailNodeFromPopupNode(document.popupNode, 'newsgroupPopup'));">
+    <menuitem id="newsgroupPlaceHolder" disabled="true"/>
+    <menuseparator/>
+    <menuitem id="sendMessageToNewsgroupItem" label="Compose Message To" accesskey="s" oncommand="SendMailToNode(findEmailNodeFromPopupNode(document.popupNode, 'newsgroupPopup'))"/>
+    <menuitem id="copyNewsgroupNameItem" label="Copy Newsgroup Name" accesskey="C" oncommand="CopyEmailNewsAddress(findEmailNodeFromPopupNode(document.popupNode, 'newsgroupPopup'))"/>
+    <menuitem id="copyNewsgroupURLItem" label="Copy Newsgroup URL" accesskey="U" oncommand="CopyNewsgroupURL(findEmailNodeFromPopupNode(document.popupNode, 'newsgroupPopup'))"/>
+    <menuseparator id="subscribeToNewsgroupSeparator"/>
+    <menuitem id="subscribeToNewsgroupItem" label="Subscribe to Newsgroup" accesskey="N" oncommand="SubscribeToNewsgroup(findEmailNodeFromPopupNode(document.popupNode, 'newsgroupPopup'))"/>
+  </menupopup>
+  <menupopup popupanchor="bottomleft" onpopupshowing="FillMessageIdContextMenu(document.popupNode);" id="messageIdContext">
+    <menuitem id="messageIdContext-messageIdTarget" disabled="true"/>
+    <menuseparator id="messageIdContext-separator"/>
+    <menuitem id="messageIdContext-openMessageForMsgId" label="Open Message For ID" oncommand="var messageId = GetMessageIdFromNode(document.popupNode, true);                        OpenMessageForMessageId(messageId)"/>
+    <menuitem id="messageIdContext-openBrowserWithMsgId" label="Open Browser With Message-ID" oncommand="var messageId = GetMessageIdFromNode(document.popupNode, true);                        OpenBrowserWithMessageId(messageId)"/>
+    <menuitem id="messageIdContext-copyMessageId" label="Copy Message-ID" oncommand="var messageId = GetMessageIdFromNode(document.popupNode, false);                        CopyMessageId(messageId);"/>
+  </menupopup>
+  <tooltip id="folderpopup" class="folderSummaryPopup"/>
+  <tooltip id="aHTMLTooltip" onpopupshowing="return FillInHTMLTooltip(document.tooltipNode);" style="direction: ltr;"/>
+  <toolbox class="toolbox-top" mode="full" defaultmode="full" labelalign="end" defaultlabelalign="end" id="mail-toolbox">
+    <toolbar type="menubar" id="mail-toolbar-menubar2" class="chromeclass-menubar" customizable="true" defaultset="menubar-items,spring,throbber-box" context="toolbar-context-menu" mode="icons">
+      <toolbaritem id="menubar-items" align="center">
+        <menubar id="mail-menubar" style="border:0px;padding:0px;margin:0px;-moz-appearance:none">
+          <menu label="File" accesskey="F" id="menu_File">
+            <menupopup id="menu_FilePopup" onpopupshowing="file_init();">
+              <menu label="New" accesskey="N" id="menu_New">
+                <menupopup id="menu_NewPopup" onpopupshowing="menu_new_init();">
+                  <menuitem id="newNewMsgCmd" label="Message" accesskey="M" key="key_newMessage2" oncommand="MsgNewMessage(null);"/>
+                  <menuitem id="menu_newFolder" label="Folder…" oncommand="gFolderTreeController.newFolder();" accesskey="F"/>
+                  <menuitem id="menu_newVirtualFolder" label="Saved Search…" oncommand="gFolderTreeController.newVirtualFolder();" accesskey="S"/>
+                  <menuseparator id="newAccountPopupMenuSeparator"/>
+                  <menuitem id="newMailAccountMenuItem" label="Mail Account…" accesskey="A" oncommand="NewMailAccount(msgWindow);"/>
+                  <menuitem id="newAccountMenuItem" label="Other Accounts…" accesskey="O" oncommand="MsgAccountWizard();"/>
+                  <menuseparator id="newPopupMenuSeparator"/>
+                  <menuitem label="Address Book Contact…" accesskey="C" command="cmd_newCard" id="menu_newCard"/>
+                </menupopup>
+              </menu>
+              <menuitem id="openMessageFileMenuitem" label="Open Saved Message…" accesskey="O" oncommand="MsgOpenFromFile();"/>
+              <menu id="fileAttachmentMenu" label="Attachments" accesskey="A" disabled="true" persist="hidden">
+                <menupopup id="attachmentMenuList" onpopupshowing="FillAttachmentListPopup(this);">
+                  <menuseparator/>
+                  <menuitem id="file-openAllAttachments" label="Open All…" accesskey="O" oncommand="HandleAllAttachments('open');"/>
+                  <menuitem id="file-saveAllAttachments" label="Save All…" accesskey="S" oncommand="HandleAllAttachments('save');"/>
+                  <menuitem id="file-detachAllAttachments" label="Detach All…" accesskey="D" oncommand="HandleAllAttachments('detach');"/>
+                  <menuitem id="file-deleteAllAttachments" label="Delete All…" accesskey="E" oncommand="HandleAllAttachments('delete');"/>
+                </menupopup>
+              </menu>
+              <menuitem label="Close" key="key_close" accesskey="C" command="cmd_close" id="menu_close"/>
+              <menuseparator id="fileMenuAfterCloseSeparator"/>
+              <menu id="menu_saveAs" label="Save As" accesskey="S">
+                <menupopup id="menu_SavePopup">
+                  <menuitem id="menu_saveAsFile" label="File" accesskey="F" key="key_saveAsFile" command="cmd_saveAsFile"/>
+                  <menuitem id="menu_saveAsTemplate" label="Template" accesskey="T" command="cmd_saveAsTemplate"/>
+                </menupopup>
+              </menu>
+              <menuseparator id="fileMenuAfterSaveSeparator"/>
+              <menu label="Get New Messages for" accesskey="w" oncommand="MsgGetMessagesForAccount(event.target._folder)">
+                <menupopup type="folder" mode="getMail" id="menu_getAllNewMsgPopup" expandFolders="false">
+                  <menuitem id="menu_getnewmsgs_all_accounts" label="All Accounts" accesskey="A" key="key_getAllNewMessages" command="cmd_getMsgsForAuthAccounts"/>
+                  <menuitem id="menu_getnewmsgs_current_account" label="Current Account" accesskey="C" key="key_getNewMessages" command="cmd_getNewMessages"/>
+                  <menuseparator/>
+                </menupopup>
+              </menu>
+              <menuitem id="menu_getnextnmsg" label="Get Next 500 News Messages" accesskey="t" command="cmd_getNextNMessages"/>
+              <menuitem id="menu_sendunsentmsgs" label="Send Unsent Messages" accesskey="d" command="cmd_sendUnsentMsgs"/>
+              <menuitem id="menu_subscribe" label="Subscribe…" accesskey="b" oncommand="MsgSubscribe();"/>
+              <menuseparator id="fileMenuAfterSubscribeSeparator"/>
+              <menuitem id="menu_deleteFolder" label="Delete Folder" accesskey="e" command="cmd_deleteFolder"/>
+              <menuitem id="menu_renameFolder" label="Rename Folder…" accesskey="R" key="key_renameFolder" command="cmd_renameFolder"/>
+              <menuitem id="menu_compactFolder" label="Compact Folders" accesskey="F" command="cmd_compactFolder"/>
+              <menuitem id="menu_emptyTrash" label="Empty Trash" accesskey="y" command="cmd_emptyTrash"/>
+              <menuseparator id="trashMenuSeparator"/>
+              <menu id="offlineMenuItem" label="Offline" accesskey="l">
+                <menupopup id="menu_OfflinePopup">
+                  <menuitem id="goOfflineMenuItem" type="checkbox" label="Work Offline" accesskey="w" oncommand="MailOfflineMgr.toggleOfflineStatus();" checked="false"/>
+                  <menuseparator id="offlineMenuAfterGoSeparator"/>
+                  <menuitem id="menu_synchronizeOffline" label="Download/Sync Now…" accesskey="S" command="cmd_synchronizeOffline"/>
+                  <menuitem id="menu_settingsOffline" label="Offline Settings…" accesskey="e" command="cmd_settingsOffline"/>
+                  <menuseparator id="offlineMenuAfterSettingsSeparator"/>
+                  <menuitem id="menu_downloadFlagged" label="Get Starred Messages" accesskey="a" command="cmd_downloadFlagged"/>
+                  <menuitem id="menu_downloadSelected" label="Get Selected Messages" accesskey="l" command="cmd_downloadSelected"/>
+                </menupopup>
+              </menu>
+              <menuseparator id="fileMenuAfterOfflineSeparator"/>
+              <menuitem id="printSetupMenuItem" label="Page Setup…" accesskey="u" command="cmd_printSetup"/>
+              <menuitem id="printPreviewMenuItem" label="Print Preview" accesskey="v" command="cmd_printpreview"/>
+              <menuitem id="printMenuItem" key="key_print" label="Print…" accesskey="P" command="cmd_print"/>
+              <menuseparator id="menu_FileQuitSeparator"/>
+              <menuitem id="menu_FileQuitItem" label="Exit" accesskey="x" command="cmd_quit"/>
+            </menupopup>
+          </menu>
+          <menu id="menu_Edit" oncommand="CommandUpdate_UndoRedo();" label="Edit" accesskey="E">
+            <menupopup id="menu_EditPopup" onpopupshowing="InitEditMessagesMenu()">
+              <menuitem id="menu_undo" label="Undo" accesskey="U" key="key_undo" command="cmd_undo"/>
+              <menuitem id="menu_redo" label="Redo" accesskey="R" key="key_redo" command="cmd_redo"/>
+              <menuseparator id="editMenuAfterRedoSeparator"/>
+              <menuitem label="Cut" key="key_cut" accesskey="t" command="cmd_cut" id="menu_cut"/>
+              <menuitem label="Copy" key="key_copy" accesskey="C" command="cmd_copy" id="menu_copy"/>
+              <menuitem label="Paste" key="key_paste" accesskey="P" command="cmd_paste" id="menu_paste"/>
+              <menuitem label="Delete" key="key_delete" accesskey="D" command="cmd_delete" id="menu_delete"/>
+              <menuseparator id="editMenuAfterDeleteSeparator"/>
+              <menu id="menu_select" label="Select" accesskey="S">
+                <menupopup id="menu_SelectPopup">
+                  <menuitem id="menu_SelectAll" label="All" accesskey="A" key="key_selectAll" command="cmd_selectAll"/>
+                  <menuseparator id="selectMenuSeparator"/>
+                  <menuitem id="menu_selectThread" label="Thread" accesskey="T" key="key_selectThread" command="cmd_selectThread"/>
+                  <menuitem id="menu_selectFlagged" label="Starred Messages" accesskey="S" command="cmd_selectFlagged"/>
+                </menupopup>
+              </menu>
+              <menuseparator id="editMenuAfterSelectSeparator"/>
+              <menu id="menu_find" label="Find" accesskey="F">
+                <menupopup id="menu_FindPopup">
+                  <menuitem id="menu_findCmd" label="Find in This Message…" key="key_find" accesskey="F" command="cmd_find"/>
+                  <menuitem id="menu_findAgainCmd" label="Find Again" key="key_findAgain" accesskey="g" command="cmd_findAgain"/>
+                  <menuseparator id="editMenuAfterFindSeparator"/>
+                  <menuitem id="searchMailCmd" label="Search Messages…" key="key_searchMail" accesskey="M" command="cmd_search"/>
+                  <menuitem id="searchAddressesCmd" label="Search Addresses…" accesskey="S" oncommand="MsgSearchAddresses()"/>
+                </menupopup>
+              </menu>
+              <menuseparator id="editPropertiesSeparator"/>
+              <menuitem id="menu_favoriteFolder" type="checkbox" label="Favorite Folder" accesskey="v" check="false" oncommand="ToggleFavoriteFolderFlag();"/>
+              <menuitem id="menu_properties" label="Properties…" accesskey="o" command="cmd_properties"/>
+            </menupopup>
+          </menu>
+          <menu label="View" accesskey="V" id="menu_View">
+            <menupopup id="menu_View_Popup" onpopupshowing="view_init();">
+              <menu id="menu_Toolbars" onpopupshowing="onViewToolbarsPopupShowing(event, 'mail-toolbox');" label="Toolbars" accesskey="T">
+                <menupopup id="view_toolbars_popup">
+                  <menuitem id="view_toolbars_popup_quickFilterBar" insertbefore="viewMenuBeforeCustomizeMailToolbarsSeparator" label="Quick Filter Bar" accesskey="Q" command="cmd_toggleQuickFilterBar" observes="qfb-show-filter-bar" oncommand="goDoCommand('cmd_toggleQuickFilterBar');" tooltiptext="Toggle the quick filter bar" type="checkbox" style="visibility: visible;" checkState="1" checked="true"/>
+                  <menuseparator id="viewMenuBeforeCustomizeMailToolbarsSeparator"/>
+                  <menuitem id="customizeMailToolbars" command="cmd_CustomizeMailToolbar" label="Customize…" accesskey="C"/>
+                </menupopup>
+              </menu>
+              <menuitem label="Status Bar" accesskey="u" oncommand="goToggleToolbar('status-bar', 'menu_showTaskbar')" checked="true" id="menu_showTaskbar" type="checkbox"/>
+              <menuseparator id="viewMenuAfterTaskbarSeparator"/>
+              <menu id="menu_MessagePaneLayout" label="Layout" accesskey="L">
+                <menupopup id="view_layout_popup" onpopupshowing="InitViewLayoutStyleMenu(event)">
+                  <menuitem id="messagePaneClassic" type="radio" label="Classic View" name="viewlayoutgroup" accesskey="C" command="cmd_viewClassicMailLayout"/>
+                  <menuitem id="messagePaneWide" type="radio" label="Wide View" name="viewlayoutgroup" accesskey="W" command="cmd_viewWideMailLayout"/>
+                  <menuitem id="messagePaneVertical" type="radio" label="Vertical View" name="viewlayoutgroup" accesskey="V" command="cmd_viewVerticalMailLayout"/>
+                  <menuseparator id="viewMenuAfterPaneVerticalSeparator"/>
+                  <menuitem id="menu_showMessage" type="checkbox" label="Message Pane" key="key_toggleMessagePane" accesskey="M" command="cmd_toggleMessagePane"/>
+                </menupopup>
+              </menu>
+              <menu id="menu_FolderViews" label="Folders" accesskey="F">
+                <menupopup id="menu_FolderViewsPopup" onpopupshowing="InitViewFolderViewsMenu(event)">
+                  <menuitem id="menu_allFolders" value="all" label="All" accesskey="A" type="radio" name="viewmessages" oncommand="gFolderTreeView.mode = this.value;"/>
+                  <menuitem id="menu_smartFolders" value="smart" label="Unified" accesskey="n" type="radio" name="viewmessages" oncommand="gFolderTreeView.mode = this.value;"/>
+                  <menuitem id="menu_unreadFolders" label="Unread" value="unread" accesskey="U" type="radio" name="viewmessages" oncommand="gFolderTreeView.mode = this.value;"/>
+                  <menuitem id="menu_favoriteFolders" value="favorite" label="Favorite" accesskey="F" type="radio" name="viewmessages" oncommand="gFolderTreeView.mode = this.value;"/>
+                  <menuitem id="menu_recentFolders" value="recent" label="Recent" accesskey="R" type="radio" name="viewmessages" oncommand="gFolderTreeView.mode = this.value;"/>
+                </menupopup>
+              </menu>
+              <menuseparator id="viewSortMenuSeparator"/>
+              <menu id="viewSortMenu" accesskey="S" label="Sort by">
+                <menupopup id="menu_viewSortPopup" onpopupshowing="InitViewSortByMenu()">
+                  <menuitem id="sortByDateMenuitem" type="radio" name="sortby" label="Date" accesskey="e" oncommand="MsgSortThreadPane('byDate')"/>
+                  <menuitem id="sortByReceivedMenuitem" type="radio" name="sortby" label="Received" accesskey="v" oncommand="MsgSortThreadPane('byReceived')"/>
+                  <menuitem id="sortByFlagMenuitem" type="radio" name="sortby" label="Star" accesskey="S" oncommand="MsgSortThreadPane('byFlagged')"/>
+                  <menuitem id="sortByOrderReceivedMenuitem" type="radio" name="sortby" label="Order Received" accesskey="O" oncommand="MsgSortThreadPane('byId')"/>
+                  <menuitem id="sortByPriorityMenuitem" type="radio" name="sortby" label="Priority" accesskey="P" oncommand="MsgSortThreadPane('byPriority')"/>
+                  <menuitem id="sortByFromMenuitem" type="radio" name="sortby" label="From" accesskey="F" oncommand="MsgSortThreadPane('byAuthor')"/>
+                  <menuitem id="sortByRecipientMenuitem" type="radio" name="sortby" label="Recipient" accesskey="c" oncommand="MsgSortThreadPane('byRecipient')"/>
+                  <menuitem id="sortBySizeMenuitem" type="radio" name="sortby" label="Size" accesskey="z" oncommand="MsgSortThreadPane('bySize')"/>
+                  <menuitem id="sortByStatusMenuitem" type="radio" name="sortby" label="Status" accesskey="u" oncommand="MsgSortThreadPane('byStatus')"/>
+                  <menuitem id="sortBySubjectMenuitem" type="radio" name="sortby" label="Subject" accesskey="b" oncommand="MsgSortThreadPane('bySubject')"/>
+                  <menuitem id="sortByUnreadMenuitem" type="radio" name="sortby" label="Read" accesskey="R" oncommand="MsgSortThreadPane('byUnread')"/>
+                  <menuitem id="sortByTagsMenuitem" type="radio" name="sortby" label="Tags" accesskey="g" oncommand="MsgSortThreadPane('byTags')"/>
+                  <menuitem id="sortByJunkStatusMenuitem" type="radio" name="sortby" label="Junk Status" accesskey="J" oncommand="MsgSortThreadPane('byJunkStatus')"/>
+                  <menuitem id="sortByAttachmentsMenuitem" type="radio" name="sortby" label="Attachments" accesskey="A" oncommand="MsgSortThreadPane('byAttachments')"/>
+                  <menuseparator id="sortAfterAttachmentSeparator"/>
+                  <menuitem id="sortAscending" type="radio" name="sortdirection" label="Ascending" accesskey="A" oncommand="MsgSortAscending()"/>
+                  <menuitem id="sortDescending" type="radio" name="sortdirection" label="Descending" accesskey="D" oncommand="MsgSortDescending()"/>
+                  <menuseparator id="sortAfterDescendingSeparator"/>
+                  <menuitem id="sortThreaded" type="radio" name="threaded" label="Threaded" accesskey="T" oncommand="MsgSortThreaded();"/>
+                  <menuitem id="sortUnthreaded" type="radio" name="threaded" label="Unthreaded" accesskey="h" oncommand="MsgSortUnthreaded();"/>
+                  <menuitem id="groupBySort" type="radio" name="group" label="Grouped By Sort" accesskey="G" oncommand="MsgGroupBySort();"/>
+                </menupopup>
+              </menu>
+              <menu id="viewMessageViewMenu" label="Messages" accesskey="M" command="mailHideMenus" oncommand="ViewChangeByMenuitem(event.target);">
+                <menupopup id="viewMessagePopup" onpopupshowing="RefreshViewPopup(this, false);">
+                  <menuitem id="viewMessageAll" value="0" type="radio" label="All" accesskey="A"/>
+                  <menuitem id="viewMessageUnread" value="1" type="radio" label="Unread" accesskey="U"/>
+                  <menuitem id="viewMessageNotDeleted" value="3" type="radio" label="Not Deleted" accesskey="D"/>
+                  <menuseparator id="messageViewAfterUnreadSeparator"/>
+                  <menu id="viewMessageTags" label="Tags" accesskey="T">
+                    <menupopup id="viewMessageTagsPopup" onpopupshowing="RefreshTagsPopup(this, false);"/>
+                  </menu>
+                  <menu id="viewMessageCustomViews" label="Custom Views" accesskey="V">
+                    <menupopup id="viewMessageCustomViewsPopup" onpopupshowing="RefreshCustomViewsPopup(this, false);"/>
+                  </menu>
+                  <menuseparator id="messageViewAfterCustomSeparator"/>
+                  <menuitem id="viewMessageVirtualFolder" value="7" label="Save View as a Folder…" accesskey="S"/>
+                  <menuitem id="viewMessageCustomize" value="8" label="Customize…" accesskey="C"/>
+                </menupopup>
+              </menu>
+              <menu label="Threads" id="viewMessagesMenu" accesskey="e">
+                <menupopup id="menu_ThreadsPopup" onpopupshowing="InitViewMessagesMenu()">
+                  <menuitem id="viewAllMessagesMenuItem" type="radio" name="viewmessages" label="All" accesskey="A" disabled="true" command="cmd_viewAllMsgs"/>
+                  <menuitem id="viewUnreadMessagesMenuItem" type="radio" name="viewmessages" label="Unread" accesskey="U" disabled="true" command="cmd_viewUnreadMsgs"/>
+                  <menuitem id="viewThreadsWithUnreadMenuItem" type="radio" name="viewmessages" label="Threads with Unread" accesskey="T" disabled="true" command="cmd_viewThreadsWithUnread"/>
+                  <menuitem id="viewWatchedThreadsWithUnreadMenuItem" type="radio" name="viewmessages" label="Watched Threads with Unread" accesskey="W" disabled="true" command="cmd_viewWatchedThreadsWithUnread"/>
+                  <menuseparator id="threadsAfterWatchedSeparator"/>
+                  <menuitem id="viewIgnoredThreadsMenuItem" type="checkbox" label="Ignored Threads" disabled="true" command="cmd_viewIgnoredThreads" accesskey="i"/>
+                  <menuseparator id="threadsAfterIgnoredSeparator"/>
+                  <menuitem id="menu_expandAllThreads" label="Expand All Threads" accesskey="E" key="key_expandAllThreads" disabled="true" command="cmd_expandAllThreads"/>
+                  <menuitem id="collapseAllThreads" label="Collapse All Threads" accesskey="C" key="key_collapseAllThreads" disabled="true" command="cmd_collapseAllThreads"/>
+                </menupopup>
+              </menu>
+              <menuseparator id="viewAfterThreadsSeparator"/>
+              <menu id="viewheadersmenu" label="Headers" accesskey="H">
+                <menupopup id="menu_HeadersPopup" onpopupshowing="InitViewHeadersMenu();">
+                  <menuitem id="viewallheaders" type="radio" name="viewheadergroup" label="All" accesskey="A" command="cmd_viewAllHeader"/>
+                  <menuitem id="viewnormalheaders" type="radio" name="viewheadergroup" label="Normal" accesskey="N" command="cmd_viewNormalHeader"/>
+                </menupopup>
+              </menu>
+              <menu id="viewBodyMenu" accesskey="B" label="Message Body As">
+                <menupopup id="viewBodyPopMenu" onpopupshowing="InitViewBodyMenu()">
+                  <menuitem id="bodyAllowHTML" type="radio" name="bodyPlaintextVsHTMLPref" label="Original HTML" accesskey="H" oncommand="MsgBodyAllowHTML()"/>
+                  <menuitem id="bodySanitized" type="radio" name="bodyPlaintextVsHTMLPref" label="Simple HTML" accesskey="S" oncommand="MsgBodySanitized()"/>
+                  <menuitem id="bodyAsPlaintext" type="radio" name="bodyPlaintextVsHTMLPref" label="Plain Text" accesskey="P" oncommand="MsgBodyAsPlaintext()"/>
+                  <menuitem id="bodyAllParts" type="radio" name="bodyPlaintextVsHTMLPref" label="All Body Parts" accesskey="A" oncommand="MsgBodyAllParts()"/>
+                </menupopup>
+              </menu>
+              <menu id="viewFeedSummary" label="Feed Message Body As" accesskey="B">
+                <menupopup id="viewFeedSummaryPopupMenu" onpopupshowing="InitViewBodyMenu()">
+                  <menuitem id="bodyFeedSummaryAllowHTML" type="radio" name="viewFeedBodyHTMLGroup" label="Original HTML" accesskey="H" oncommand="MsgFeedBodyRenderPrefs(false, 0, 0)"/>
+                  <menuitem id="bodyFeedSummarySanitized" type="radio" name="viewFeedBodyHTMLGroup" label="Simple HTML" accesskey="S" oncommand="MsgFeedBodyRenderPrefs(false, 3, gDisallow_classes_no_html)"/>
+                  <menuitem id="bodyFeedSummaryAsPlaintext" type="radio" name="viewFeedBodyHTMLGroup" label="Plain Text" accesskey="P" oncommand="MsgFeedBodyRenderPrefs(true, 1, gDisallow_classes_no_html)"/>
+                  <menuseparator id="viewFeedSummarySeparator"/>
+                  <menuitem id="bodyFeedGlobalWebPage" type="radio" name="viewFeedSummaryGroup" label="Web Page" accesskey="W" oncommand="ChangeFeedShowSummaryPref(0)"/>
+                  <menuitem id="bodyFeedGlobalSummary" type="radio" name="viewFeedSummaryGroup" label="Summary" accesskey="m" oncommand="ChangeFeedShowSummaryPref(1)"/>
+                  <menuitem id="bodyFeedPerFolderPref" type="radio" name="viewFeedSummaryGroup" label="Default Format" accesskey="D" oncommand="ChangeFeedShowSummaryPref(2)"/>
+                </menupopup>
+              </menu>
+              <menuitem id="viewAttachmentsInlineMenuitem" label="Display Attachments Inline" accesskey="A" oncommand="ToggleInlineAttachment(event.target)" type="checkbox" checked="true"/>
+              <menuseparator id="viewAfterAttachmentsSeparator"/>
+              <menu id="viewFullZoomMenu" label="Zoom" accesskey="Z" onpopupshowing="UpdateFullZoomMenu()">
+                <menupopup id="viewFullZoomPopupMenu">
+                  <menuitem id="menu_fullZoomEnlarge" key="key_fullZoomEnlarge" label="Zoom In" accesskey="I" command="cmd_fullZoomEnlarge"/>
+                  <menuitem id="menu_fullZoomReduce" key="key_fullZoomReduce" label="Zoom Out" accesskey="O" command="cmd_fullZoomReduce"/>
+                  <menuseparator id="fullZoomAfterReduceSeparator"/>
+                  <menuitem id="menu_fullZoomReset" key="key_fullZoomReset" label="Reset" accesskey="R" command="cmd_fullZoomReset"/>
+                  <menuseparator id="fullZoomAfterResetSeparator"/>
+                  <menuitem id="menu_fullZoomToggle" label="Zoom Text Only" accesskey="T" type="checkbox" command="cmd_fullZoomToggle" checked="false"/>
+                </menupopup>
+              </menu>
+              <menu label="Character Encoding" accesskey="C" datasources="rdf:charset-menu" ref="NC:MailviewCharsetMenuRoot" oncommand="MailMultiplexHandler(event)" onpopupshowing="CreateMenu('mailview');UpdateMailMenus()" onpopupshown="CreateMenu('more-menu');" id="mailviewCharsetMenu">
+                <template>
+                  <rule rdf:type="http://home.netscape.com/NC-rdf#BookmarkSeparator" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                    <menupopup>
+                      <menuseparator uri="..."/>
+                    </menupopup>
+                  </rule>
+                  <rule>
+                    <menupopup>
+                      <menuitem type="radio" name="charsetGroup" checked="rdf:http://home.netscape.com/NC-rdf#Checked" uri="..." label="rdf:http://home.netscape.com/NC-rdf#Name"/>
+                    </menupopup>
+                  </rule>
+                </template>
+                <menupopup>
+                  <menu label="Auto-Detect" accesskey="a" datasources="rdf:charset-menu" ref="NC:BrowserAutodetMenuRoot">
+                    <template>
+                      <rule rdf:type="http://home.netscape.com/NC-rdf#CharsetDetector" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                        <menupopup>
+                          <menuitem type="radio" name="detectorGroup" checked="rdf:http://home.netscape.com/NC-rdf#Checked" uri="..." label="rdf:http://home.netscape.com/NC-rdf#Name"/>
+                        </menupopup>
+                      </rule>
+                    </template>
+                    <menupopup/>
+                  </menu>
+                  <menu label="More Encodings" accesskey="m" datasources="rdf:charset-menu" ref="NC:BrowserMoreCharsetMenuRoot">
+                    <template>
+                      <rule>
+                        <menupopup>
+                          <menuitem uri="..." label="rdf:http://home.netscape.com/NC-rdf#Name"/>
+                        </menupopup>
+                      </rule>
+                    </template>
+                    <menupopup>
+                      <menu label="West European" datasources="rdf:charset-menu" ref="NC:BrowserMore1CharsetMenuRoot">
+                        <template>
+                          <rule>
+                            <menupopup>
+                              <menuitem uri="..." label="rdf:http://home.netscape.com/NC-rdf#Name"/>
+                            </menupopup>
+                          </rule>
+                        </template>
+                        <menupopup/>
+                      </menu>
+                      <menu label="East European" datasources="rdf:charset-menu" ref="NC:BrowserMore2CharsetMenuRoot">
+                        <template>
+                          <rule>
+                            <menupopup>
+                              <menuitem uri="..." label="rdf:http://home.netscape.com/NC-rdf#Name"/>
+                            </menupopup>
+                          </rule>
+                        </template>
+                        <menupopup/>
+                      </menu>
+                      <menu label="East Asian" datasources="rdf:charset-menu" ref="NC:BrowserMore3CharsetMenuRoot">
+                        <template>
+                          <rule>
+                            <menupopup>
+                              <menuitem uri="..." label="rdf:http://home.netscape.com/NC-rdf#Name"/>
+                            </menupopup>
+                          </rule>
+                        </template>
+                        <menupopup/>
+                      </menu>
+                      <menu label="SE &amp; SW Asian" datasources="rdf:charset-menu" ref="NC:BrowserMore4CharsetMenuRoot">
+                        <template>
+                          <rule>
+                            <menupopup>
+                              <menuitem uri="..." label="rdf:http://home.netscape.com/NC-rdf#Name"/>
+                            </menupopup>
+                          </rule>
+                        </template>
+                        <menupopup/>
+                      </menu>
+                      <menu label="Middle Eastern" datasources="rdf:charset-menu" ref="NC:BrowserMore5CharsetMenuRoot">
+                        <template>
+                          <rule>
+                            <menupopup>
+                              <menuitem uri="..." label="rdf:http://home.netscape.com/NC-rdf#Name"/>
+                            </menupopup>
+                          </rule>
+                        </template>
+                        <menupopup/>
+                      </menu>
+                      <menuseparator/>
+                    </menupopup>
+                  </menu>
+                  <menuitem name="charsetCustomize" accesskey="c" label="Customize List…" oncommand="window.openDialog('chrome://global/content/customizeCharset.xul','PrefWindow', 'chrome,modal=yes,resizable=yes', 'browser')"/>
+                </menupopup>
+              </menu>
+              <menuseparator id="viewAfterCharsetSeparator"/>
+              <menuitem id="pageSourceMenuItem" label="Message Source" key="key_viewPageSource" accesskey="o" command="cmd_viewPageSource"/>
+              <menuitem id="menu_securityStatus" insertafter="pageSourceMenuItem" label="Message Security Info" accesskey="I" observes="cmd_viewSecurityStatus" disabled="true" oncommand="showMessageReadSecurityInfo();"/>
+            </menupopup>
+          </menu>
+          <menu id="menu_Go" label="Go" accesskey="G">
+            <menupopup id="menu_GoPopup" onpopupshowing="InitGoMessagesMenu();">
+              <menu id="goNextMenu" label="Next" accesskey="N">
+                <menupopup id="menu_GoNextPopup">
+                  <menuitem id="menu_nextMsg" label="Message" accesskey="M" command="cmd_nextMsg" key="key_nextMsg"/>
+                  <menuitem id="menu_nextUnreadMsg" label="Unread Message" accesskey="U" command="cmd_nextUnreadMsg" key="key_nextUnreadMsg"/>
+                  <menuitem id="menu_nextFlaggedMsg" label="Starred Message" accesskey="S" command="cmd_nextFlaggedMsg"/>
+                  <menuseparator id="goNextAfterFlaggedSeparator"/>
+                  <menuitem id="menu_nextUnreadThread" label="Unread Thread" accesskey="T" command="cmd_nextUnreadThread" key="key_nextUnreadThread"/>
+                </menupopup>
+              </menu>
+              <menu id="goPreviousMenu" label="Previous" accesskey="P">
+                <menupopup id="menu_GoPreviousPopup">
+                  <menuitem id="menu_prevMsg" label="Message" accesskey="M" command="cmd_previousMsg" key="key_previousMsg"/>
+                  <menuitem id="menu_prevUnreadMsg" label="Unread Message" accesskey="U" command="cmd_previousUnreadMsg" key="key_previousUnreadMsg"/>
+                  <menuitem id="menu_prevFlaggedMsg" label="Starred Message" accesskey="S" command="cmd_previousFlaggedMsg"/>
+                </menupopup>
+              </menu>
+              <menuitem id="menu_goForward" label="Forward" accesskey="F" command="cmd_goForward" key="key_goForward"/>
+              <menuitem id="menu_goBack" label="Back" accesskey="B" command="cmd_goBack" key="key_goBack"/>
+              <menuseparator id="goNextSeparator"/>
+              <menu id="goFolderMenu" label="Folder" accesskey="O" oncommand="gFolderTreeView.selectFolder(event.target._folder, true)">
+                <menupopup id="menu_GoFolderPopup" type="folder" showFileHereLabel="true" fileHereLabel="This Folder" fileHereAccessKey="F" showRecent="true" recentLabel="Recent" recentAccessKey="R"/>
+              </menu>
+              <menuseparator id="goFolderSeparator"/>
+              <menu id="goRecentlyClosedTabs" label="Recently Closed Tabs">
+                <menupopup id="menu_GoRecentlyClosedTabsPopup" onpopupshowing="return InitRecentlyClosedTabsPopup(this)"/>
+              </menu>
+              <menuseparator id="goRecentlyClosedTabsSeparator"/>
+              <menuitem id="goStartPage" label="Mail Start Page" accesskey="S" command="cmd_goStartPage" key="key_goStartPage"/>
+            </menupopup>
+          </menu>
+          <menu id="messageMenu" label="Message" accesskey="M">
+            <menupopup id="messageMenuPopup" onpopupshowing="InitMessageMenu();">
+              <menuitem id="newMsgCmd" label="New Message" accesskey="N" key="key_newMessage2" oncommand="MsgNewMessage(null);"/>
+              <menuitem id="replyMainMenu" label="Reply" accesskey="R" key="key_reply" command="cmd_reply"/>
+              <menuitem id="replyNewsgroupMainMenu" label="Reply to Newsgroup" accesskey="y" key="key_reply" command="cmd_replyGroup"/>
+              <menuitem id="replySenderMainMenu" label="Reply to Sender Only" accesskey="R" command="cmd_replySender"/>
+              <menuitem id="menu_replyToAll" label="Reply to All" accesskey="p" key="key_replyall" command="cmd_replyall"/>
+              <menuitem id="menu_replyToList" label="Reply to List" accesskey="L" key="key_replylist" command="cmd_replylist"/>
+              <menuitem id="menu_forwardMsg" label="Forward" accesskey="F" key="key_forward" command="cmd_forward"/>
+              <menu id="forwardAsMenu" label="Forward As" accesskey="w">
+                <menupopup id="menu_forwardAsPopup">
+                  <menuitem id="menu_forwardAsInline" label="Inline" accesskey="I" command="cmd_forwardInline"/>
+                  <menuitem id="menu_forwardAsAttachment" label="Attachment" accesskey="A" command="cmd_forwardAttachment"/>
+                </menupopup>
+              </menu>
+              <menuitem id="menu_editMsgAsNew" label="Edit Message As New" accesskey="E" key="key_editAsNew" command="cmd_editAsNew"/>
+              <menuseparator id="messageMenuAfterCompositionCommandsSeparator"/>
+              <menuitem id="openMessageWindowMenuitem" label="Open Message" command="cmd_openMessage" accesskey="O" key="key_openMessage"/>
+              <menuitem id="openConversationMenuitem" label="Open in Conversation" command="cmd_openConversation" accesskey="s" key="key_openConversation"/>
+              <menu id="openFeedMessage" label="Open Feed Message" accesskey="O">
+                <menupopup id="menu_openFeedMessage">
+                  <menuitem id="menu_openFeedWebPageInWindow" type="radio" name="openFeedGroup" label="Web Page in New Window" accesskey="W" oncommand="ChangeFeedOpenHandler(0);"/>
+                  <menuitem id="menu_openFeedSummaryInWindow" type="radio" name="openFeedGroup" label="Summary in New Window" accesskey="S" oncommand="ChangeFeedOpenHandler(1);"/>
+                  <menuitem id="menu_openFeedWebPageInMessagePane" type="radio" name="openFeedGroup" label="Toggle Web Page and Summary in Message Pane" accesskey="T" oncommand="ChangeFeedOpenHandler(2);"/>
+                </menupopup>
+              </menu>
+              <menuseparator id="messageAfterOpenMsgSeparator"/>
+              <menu id="tagMenu" label="Tag" accesskey="g" command="cmd_tag">
+                <menupopup id="tagMenu-tagpopup" onpopupshowing="InitMessageTags(this)">
+                  <menuitem id="addNewTag" label="New Tag…" accesskey="N" oncommand="AddTag();"/>
+                  <menuseparator id="tagMenu-sep-afterTagAddNew"/>
+                  <menuitem id="tagMenu-tagRemoveAll" oncommand="RemoveAllMessageTags();"/>
+                  <menuseparator id="tagMenuAfterRemoveSeparator"/>
+                </menupopup>
+              </menu>
+              <menu id="markMenu" label="Mark" accesskey="k">
+                <menupopup id="menu_MarkPopup" onpopupshowing="InitMessageMark()">
+                  <menuitem id="markReadMenuItem" label="As Read" accesskey="R" command="cmd_markAsRead"/>
+                  <menuitem id="markUnreadMenuItem" label="As Unread" accesskey="U" command="cmd_markAsUnread"/>
+                  <menuitem id="menu_markThreadAsRead" label="Thread As Read" accesskey="T" command="cmd_markThreadAsRead" key="key_markThreadAsRead"/>
+                  <menuitem id="menu_markReadByDate" label="As Read by Date…" accesskey="D" command="cmd_markReadByDate" key="key_markReadByDate"/>
+                  <menuitem id="menu_markAllRead" label="All Read" key="key_markAllRead" accesskey="A" command="cmd_markAllRead"/>
+                  <menuseparator id="markMenuAfterAllReadSeparator"/>
+                  <menuitem id="markFlaggedMenuItem" type="checkbox" label="Add Star" accesskey="S" command="cmd_markAsFlagged" key="key_toggleFlagged"/>
+                  <menuseparator id="markMenuAfterFlaggedSeparator"/>
+                  <menuitem id="menu_markAsJunk" label="As Junk" accesskey="J" command="cmd_markAsJunk" key="key_markJunk"/>
+                  <menuitem id="menu_markAsNotJunk" label="As Not Junk" key="key_markNotJunk" accesskey="N" command="cmd_markAsNotJunk"/>
+                  <menuitem id="menu_recalculateJunkScore" label="Run Junk Mail Controls" accesskey="C" command="cmd_recalculateJunkScore"/>
+                </menupopup>
+              </menu>
+              <menuseparator id="messageMenuAfterMarkSeparator"/>
+              <menuitem id="archiveMainMenu" label="Archive" accesskey="A" key="key_archive" command="cmd_archive"/>
+              <menuitem id="menu_cancel" command="cmd_cancel" label="Cancel Message" accesskey="C"/>
+              <menu id="moveMenu" label="Move To" accesskey="M" oncommand="MsgMoveMessage(event.target._folder)">
+                <menupopup type="folder" mode="filing" showFileHereLabel="true" showRecent="true" fileHereLabel="File Here" fileHereAccessKey="F" recentLabel="Recent" recentAccessKey="R"/>
+              </menu>
+              <menu id="copyMenu" label="Copy To" accesskey="C" oncommand="MsgCopyMessage(event.target._folder)">
+                <menupopup type="folder" mode="filing" showFileHereLabel="true" showRecent="true" fileHereLabel="Copy Here" fileHereAccessKey="C" recentLabel="Recent" recentAccessKey="R"/>
+              </menu>
+              <menuitem id="moveToFolderAgain" key="key_moveToFolderAgain" command="cmd_moveToFolderAgain" label="Move Again" accesskey="i"/>
+              <menuseparator id="messageMenuAfterMoveCommandsSeparator"/>
+              <menuitem id="createFilter" label="Create Filter From Message…" accesskey="a" command="cmd_createFilterFromMenu"/>
+              <menuseparator id="threadItemsSeparator"/>
+              <menuitem label="Ignore Thread" accesskey="I" id="killThread" command="cmd_killThread" key="key_killThread"/>
+              <menuitem label="Ignore Subthread" accesskey="S" id="killSubthread" command="cmd_killSubthread" key="key_killSubthread"/>
+              <menuitem label="Watch Thread" accesskey="W" id="watchThread" command="cmd_watchThread" key="key_watchThread"/>
+            </menupopup>
+          </menu>
+          <menu id="tasksMenu" label="Tools" accesskey="T">
+            <menupopup id="taskPopup" onpopupshowing="document.commandDispatcher.updateCommands('create-menu-tasks')">
+              <menuitem hidden="true" accesskey="N" label="Mail &amp; Newsgroups" key="key_mail" oncommand="toMessengerWindow();" id="tasksMenuMail" class="menuitem-iconic menu-iconic"/>
+              <menuitem id="addressBook" label="Address Book" accesskey="B" key="key_addressbook" oncommand="toOpenWindowByType('mail:addressbook', 'chrome://messenger/content/addressbook/addressbook.xul');"/>
+              <menuseparator id="devToolsSeparator"/>
+              <menuitem id="menu_openSavedFilesWnd" label="Saved Files" accesskey="l" key="key_savedFiles" oncommand="openSavedFilesWnd();"/>
+              <menuitem id="addonsManager" label="Add-ons" accesskey="A" oncommand="openAddonsMgr();"/>
+              <menuitem id="activityManager" label="Activity Manager" accesskey="v" oncommand="openActivityMgr();"/>
+              <menuseparator id="devToolsSeparator"/>
+              <menuitem id="filtersCmd" label="Message Filters…" accesskey="F" command="cmd_displayMsgFilters"/>
+              <menuitem id="applyFilters" label="Run Filters on Folder" accesskey="R" command="cmd_applyFilters"/>
+              <menuitem id="applyFiltersToSelection" label="Run Filters on Message" accesskey="u" command="cmd_applyFiltersToSelection"/>
+              <menuseparator id="tasksMenuAfterApplySeparator"/>
+              <menuitem id="runJunkControls" label="Run Junk Mail Controls on Folder" accesskey="C" command="cmd_runJunkControls"/>
+              <menuitem id="deleteJunk" label="Delete Mail Marked as Junk in Folder" accesskey="D" command="cmd_deleteJunk"/>
+              <menuseparator id="tasksMenuAfterDeleteSeparator"/>
+              <menuitem id="menu_import" label="Import…" accesskey="m" oncommand="toImport();"/>
+              <menuitem id="javascriptConsole" label="Error Console" accesskey="E" oncommand="toJavaScriptConsole();"/>
+              <menuitem id="menu_inspector" label="DOM Inspector" insertafter="javascriptConsole,javaScriptConsole" key="key_inspectPage" accesskey="I" command="Tasks:Inspector"/>
+              <menuseparator id="prefSep"/>
+              <menuitem id="menu_accountmgr" label="Account Settings…" accesskey="S" oncommand="MsgAccountManager(null);"/>
+              <menuitem id="menu_preferences" oncommand="openOptionsDialog()" label="Options…" accesskey="O"/>
+              <menuitem id="nostalgy" command="cmd_nostalgyconfig"/>
+              <menuitem id="example-item" oncommand="patcherShowAll();" label="Show all listeners"/>
+            </menupopup>
+          </menu>
+          <menu label="Help" accesskey="H" id="helpMenu">
+            <menupopup id="menu_HelpPopup">
+              <menuitem id="menu_openHelp" label="Help Contents" accesskey="H" oncommand="openSupportURL();" key="key_openHelp"/>
+              <menuitem id="aboutsupport_open" label="Troubleshooting Information" accesskey="T" insertafter="menu_openHelp" oncommand="AboutSupportOverlay.openInNewTab();"/>
+              <menuitem id="whatsNew" label="What's New" accesskey="W" oncommand="openWhatsNew();"/>
+              <menuitem id="releaseNotes" label="Release Notes" accesskey="N" oncommand="openFormattedURL('app.releaseNotesURL');"/>
+              <menuseparator id="functionsSeparator"/>
+              <menuitem id="featureConfigurator" label="Migration Assistant" accesskey="M" oncommand="openFeatureConfigurator(false);"/>
+              <menuitem id="helpSafeMode" label="Restart with Add-ons Disabled…" accesskey="R" oncommand="safeModeRestart();"/>
+              <menuseparator id="aboutSeparator"/>
+              <menuitem id="aboutName" label="About Thunderbird" accesskey="A" oncommand="openAboutDialog();"/>
+            </menupopup>
+          </menu>
+          <spacer id="menubar_spacer" flex="100%"/>
+        </menubar>
+      </toolbaritem>
+      <toolbarspring id="spring13226731903361" flex="1" removable="true"/>
+      <toolbaritem id="throbber-box" title="Activity Indicator" align="center" pack="center" mousethrough="always" removable="true" busy="true">
+        <image/>
+      </toolbaritem>
+    </toolbar>
+    <toolbar id="mail-bar3" class="toolbar-primary chromeclass-toolbar" toolbarname="Mail Toolbar" accesskey="o" fullscreentoolbar="true" mode="full" customizable="true" context="toolbar-context-menu" defaultset="button-getmsg,button-newmsg,button-address,separator,button-tag,spring,gloda-search">
+      <toolbarbutton id="button-getmsg" type="menu-button" class="toolbarbutton-1" label="Get Mail" tooltiptext="Get new messages" oncommand="MsgGetMessagesForAccount(event.target._folder)" observes="button_getNewMessages" removable="true">
+        <menupopup id="button-getMsgPopup" onpopupshowing="getMsgToolbarMenu_init();" type="folder" expandFolders="false" mode="getMail">
+          <menuitem id="button-getAllNewMsg" label="Get All New Messages" accesskey="G" command="cmd_getMsgsForAuthAccounts"/>
+          <menuseparator id="button-getAllNewMsgSeparator"/>
+        </menupopup>
+      </toolbarbutton>
+      <toolbarbutton id="button-newmsg" class="toolbarbutton-1" label="Write" tooltiptext="Create a new message" oncommand="MsgNewMessage(event)" removable="true"/>
+      <toolbarbutton id="button-address" class="toolbarbutton-1" label="Address Book" oncommand="toAddressBook();" tooltiptext="Go to the address book" removable="true"/>
+      <toolbarseparator id="separator13226731903251" removable="true"/>
+      <toolbarbutton id="button-tag" type="menu" class="toolbarbutton-1" label="Tag" tooltiptext="Tag messages" command="cmd_tag" removable="true">
+        <menupopup id="button-tagpopup" onpopupshowing="InitMessageTags(this)">
+          <menuitem id="addNewTag" label="New Tag…" accesskey="N" oncommand="AddTag();"/>
+          <menuseparator id="button-tagpopup-sep-afterTagAddNew"/>
+          <menuitem id="button-tagRemoveAll" oncommand="RemoveAllMessageTags();"/>
+          <menuseparator id="button-afterTagRemoveAllSeparator"/>
+        </menupopup>
+      </toolbarbutton>
+      <toolbarspring id="spring13226731903252" flex="1" removable="true"/>
+      <toolbaritem id="gloda-search" insertafter="button-stop" title="Global Search" align="center" flex="1" class="chromeclass-toolbar-additional" removable="true">
+        <textbox id="searchInput" flex="1" type="glodacomplete" searchbutton="true" autocompletesearch="gloda" autocompletepopup="PopupGlodaAutocomplete" autocompletesearchparam="global" enablehistory="false" timeout="200" maxlength="192" placeholder="Search all messages… &lt;Ctrl+K&gt;" emptytextbase="Search all messages… #1" keyLabelNonMac="&lt;Ctrl+K&gt;" keyLabelMac="&lt;⌘K&gt;" sizetopopup="pref">
+          <hbox>
+            <image class="gloda-search-icon" onclick="document.getElementById('searchInput').doSearch();"/>
+          </hbox>
+        </textbox>
+      </toolbaritem>
+    </toolbar>
+    <toolbarset id="customToolbars" context="toolbar-context-menu"/>
+  </toolbox>
+  <hbox id="tabmail-container" flex="1">
+    <tabmail id="tabmail" flex="1" panelcontainer="tabpanelcontainer">
+      <hbox>
+        <hbox id="tabmail-buttons"/>
+        <hbox id="thunderbird-private-tabmail-buttons">
+          <toolbarbutton id="qfb-show-filter-bar" type="checkbox" command="cmd_toggleQuickFilterBar" tooltiptext="Toggle the quick filter bar" oncommand="goDoCommand('cmd_toggleQuickFilterBar');" style="visibility: visible;" checkState="1" checked="true"/>
+        </hbox>
+      </hbox>
+      <tabpanels id="tabpanelcontainer" flex="1" class="plain" selectedIndex="0">
+        <box id="mailContent" orient="vertical" flex="1" layout="standard">
+          <box id="messengerBox" orient="horizontal" flex="1" minheight="100" height="100" persist="height">
+            <vbox id="folderPaneBox" minwidth="125" width="200" persist="width">
+              <label id="folderColumnLabel" hidden="true" value="Name"/>
+              <sidebarheader id="folderPaneHeader" hidden="true" align="center" overflowing="false">
+                <label id="folderpane-title" crop="end" flex="1" value="Unified Folders"/>
+                <toolbarbutton id="folderview-cycler-prev" dir="prev" class="folderview-cycler" onclick="gFolderTreeView.cycleMode(false);"/>
+                <toolbarbutton id="folderview-cycler-next" dir="next" class="folderview-cycler" onclick="gFolderTreeView.cycleMode(true);"/>
+              </sidebarheader>
+              <tree id="folderTree" class="plain" flex="1" hidecolumnpicker="true" persist="mode" mode="smart" keepcurrentinview="true" context="folderPaneContext" disableKeyNavigation="true" ondraggesture="gFolderTreeView._onDragStart(event);" ondragover="gFolderTreeView._onDragOver(event);" ondblclick="gFolderTreeView.onDoubleClick(event);" onselect="FolderPaneSelectionChange();" hidehscroll="true" clickthrough="never" hidevscroll="true">
+                <treecols id="folderPaneCols" orient="horizontal">
+                  <treecol id="folderNameCol" flex="5" crop="center" persist="width" hideheader="true" ignoreincolumnpicker="true" primary="true" sortActive="true" sortDirection="ascending" ordinal="1"/>
+                </treecols>
+                <treechildren tooltip="folderpopup" onoverflow="document.getElementById('folderPaneHeader').setAttribute('overflowing', 'true');" onunderflow="document.getElementById('folderPaneHeader').setAttribute('overflowing', 'false');"/>
+              </tree>
+            </vbox>
+            <splitter id="folderpane_splitter" collapse="before" state="open"/>
+            <vbox flex="1">
+              <box orient="vertical" id="messagesBox" flex="1">
+                <deck id="displayDeck" flex="1" selectedIndex="1" minheight="100" height="100" persist="height">
+                  <vbox id="accountCentralBox" flex="1">
+                    <iframe name="accountCentralPane" width="150" flex="1" src="about:blank"/>
+                  </vbox>
+                  <hbox id="threadPaneBox">
+                    <vbox id="threadContentArea" flex="1" persist="width">
+                      <box id="glodaSearchFacets"/>
+                      <vbox id="quick-filter-bar" insertbefore="threadTree">
+                        <hbox id="quick-filter-bar-main-bar" align="center" onoverflow="QuickFilterBarMuxer.onOverflow();">
+                          <toolbarbutton id="qfb-sticky" type="checkbox" crop="none" minwidth="16" tooltiptext="Keep filters applied when switching folders" checkState="0"/>
+                          <label id="qfb-filter-label" value="Quick Filter:"/>
+                          <hbox id="quick-filter-bar-collapsible-buttons" shrink="true">
+                            <toolbarbutton id="qfb-unread" type="checkbox" crop="none" minwidth="16" label="Unread" tooltiptext="Show only unread messages" checkState="0"/>
+                            <toolbarbutton id="qfb-starred" type="checkbox" crop="none" minwidth="16" label="Starred" tooltiptext="Show only starred messages" checkState="0"/>
+                            <toolbarbutton id="qfb-inaddrbook" type="checkbox" crop="none" minwidth="16" label="Contact" tooltiptext="Show only messages from people in your address book" checkState="0"/>
+                            <toolbarbutton id="qfb-tags" type="checkbox" crop="none" minwidth="16" label="Tags" tooltiptext="Show only messages with tags on them" checkState="0"/>
+                            <toolbarbutton id="qfb-attachment" type="checkbox" crop="none" minwidth="16" label="Attachment" tooltiptext="Show only messages with attachments" checkState="0"/>
+                          </hbox>
+                          <toolbarspacer id="qfb-filter-bar-spacer" flex="200" align="end"/>
+                          <label id="qfb-results-label" minwidth="100" value="" somefmtstring="#1 message;#1 messages" noresultsstring="No results" style="visibility: hidden;"/>
+                          <textbox aria-autocomplete="list" id="qfb-qs-textbox" flex="1" type="search" placeholder="Filter these messages... &lt;Ctrl+Shift+K&gt;" emptytextbase="Filter these messages... #1" keyLabelNonMac="&lt;Ctrl+Shift+K&gt;" keyLabelMac="&lt;⇧⌘K&gt;" timeout="500" maxlength="192" width="320"/>
+                        </hbox>
+                        <hbox id="quick-filter-bar-expando">
+                          <arrowscrollbox id="quick-filter-bar-tab-bar" orient="horizontal" collapsed="true" flex="2"/>
+                          <hbox id="quick-filter-bar-filter-text-bar" pack="end" align="center" flex="1" collapsed="true">
+                            <label id="qfb-qs-label" value="Filter messages by:"/>
+                            <toolbarbutton id="qfb-qs-sender" type="checkbox" label="Sender" checkState="1" checked="true"/>
+                            <toolbarbutton id="qfb-qs-recipients" type="checkbox" label="Recipients" checkState="1" checked="true"/>
+                            <toolbarbutton id="qfb-qs-subject" type="checkbox" label="Subject" checkState="1" checked="true"/>
+                            <toolbarbutton id="qfb-qs-body" type="checkbox" label="Body" checkState="0"/>
+                          </hbox>
+                        </hbox>
+                      </vbox>
+                      <tree id="threadTree" persist="lastfoldersent width" treelines="true" flex="2" enableColumnDrag="true" _selectDelay="250" class="plain" lastfoldersent="false" keepcurrentinview="true" disableKeyNavigation="true" context="mailContext" onkeypress="ThreadPaneKeyPress(event);" onselect="ThreadPaneSelectionChanged();" clickthrough="never" hidehscroll="true" hidevscroll="true">
+                        <treecols id="threadCols" pickertooltiptext="Click to select columns to display" orient="horizontal">
+                          <treecol id="threadCol" fixed="true" cycler="true" class="treecol-image threadColumnHeader" currentView="unthreaded" label="Thread" tooltiptext="Click to display message threads" ordinal="1"/>
+                          <splitter ordinal="2" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="flaggedCol" fixed="true" cycler="true" class="treecol-image flagColumnHeader" label="Starred" tooltiptext="Click to sort by star" ordinal="3"/>
+                          <splitter ordinal="4" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="attachmentCol" fixed="true" class="treecol-image attachmentColumnHeader" label="Attachments" tooltiptext="Click to sort by attachments" ordinal="5"/>
+                          <splitter ordinal="6" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="subjectCol" persist="width" flex="7" ignoreincolumnpicker="true" label="Subject" tooltiptext="Click to sort by subject" ordinal="7"/>
+                          <splitter ordinal="8" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="unreadButtonColHeader" fixed="true" cycler="true" class="treecol-image readColumnHeader" label="Read" tooltiptext="Click to sort by read" ordinal="11"/>
+                          <splitter ordinal="10" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol ordinal="9" id="betweenCol" insertbefore="senderCol" persist="width hidden ordinal" flex="4" label="Between" tooltiptext="Click to sort by participants" hidden="true"/>
+                          <splitter class="tree-splitter" insertbefore="senderCol" ordinal="12" resizeafter="farthest"/>
+                          <treecol ordinal="13" id="senderCol" persist="width" flex="4" swappedhidden="true" label="From" tooltiptext="Click to sort by from"/>
+                          <splitter ordinal="14" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="recipientCol" persist="width" flex="4" hidden="true" swappedhidden="false" label="Recipient" tooltiptext="Click to sort by recipient" ordinal="15"/>
+                          <splitter ordinal="16" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="junkStatusCol" persist="width" fixed="true" cycler="true" class="treecol-image junkStatusHeader" label="Junk Status" tooltiptext="Click to sort by junk status" ordinal="17"/>
+                          <splitter ordinal="18" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="receivedCol" persist="width temphidden" flex="2" hidden="true" label="Received" tooltiptext="Click to sort by date received" ordinal="19"/>
+                          <splitter ordinal="20" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="dateCol" persist="width" flex="2" label="Date" tooltiptext="Click to sort by date" ordinal="21" sortDirection="ascending"/>
+                          <splitter ordinal="22" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="statusCol" persist="width" flex="1" hidden="true" label="Status" tooltiptext="Click to sort by status" ordinal="23"/>
+                          <splitter ordinal="24" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="sizeCol" persist="width" flex="1" hidden="true" label="Size" tooltiptext="Click to sort by size" ordinal="25"/>
+                          <splitter ordinal="26" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="tagsCol" persist="width" flex="1" hidden="true" label="Tag" tooltiptext="Click to sort by tags" ordinal="27"/>
+                          <splitter ordinal="28" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="accountCol" persist="width" flex="1" hidden="true" label="Account" tooltiptext="Click to sort by account" ordinal="29"/>
+                          <splitter ordinal="30" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="priorityCol" persist="width" flex="1" hidden="true" label="Priority" tooltiptext="Click to sort by priority" ordinal="31"/>
+                          <splitter ordinal="32" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol ordinal="33" id="unreadCol" persist="width" flex="1" label="Unread" tooltiptext="Number of unread messages in thread" hidden="true"/>
+                          <splitter ordinal="34" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="totalCol" persist="width" flex="1" hidden="true" label="Total" tooltiptext="Total number of messages in thread" ordinal="35"/>
+                          <splitter ordinal="36" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="locationCol" persist="width" flex="1" hidden="true" label="Location" tooltiptext="Click to sort by location" ordinal="37"/>
+                          <splitter ordinal="38" resizeafter="farthest" class="tree-splitter"/>
+                          <treecol id="idCol" persist="width" flex="1" hidden="true" label="Order Received" tooltiptext="Click to sort by order received" ordinal="39"/>
+                        </treecols>
+                        <treechildren ondraggesture="ThreadPaneOnDragStart(event);" ondragover="ThreadPaneOnDragOver(event);" ondrop="ThreadPaneOnDrop(event);"/>
+                      </tree>
+                    </vbox>
+                  </hbox>
+                </deck>
+                <splitter orient="vertical" id="threadpane-splitter" collapse="after" onmouseup="OnMouseUpThreadAndMessagePaneSplitter()" state="open"/>
+                <vbox id="messagepanebox" flex="2" minheight="100" height="200" minwidth="100" width="200" persist="height width">
+                  <browser context="mailContext" clickthrough="never" id="multimessage" style="height: 0px; min-height: 1px" flex="1" name="multimessage" disablesecurity="true" disablehistory="true" tooltip="aHTMLTooltip" src="chrome://conversations/content/stub.xhtml" autofind="false" focusring="true">
+
+
+<!DOCTYPE html [
+  <!ENTITY % pageDTD SYSTEM "chrome://conversations/locale/pages.dtd"> %pageDTD;
+]>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>test</title>
+  <link rel="stylesheet" type="text/css" href="chrome://messenger/skin/tagColors.css" />
+  <link rel="stylesheet" type="text/css" href="chrome://conversations/skin/boxflex.css" />
+  <!-- Keep the order! -->
+  <link rel="stylesheet" type="text/css" href="chrome://conversations/skin/conversation.css" />
+  <link rel="stylesheet" type="text/css" href="chrome://conversations/skin/quickreply.css" />
+  <link rel="stylesheet" type="text/css" href="chrome://conversations/skin/tokeninput.css" />
+  <link rel="stylesheet" type="text/css" media="print" href="chrome://conversations/skin/print.css" />
+  <script type="text/javascript" src="chrome://conversations/content/js/jquery-1.5.js"></script>
+  <script type="text/javascript" src="chrome://conversations/content/js/jquery.text-overflow.js"></script>
+  <script type="text/javascript" src="chrome://conversations/content/js/jquery.tmpl.js"></script>
+  <script type="text/javascript" src="chrome://conversations/content/js/jquery.tokeninput.js"></script>
+  <!-- The two scripts below share the same scope, they were split for the sake
+    of readability. -->
+  <script type="application/javascript;version=1.8" src="chrome://conversations/content/quickReply.js"></script>
+  <script type="application/javascript;version=1.8" src="chrome://conversations/content/stub.compose-ui.js"></script>
+  <script type="application/javascript;version=1.8" src="chrome://conversations/content/stub.compose-ui-bz.js"></script>
+  <script type="application/javascript;version=1.8" src="chrome://conversations/content/stub.completion-ui.js"></script>
+  <script type="application/javascript;version=1.8"><![CDATA[
+    // Below are mostly UI utility functions.
+    (function ($) {
+      $.fn.vAlign = function(container) {
+        $(document).ready(function () {
+          if (!container)
+            container = "div";
+
+          this.each(function(i) {
+            $(this).wrap("<div />");
+            var el = $(this);
+            var elh = el.height(); //new element height
+            var ph = el.parent().height(); //parent height
+            var nh = (ph - elh) / 2; //new margin to apply
+            if (!nh) {
+              $(this).unwrap();
+            } else {
+              el.css('margin-top', nh);
+              // don't align again now we've succeeded
+              el.removeClass("align");
+            }
+          });
+        }.bind(this));
+      };
+    })(jQuery);
+
+    function hideConversationMenu() {
+      $("#conversationMenuWrapper").css("display", "none");
+    }
+
+    function showConversationMenu() {
+      $("#conversationMenuWrapper").css("display", "block");
+      let menu = $(".conversationMenu");
+      let win = $(window);
+      let h = menu.height();
+      let w = menu.width();
+      let wh = win.height();
+      let ww = win.width();
+      menu.css("margin-top", (wh-h)/2);
+      menu.css("margin-left", (ww-w)/2);
+    }
+
+    function clearMenu() {
+      let menus = document.getElementsByClassName("menu");
+      for each (let [, menu] in Iterator(menus))
+        menu.style.display = "none";
+    }
+
+    function displayMenu(event) {
+      let target = event.target;
+      // This is a hack to make it work when we click the downwardArrow.
+      if (!target.nextElementSibling)
+        target = target.parentNode;
+      let menu = target.nextElementSibling;
+      let menuWasVisible = (menu.style.display == "-moz-box")
+          || (menu.style.display == "inline-block")
+          || (menu.style.display == "block");
+      clearMenu();
+      if (!menuWasVisible) {
+        menu.style.display = "-moz-box";
+        event.stopPropagation();
+      }
+    }
+
+    $(document).ready(function () {
+      document.addEventListener("click", function (event) {
+        clearMenu();
+      }, false);
+      document.addEventListener("keypress", function (event) {
+        if (event.keyCode == KeyEvent.DOM_VK_ESCAPE)
+          clearMenu();
+      }, false);
+    });
+
+    function alignAttachments(aMsgNode) {
+      $(aMsgNode._domNode).find(".align").vAlign();
+    }
+
+    // This function only works for our message nodes, use $(...).offset() for
+    //  more complicated computations.
+    function offsetFromTop (aNode) {
+      let offset = aNode.offsetTop || 0;
+      let parent = aNode.parentNode;
+      while (parent && !(parent instanceof HTMLDocument)) {
+        let style = window.getComputedStyle(parent, null);
+        if (style.position == "relative")
+          offset += parent.offsetTop;
+        parent = parent.parentNode;
+      }
+      return offset;
+    }
+
+    function scrollNodeIntoView (aNode) {
+      let offset = offsetFromTop(aNode);
+      // The header is 44px high (yes, this is harcodeadly ugly).
+      window.scrollTo(0, offset + 5 - 44);
+    }
+
+    function toggleQuote(event, showquotedtext, hidequotedtext) {
+      let link = event.target;
+      let div = link.nextSibling;
+      let cs = window.getComputedStyle(div, null);
+      if (div.style.display == "none") {
+        link.textContent = "- "+hidequotedtext+" -";
+        div.style.display = "";
+        let h = div.getBoundingClientRect().height +
+          parseFloat(cs.marginTop) + parseFloat(cs.marginBottom);
+        return h;
+      } else {
+        let h = div.getBoundingClientRect().height;
+        h += parseFloat(cs.marginTop);
+        h += parseFloat(cs.marginBottom);
+        link.textContent = "- "+showquotedtext+" -";
+        div.style.display = "none";
+        return -h;
+      }
+    }
+
+    const kPopupTimeout = 400;
+
+    // This only works for contact tooltips. The "more" menu is treated like a
+    //  real menu (it uses displayMenu and falls under clearMenu's operations),
+    //  and the reply menu with various choices is also treated like a menu.
+    // It turns out the "more" menu reuses the tooltip style for various
+    //  reasons, mostly to keep the same appearance, so we differentiate that
+    //  one with a tooltip-menu extra class.
+    function enableTooltips(aMsg) {
+      let $aMsgNode = $(aMsg._domNode);
+      $aMsgNode.find('.tooltip').each(function (i) {
+        // "details" is a hypothetical "details" link that, when
+        //   hovered/clicked, starts the interaction with the tooltip
+        let $tooltip = $(this);
+        if ($tooltip.hasClass("tooltip-menu"))
+          return;
+        let $details = $tooltip.prev();
+        if ($details.hasClass("contactBr"))
+          $details = $details.prev();
+
+        let timeout;
+        $details.hover(
+          function() {
+            if (aMsg.collapsed)
+              return;
+            clearTimeout(timeout);
+            let self = this;
+            timeout = setTimeout(function () {
+              $(self).next(':hidden').fadeIn();
+            }, kPopupTimeout);
+          },
+          function() {
+            var self = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(function () {
+              $(self).next(/*':visible'*/).fadeOut()
+            }, kPopupTimeout);
+          });
+        $tooltip.hover(
+          function () {
+            clearTimeout(timeout);
+          },
+          function () {
+            var self = this;
+            if ($(this).is(":visible")) {
+              clearTimeout(timeout);
+              timeout = setTimeout(function () {
+                $(self).fadeOut();
+              }, kPopupTimeout);
+            }
+          });
+      });
+    }
+
+    // Setting the second parameter to false means don't fire a stupid timer
+    //  that lives forever everytime we call this function.
+    function fakeTextOverflowSubject() {
+      $(".subject").textOverflow(null, false);
+    }
+
+    function cleanup() {
+      // These shouldn't be necessary because we're blasting away everything by
+      //  setting .innerHTML BUT jQuery won't remove its persistent event
+      //  listeners if we don't do that which will in turn cause memory leaks!
+      // Indeed, the listeners are actually closures on Message instances. These
+      //  contain a pointer to their parent Conversation, so that would prevent
+      //  the GC from collecting anything! Argh!
+      $("#messageList").empty();
+    }
+
+    function openLink(event) {
+      gMessenger.launchExternalURL(event.originalTarget.getAttribute("href"));
+    }
+
+    document.addEventListener("focus", function (event) {
+      /* This is a persistent event listener. It can operate multiple
+       * times. We have the invariant that for a given conversation, there's at
+       * most one such element (recycling doesn't use tabindex 1). */
+      let msgNode = document.querySelector(".message[tabindex=\"1\"]");
+      if (!msgNode)
+        return;
+
+      /* Restore the proper tab order. This event is fired *after* the
+       * right message has been focused in Gecko 1.9.2, *before* the right
+       * message has been focused in Gecko 1.9.1 (so it's basically
+       * useless). */
+      let msgNodes = document.getElementsByClassName("message");
+      let index;
+      for each (let [i, k] in Iterator(msgNodes)) {
+        if (k == msgNode) {
+          index = i;
+          break;
+        }
+      }
+      if (index)
+        msgNode.setAttribute("tabindex", index+2);
+    }, true);
+
+    function closeTab() {
+      let browser = window.frameElement;
+      let tabmail = window.top.document.getElementById("tabmail");
+      let tabs = tabmail.tabInfo;
+      let candidates = tabs.filter(function (x) x.browser == browser);
+      if (candidates.length == 1) {
+        tabmail.closeTab(candidates[0]);
+      } else {
+        Log.error("Couldn't find a tab to close...");
+      }
+    }
+
+    function capitalize(str)
+      str.charAt(0).toUpperCase() + str.substring(1);
+
+    // Below are event listeners for various actions. There is some logic
+    //  involved, and they may talk to other parts of the code.
+
+    // This property is now set from the outside. This allows stub.html to
+    //  be used either in a standalone tab or in the multimessage pane.
+    // let Conversations = window.top.Conversations;
+
+    Components.utils.import("resource:///modules/mailServices.js");
+    Components.utils.import("resource://conversations/stdlib/misc.js");
+    Components.utils.import("resource://conversations/stdlib/msgHdrUtils.js");
+    Components.utils.import("resource://conversations/prefs.js");
+    Components.utils.import("resource://conversations/log.js");
+
+    let Log = setupLogging("Conversations.Stub");
+    let isOSX = ("nsILocalFileMac" in Components.interfaces);
+    let isWindows = ("@mozilla.org/windows-registry-key;1" in Components.classes);
+    let isInTab = false;
+
+    $(document).ready(function () {
+      let stylesheet = [x
+        for each ([, x] in Iterator(document.styleSheets))
+        if (String.indexOf(x.href, "/conversation.css") >= 0)][0];
+      if (stylesheet) {
+        if (Prefs.tweak_chrome) {
+          // Set the root size to 10px on Linux, and equivalent font sizes on
+          // other platforms.
+          if (isOSX)
+            stylesheet.insertRule("html { font-size: 66.6%; }", 0);
+          else if (isWindows)
+            stylesheet.insertRule("html { font-size: 70%; }", 0);
+          else
+            stylesheet.insertRule("html { font-size: 62.5%; }", 0);
+        } else {
+          stylesheet.insertRule("html { font-size: 83.3%; }", 0);
+        }
+      } else {
+        Log.error("No stylesheet. This is unexpected.");
+      }
+    });
+
+    // Mark the current conversation as read/unread. The conversation driver
+    //  takes care of setting the right class on us whenever the state
+    //  changes...
+    function toggleRead(event) {
+      let $span = $(event.target).find("span.read");
+      if ($span.hasClass("unread")) {
+        Conversations.currentConversation.read = true;
+        $span.removeClass("unread");
+      } else {
+        Conversations.currentConversation.read = false;
+        $span.addClass("unread");
+      }
+    }
+
+    function expandCollapse(event) {
+      let $span = $(event.target).find("span.expand");
+      if ($span.hasClass("collapse")) {
+        [message.collapse()
+          for each ([, { message }] in Iterator(Conversations.currentConversation.messages))];
+        $span.removeClass("collapse");
+      } else {
+        [message.expand()
+          for each ([, { message }] in Iterator(Conversations.currentConversation.messages))];
+        $span.addClass("collapse");
+      }
+    }
+
+    function archiveToolbar(event) {
+      if (isInTab)
+        archiveConversation(event);
+      else
+        msgHdrsArchive(topMail3Pane(window).gFolderDisplay.selectedMessages);
+    }
+
+    function archiveConversation(event) {
+      msgHdrsArchive(Conversations.currentConversation.msgHdrs);
+    }
+
+    function deleteToolbar(event) {
+      if (isInTab)
+        deleteConversation();
+      else
+        msgHdrsDelete(topMail3Pane(window).gFolderDisplay.selectedMessages);
+    }
+
+    function deleteConversation(event) {
+      msgHdrsDelete(Conversations.currentConversation.msgHdrs);
+      if (isInTab)
+        closeTab();
+    }
+
+    function forwardConversation(event) {
+      let conv = Conversations.currentConversation;
+      conv._runOnceAfterNSignals(function () {
+        let fields = Cc["@mozilla.org/messengercompose/composefields;1"]
+                        .createInstance(Components.interfaces.nsIMsgCompFields);
+        fields.characterSet = "UTF-8";
+        fields.bodyIsAsciiOnly = false;
+        fields.forcePlainText = false;
+        fields.body = Conversations.currentConversation.exportAsHtml();
+        let params = Cc["@mozilla.org/messengercompose/composeparams;1"]
+                        .createInstance(Components.interfaces.nsIMsgComposeParams);
+        params.format = Components.interfaces.nsIMsgCompFormat.HTML;
+        params.composeFields = fields;
+        return MailServices.compose.OpenComposeWindowWithParams(null, params);
+      }, conv.messages.length);
+      for each (let { message } in conv.messages) {
+        message.expand();
+      }
+    }
+
+    let oldPrint = window.print;
+
+    function printConversation(event) {
+      for each (let { message: m } in Conversations.currentConversation.messages) {
+        m.dumpPlainTextForPrinting();
+      }
+      oldPrint();
+    }
+
+    window.print = printConversation;
+
+    function junkConversation(event) {
+      // This callback is only activated when the conversation is not a
+      //  conversation in a tab AND there's only one message in the conversation,
+      //  i.e. the currently selected message
+      topMail3Pane(window).JunkSelectedMessages(true);
+      $("#conversationHeader").addClass("not-junkable");
+    }
+
+    const kGalleryUrl = "chrome://conversations/content/gallery/index.html";
+
+    function galleryView(uri) {
+      let tabmail = topMail3Pane(window).document.getElementById("tabmail");
+      tabmail.openTab("chromeTab", {
+        chromePage: kGalleryUrl+"?uri="+uri,
+      });
+    }
+
+    /**
+     * This function gathers various information, encodes it in a URL query
+     * string, and then opens a regular chrome tab that contains our
+     * conversation.
+     */
+    function detachTab(event) {
+      let tabmail = topMail3Pane(window).document.getElementById("tabmail");
+      let willExpand = $("textarea").parent().hasClass("expand") && startedEditing();
+      // Pick _initialSet and not msgHdrs so as to enforce the invariant
+      //  that the messages from _initialSet are in the current view.
+      let urls = [
+        msgHdrGetUri(x)
+        for each (x in Conversations.currentConversation._initialSet)
+      ].join(",");
+      let queryString = "?urls="+encodeURIComponent(urls)
+        +"&willExpand="+Number(willExpand);
+      // First, save the draft, and once it's saved, then move on to opening the
+      // conversation in a new tab...
+      onSave(function () {
+        tabmail.openTab("chromeTab", {
+          chromePage: kStubUrl+queryString,
+        });
+      });
+    }
+
+    /**
+     * That big event handler tries to parse URL query parameters, and then acts
+     * upon these, by firing a conversation on its own. This is a very
+     * stripped-down version of the logic that's in monkeypatch.js, and it
+     * serves the purpose of being able to create a standalone conversation view
+     * in a new tab.
+     */
+    $(document).ready(function () {
+      // I just imagined Javascript would have some function for that
+      // built-in... looks like even jQuery doesn't have it.
+      let params = decodeUrlParameters(document.location.href);
+
+      // Oh, are we expected to build a conversation on our own? Let's do it,
+      // yay!
+      if ("urls" in params) {
+        try {
+          isInTab = true;
+          window.frameElement.setAttribute("tooltip", "aHTMLTooltip");
+          let mainWindow = topMail3Pane(window);
+          let willExpand = parseInt(params.willExpand);
+          let msgHdrs = [msgUriToMsgHdr(x) for each (x in params.urls.split(","))];
+          msgHdrs = msgHdrs.filter(function (x) x != null);
+          msgHdrs = msgHdrs.filter(function (x) x.messageId);
+          // It might happen that there are no messages left...
+          if (!msgHdrs.length) {
+            document.getElementById("messageList").textContent =
+              strings.get("messageMovedOrDeletedConversation");
+          } else {
+            window.Conversations = {
+              currentConversation: null,
+              counter: 0,
+            };
+            let freshConversation = new mainWindow.Conversations.monkeyPatch._Conversation(
+              window,
+              msgHdrs,
+              Prefs.kScrollUnreadOrLast,
+              ++Conversations.counter
+            );
+            let browser = window.frameElement;
+            // Because Thunderbird still hasn't fixed that...
+            browser.setAttribute("context", "mailContext");
+            freshConversation.outputInto(browser, function (aConversation) {
+              // This is a stripped-down version of what's in monkeypatch.js,
+              //  make sure the two are in sync!
+              Conversations.currentConversation = aConversation;
+              aConversation.completed = true;
+              registerQuickReply();
+              // That's why we saved it before...
+              newComposeSessionByDraftIf();
+              if (willExpand)
+                expandQuickReply();
+              // Create a new rule that will override the default rule, so that
+              // the expanded quick reply is twice higher.
+              document.body.classList.add("inTab");
+              // We can never junk a conversation in a new tab, because the junk
+              // command only operates on selected messages, and we're not in a
+              // 3pane context anymore.
+              document.getElementById("conversationHeader").classList.add("not-junkable");
+              // Do this now so as to not defeat the whole expand/collapse
+              // logic.
+              if (Prefs.getBool("mailnews.mark_message_read.auto")) {
+                setTimeout(function () {
+                  msgHdrsMarkAsRead(msgHdrs, true);
+                }, Prefs.getInt("mailnews.mark_message_read.delay.interval")
+                   * Prefs.getBool("mailnews.mark_message_read.delay") * 1000);
+              }
+            });
+          }
+        } catch (e) {
+          Log.debug(e);
+          dumpCallStack(e);
+        }
+      }
+    });
+
+    // I'll never understand why JS doesn't have lexical scoping...
+    let tStrings = new StringBundle("chrome://conversations/locale/template.properties");
+    let str = function (x) {
+      try {
+        return tStrings.get(x);
+      } catch (e) {
+        Log.error("No such string", x);
+        Log.debug(e);
+        dumpCallStack(e);
+      }
+    };
+  ]]>
+  </script>
+</head>
+
+<body>
+  <script id="detailsTemplate" type="text/x-jquery-tmpl"><![CDATA[
+      {{if dataContactsFrom.length}}
+        <div class="detailsLine fromLine">
+          <u>${str("fieldFrom")}</u>
+          {{tmpl(dataContactsFrom) "#contactTemplate"}}
+        </div>
+        {{/if}}
+        {{if dataContactsTo.length}}
+        <div class="detailsLine toLine">
+          <u>${str("fieldTo")}</u>
+          {{tmpl(dataContactsTo) "#contactTemplate"}}
+        </div>
+        {{/if}}
+        {{if dataContactsCc.length}}
+        <div class="detailsLine ccLine">
+          <u>${str("fieldCc")}</u>
+          {{tmpl(dataContactsCc) "#contactTemplate"}}
+        </div>
+        {{/if}}
+        {{if dataContactsBcc.length}}
+        <div class="detailsLine bccLine">
+          <u>${str("fieldBcc")}</u>
+          {{tmpl(dataContactsBcc) "#contactTemplate"}}
+        </div>
+        {{/if}}
+        {{each(i, line) extraLines}}
+        <div class="detailsLine">
+          <u>${line.key}:</u>
+          ${line.value}
+        </div>
+        {{/each}}
+        ]]>
+  </script>
+  <script id="messageTemplate" type="text/x-jquery-tmpl"><![CDATA[
+    <li class="message collapsed ${extraClasses}">
+      <div class="messageHeader hbox">
+        <div class="star"></div>
+        <div class="author">{{tmpl(dataContactFrom) "#contactTemplate"}}</div>
+        <div class="involved boxFlex">
+          <span class="to hide-with-details"> ${str("to")} {{tmpl(dataContactsTo) "#contactTemplate"}}</span>
+          <span class="bzTo"> ${str("at")} ${bugzillaUrl}</span>
+          <span class="snippet"><ul class="tags regular-tags"></ul><ul
+                                                                      class="tags special-tags"
+                                                                      ><li
+                                                                          class="tag-signed"
+                                                                          title="${str('messageSignedLong')}"
+                                                                          ><img src="chrome://conversations/content/i/sign.png" />
+                ${str("messageSigned")}</li
+                                          ><li
+                                              class="tag-decrypted"
+                                              title="${str('messageDecryptedLong')}"
+                                              ><img src="chrome://conversations/content/i/enc.png" />
+                ${str("messageDecrypted")}</li
+                                             ><li
+                                                 class="in-folder"
+                                                 title="${str('jumpToFolder')}"
+                                                 >${str("inFolder").replace("#1", shortFolderName)}</li
+                                                                                                      ></ul>${snippet}</span>
+        </div>
+        <div class="options">
+          <span class="date">
+            {{if attachments.length}}
+            <img src="chrome://conversations/content/i/attachment.png" />
+            {{/if}}
+            <span title="${fullDate}">${date}</span>
+          </span>
+          <span class="details hide-with-details">
+            | <a href="javascript:" class="link">${str("details")}</a>
+          </span>
+          <span class="replyLinkWrapper">
+            | <a href="javascript:" class="replyMainActionLink"></a>
+          </span>
+          <span class="editDraftLinkWrapper">
+            | <a href="javascript:" class="edit-draft">${str("editDraft2")}</a>
+          </span>
+          <span class="dropDown"> |
+            <a href="javascript:" onclick="displayMenu(event);" class="top-right-more">${str("more")} <span class="downwardArrow">&#x25bc;</span></a>
+            <div class="tooltip tooltip-menu menu">
+              <ul>
+                <li class="action-archive">${str("archive")}
+                  <div class="arrow"></div>
+                  <div class="arrow inside"></div>
+                </li>
+                <li class="action-delete">${str("delete")}</li>
+                <li class="action-classic">${str("viewClassic")}</li>
+                <li class="action-source">${str("viewSource")}</li>
+              </ul>
+            </div>
+          </span>
+        </div>
+      </div>
+      <div class="detailsPlaceholder">
+      </div>
+      <div class="detailsLine">
+        {{if attachments.length}}
+        <u>${attachmentsPlural}:</u>
+        {{each(i, att) attachments}}
+        <a href="javascript:"
+           onclick="scrollNodeIntoView(document.getElementById('${att.anchor}'));">
+          ${att.name} (${att.formattedSize})</a>${att.sep}
+        {{/each}}
+        {{/if}}
+      </div>
+      <div class="lightningImipBar notificationBar" style="display: none">
+        <img class="lightningImipImage" src="chrome://calendar/skin/cal-icon32.png"/>
+        <span class="lightningImipText"></span>
+        <button class="lightningImipButton lightningImipButton1" style="display: none"/>
+        <button class="lightningImipButton lightningImipButton2" style="display: none"/>
+        <button class="lightningImipButton lightningImipButton3" style="display: none"/>
+      </div>
+      <div class="phishingBar notificationBar" style="display: none">
+        <img src="chrome://messenger/skin/icons/phishing.png" style="vertical-align: middle;" />
+        ${str("scam")}
+        <span class="ignore-warning">
+          <a href="javascript:">${str("ignoreWarning")}</a>
+        </span>
+      </div>
+      <div class="remoteContent notificationBar" style="display: none">
+        ${str("remoteContentBlocked")}
+        <span class="show-remote-content">
+          <a href="javascript:">${str("showRemote")}</a> -
+        </span>
+        <span class="always-display">
+          <a href="javascript:">${str("alwaysShowRemote").replace("#1", realFrom)}</a>
+        </span>
+      </div>
+      <div class="messageBody">
+        <!-- Weird markup to deal with whitespace DOM nodes -->
+        <ul class="tags special-tags"
+            ><li
+                class="keep-tag tag-signed"
+                title="${str('messageSignedLong')}"
+                ><img src="chrome://conversations/content/i/sign.png" />
+            ${str("messageSigned")}</li
+                                      ><li
+                                          class="keep-tag tag-decrypted"
+                                          title="${str('messageDecryptedLong')}"
+                                          ><img src="chrome://conversations/content/i/enc.png" />
+            ${str("messageDecrypted")}</li
+                                         ><li
+                                             class="keep-tag in-folder"
+                                             title="${str('jumpToFolder')}"
+                                             >${str("inFolder").replace("#1", folderName)}</li
+                                                                                             ></ul
+                                                                                                 >
+        <ul class="tags regular-tags"></ul>
+        <div class="iframe-container"></div>
+        <div class="body-container"></div>
+        {{if attachments.length}}
+        <ul class="attachments">
+          <div class="attachHeader">
+            ${attachmentsPlural}
+            | <a href="javascript:" class="link download-all">${str("downloadAll")}</a>
+            {{if gallery}}
+            | <a href="javascript:" onclick="galleryView('${uri}')" class="view-all">
+              ${str("galleryView")}
+            </a>
+            {{/if}}
+          </div>
+          {{each(i, att) attachments}}
+          <li class="clearfix hbox attachment" draggable="true" id="${att.anchor}">
+            <div class="attachmentThumb">
+              <img onload="$(this).closest('.attachment').find('.align').vAlign()"
+                   class="${att.imgClass}" src="${att.thumb}" />
+            </div>
+            <div class="attachmentInfo align">
+              <span class="filename">${att.name}</span>
+              <div class="attachActions">
+                ${att.formattedSize}
+                | <a href="javascript:" class="link open-attachment">${str("open")}</a>
+                | <a href="javascript:" class="link download-attachment">${str("download")}</a>
+              </div>
+            </div>
+          </li>
+          {{/each}}
+        </ul>
+        {{/if}}
+        <div class="embedsContainer">
+        </div>
+      </div>
+      <div class="messageFooter">
+        <div class="footerActions">
+          <button class="edit-draft"><span>${str("editDraft2")}</span><span class="ext"></span></button>
+          <button class="buttonReply"><span>${str("reply")}</span><span class="ext"></span></button>
+          <button class="buttonReplyAll"><span>${str("replyAll")}</span><span class="ext"></span></button>
+          <button class="buttonReplyList"><span>${str("replyList")}</span><span class="ext"></span></button>
+          <button class="buttonForward">${str("forward")}<span class="ext"></span></button>
+        </div>
+      </div>
+      {{if quickReply}}
+      {{tmpl "#quickReplyTemplate"}}
+      {{/if}}
+    </li>
+    ]]>
+  </script>
+  <!-- Weird markup again, otherwise, the comma is separated from the name by a
+       space because of the #text whitespace-only nodes that end up in the DOM.
+    -->
+  <script id="contactTemplate" type="text/x-jquery-tmpl"><![CDATA[<span
+    >${separator}</span
+    ><span class="tooltipWrapper contact"
+      ><span class="contactName" style="${colorStyle}"
+        >{{if star}}&#x2605; {{/if}}${String.trim(name)}{{if writeBr}}<br />{{/if}}</span
+      ><div class="tooltip">
+        <div class="arrow"></div>
+        <div class="arrow inside"></div>
+        <div class="authorInfo">
+          <span class="name">${tooltipName}</span>
+          <span class="authorEmail">
+            ${email}
+            <button class="copyEmail" title="${str('copyEmail')}">
+              <img src="chrome://conversations/content/i/clipboard.png" />
+            </button>
+          </span>
+        </div>
+        <div class="authorPicture">
+          <img src="${avatar}" />
+        </div>
+        <div class="authorInfo authorLinks">
+          {{if ("facebook" in profiles)}}
+          <a href="http://www.facebook.com/profile.php?id=${profiles.facebook}" class="profile-link">
+            <img src="chrome://conversations/content/i/facebook.ico" />
+          </a>
+          {{/if}}
+          {{if ("twitter" in profiles)}}
+          <a href="http://www.twitter.com/${profiles.twitter}" class="profile-link">
+            <img src="chrome://conversations/content/i/twitter.ico" />
+          </a>
+          {{/if}}
+          {{if ("google" in profiles)}}
+          <a href="${profiles.google}" class="profile-link">
+            <img src="chrome://conversations/content/i/google.ico" />
+          </a>
+          {{/if}}
+          {{if ("flickr" in profiles)}}
+          <a href="${profiles.flickr}" class="profile-link">
+            <img src="chrome://conversations/content/i/flickr.ico" />
+          </a>
+          {{/if}}
+        </div>
+        <div class="tipFooter hiddenFooter" style="display:none;">
+          {{if (showMonospace)}}
+          <div style="margin-bottom:5px;">
+            <input type="checkbox" style="vertical-align: text-top" class="checkbox-monospace" />
+            <label style="color:#666; font-weight: normal">${str("messagesMonospace")}</label>
+          </div>
+          {{/if}}
+          <button class="createFilter">${str("createFilter")}</button>
+          <button class="addContact" title="${str('addToAb')}">
+            <img src="chrome://conversations/content/i/user_add.png" />
+          </button>
+          <button class="editContact" title="${str('editCardAb')}">
+            <img src="chrome://conversations/content/i/user_edit.png" />
+          </button>
+        </div>
+        <div class="tipFooter">
+          <button class="sendEmail">${str("sendEmail")}</button>
+          <button class="showInvolving">${str("recentConversations")}</button>
+          <button class="moreExpander">+</button>
+        </div>
+    </div
+       ></span
+           >]]></script>
+  <script id="quickReplyTemplate" type="text/x-jquery-tmpl"><![CDATA[
+    <div class="quickReply">
+      <div class="replyHeader">
+        <div class="quickReplyRecipients">
+          <ul class="fromField">
+            ${str("fieldFrom")}
+            <li class="senderName"></li>,
+            <li class="replyMethod">
+              <input type="radio" name="reply-method" value="reply"
+                     onchange="changeComposeFields('reply')" id="reply-radio"
+                     /><label for="reply-radio">${str("reply")}</label>
+            </li>
+            <li class="replyMethod replyMethod-replyAll">
+              <input type="radio" name="reply-method" value="replyAll"
+                     onchange="changeComposeFields('replyAll')" id="replyAll-radio"
+                     /><label for="replyAll-radio">${str("replyAll")}</label>
+            </li>
+            <li class="replyMethod replyMethod-replyList">
+              <input type="radio" name="reply-method" value="replyList"
+                     onchange="changeComposeFields('replyList')" id="replyList-radio"
+                     /><label for="replyList-radio">${str("replyList")}</label>
+            </li>
+            <li class="replyMethod">
+              <input type="radio" name="reply-method" value="forward"
+                     onchange="changeComposeFields('forward')" id="forward-radio"
+                     /><label for="forward-radio">${str("forward")}</label>
+            </li>
+            <li class="showCc">| <a onclick="showCc(); editFields();" href="javascript:">${str("addCc")}</a></li>
+            <li class="showBcc">| <a onclick="showBcc(); editFields();" href="javascript:">${str("addBcc")}</a></li>
+          </ul>
+          <div class="editRecipientList editToList hbox">
+            <div class="label">${str("fieldTo")}</div>
+            <div class="boxFlex"><input type="text" id="to" /></div>
+          </div>
+          <div class="editRecipientList editCcList hbox" style="display: none">
+            <div class="label">${str("fieldCc")}</div>
+            <div class="boxFlex"><input type="text" id="cc" /></div>
+          </div>
+          <div class="editRecipientList editBccList hbox" style="display: none">
+            <div class="label">${str("fieldBcc")}</div>
+            <div class="boxFlex"><input type="text" id="bcc" /></div>
+          </div>
+          <ul class="recipientList toList">
+            ${str("fieldTo")}
+            <li>${str("pleaseWait")}</li>
+            <li class="add-more">&#xa0;- <a href="javascript:" onclick="editFields('to');">${str("edit")}</a></li>
+          </ul>
+          <ul class="recipientList ccList" style="display: none;">
+            ${str("fieldCc")}
+            <li>${str("pleaseWait")}</li>
+            <li class="add-more">&#xa0;- <a href="javascript:" onclick="editFields('cc');">${str("edit")}</a></li>
+          </ul>
+          <ul class="recipientList bccList" style="display: none;">
+            ${str("fieldBcc")}
+            <li>${str("pleaseWait")}</li>
+            <li class="add-more">&#xa0;- <a href="javascript:" onclick="editFields('bcc');">${str("edit")}</a></li>
+          </ul>
+        </div>
+        <div class="quickReplyHeader" style="display: none; overflow: auto">
+          <span class="statusMessage" style="float: left;"></span>
+          <span class="statusPercentage" style="float: right;"></span>
+          <span class="statusThrobber" style="float: right;">
+            <img src="chrome://conversations/content/i/loader.gif"
+                 style="vertical-align: middle;" />
+          </span>
+        </div>
+      </div>
+
+      <ul class="inputs cf" style="padding-right: ${str('actionsSize')}rem">
+        <li class="reply expand">
+          <div class="popout" title="${str('popoutReply')}" alt="popout"></div>
+          <div class="textWrap">
+            <div class="icon"><span>${str("reply")}</span> <img src="i/reply.png" /></div>
+            <textarea class="sans"></textarea>
+          </div>
+        </li>
+        
+        <li class="replyAll expand">
+          <div class="popout" title="${str('popoutReplyAll')}" alt="popout"></div>
+          <div class="textWrap">
+            <div class="icon"><span>${str("replyAll")}</span> <img src="i/replyAll.png" /></div>
+            <textarea class="sans"></textarea>
+          </div>
+        </li>
+        
+        <li class="misc" style="width: ${str('actionsSize')}rem">
+          <ul class="actions cf">
+            <li class="fwd"><a href="javascript:">${capitalize(str('forward'))}</a></li>
+            <li class="list"><a href="javascript:">${capitalize(str('replyList'))}</a></li>
+          </ul>
+        </li>   
+      </ul>
+
+      <div class="replyFooter" style="overflow: auto" tabindex="-1">
+        <button id="send" style="float:right;margin-left:3px;" onclick="gComposeSession.send();">
+          ${str("send")}
+        </button>
+        <button id="sendArchive" style="float:right;margin-left:3px;"
+                onclick="gComposeSession.send({ archive: true });">
+          ${str("sendArchive")}
+        </button>
+        <button id="save" style="float:right" onclick="onSave();">${str("save")}</button>
+        <a class="discard" href="javascript:" id="discard"
+           onclick="confirmDiscard()">${str("discard")}</a>
+      </div>
+    </div>
+    ]]>
+  </script>
+  <div id="wrapper">
+    <div id="conversationHeaderWrapper">
+      <div id="conversationHeader" class="hbox">
+        <div class="subject boxFlex" title="test">test</div>
+        <div class="actions">
+          <button title="Delete this conversation" onclick="deleteToolbar(event);">
+            <span class="trash"></span>
+          </button>
+          <button title="Archive this conversation" onclick="archiveToolbar(event);">
+            <span class="archive"></span>
+          </button>
+          <button title="Junk this message" class="junk-button" onclick="junkConversation(event);">
+            <span class="junk"></span>
+          </button>
+          <button title="Expand/collapse all messages" onclick="expandCollapse(event);">
+            <span class="expand collapse"></span>
+          </button>
+          <button title="Toggle read/unread all messages" onclick="toggleRead(event);">
+            <span class="read"></span>
+          </button>
+          <button title="Show this conversation in a new tab" onclick="detachTab(event);">
+            <span class="tab"></span>
+          </button>
+          <!--<button><span class="mode"></span></button>-->
+        </div>
+      </div>
+    </div>
+    <ul id="messageList">
+      <li class="message inView" tabindex="1">
+        <div class="messageHeader hbox">
+          <div class="star">
+          </div>
+          <div class="author">
+            <span>
+            </span>
+            <span class="tooltipWrapper contact inAddressBook">
+              <span class="contactName" style="color :#ed6666">Me</span>
+              <div class="tooltip">
+                <div class="arrow">
+                </div>
+                <div class="arrow inside">
+                </div>
+                <div class="authorInfo">
+                  <span class="name">Me</span>
+                  <span class="authorEmail">             benjamin.lerner@gmail.com             <button class="copyEmail" title="Copy email address to clipboard">
+                      <img src="chrome://conversations/content/i/clipboard.png" />
+                    </button>
+                  </span>
+                </div>
+                <div class="authorPicture">
+                  <img src="chrome://messenger/skin/addressbook/icons/contact-generic.png" />
+                </div>
+                <div class="authorInfo authorLinks">
+                </div>
+                <div class="tipFooter hiddenFooter" style="display:none;">
+                  <div style="margin-bottom:5px;">
+                    <input type="checkbox" style="vertical-align: text-top" class="checkbox-monospace" />
+                    <label style="color:#666; font-weight: normal">Messages from this sender in monospace</label>
+                  </div>
+                  <button class="createFilter">create filter for sender</button>
+                  <button class="addContact" title="Add to address book">
+                    <img src="chrome://conversations/content/i/user_add.png" />
+                  </button>
+                  <button class="editContact" title="Edit contact in address book">
+                    <img src="chrome://conversations/content/i/user_edit.png" />
+                  </button>
+                </div>
+                <div class="tipFooter">
+                  <button class="sendEmail">send email</button>
+                  <button class="showInvolving">recent conversations</button>
+                  <button class="moreExpander">+</button>
+                </div>
+              </div>
+            </span>
+          </div>
+          <div class="involved boxFlex">
+            <span class="to hide-with-details"> to <span>
+              </span>
+              <span class="tooltipWrapper contact inAddressBook">
+                <span class="contactName" style="">Me</span>
+                <div class="tooltip">
+                  <div class="arrow">
+                  </div>
+                  <div class="arrow inside">
+                  </div>
+                  <div class="authorInfo">
+                    <span class="name">Me</span>
+                    <span class="authorEmail">             benjamin.lerner@gmail.com             <button class="copyEmail" title="Copy email address to clipboard">
+                        <img src="chrome://conversations/content/i/clipboard.png" />
+                      </button>
+                    </span>
+                  </div>
+                  <div class="authorPicture">
+                    <img src="chrome://messenger/skin/addressbook/icons/contact-generic.png" />
+                  </div>
+                  <div class="authorInfo authorLinks">
+                  </div>
+                  <div class="tipFooter hiddenFooter" style="display:none;">
+                    <button class="createFilter">create filter for sender</button>
+                    <button class="addContact" title="Add to address book">
+                      <img src="chrome://conversations/content/i/user_add.png" />
+                    </button>
+                    <button class="editContact" title="Edit contact in address book">
+                      <img src="chrome://conversations/content/i/user_edit.png" />
+                    </button>
+                  </div>
+                  <div class="tipFooter">
+                    <button class="sendEmail">send email</button>
+                    <button class="showInvolving">recent conversations</button>
+                    <button class="moreExpander">+</button>
+                  </div>
+                </div>
+              </span>
+            </span>
+            <span class="bzTo"> at [unknown bugzilla instance]</span>
+            <span class="snippet">
+              <ul class="tags regular-tags">
+              </ul>
+              <ul class="tags special-tags">
+                <li class="tag-signed" title="This message has been signed">
+                  <img src="chrome://conversations/content/i/sign.png" />               signed</li>
+                <li class="tag-decrypted" title="This message has been decrypted before display">
+                  <img src="chrome://conversations/content/i/enc.png" />               decrypted</li>
+                <li class="in-folder" title="Jump to this folder">In Inbox</li>
+              </ul>...</span>
+          </div>
+          <div class="options">
+            <span class="date">
+              <span title="12:14 PM">12:14 PM</span>
+            </span>
+            <span class="details hide-with-details">             | <a href="javascript:" class="link">show details</a>
+            </span>
+            <span class="replyLinkWrapper">             | <a href="javascript:" class="replyMainActionLink">reply</a>
+            </span>
+            <span class="editDraftLinkWrapper">             | <a href="javascript:" class="edit-draft">edit draft</a>
+            </span>
+            <span class="dropDown"> |             <a href="javascript:" onclick="displayMenu(event);" class="top-right-more">more <span class="downwardArrow">▼</span>
+              </a>
+              <div class="tooltip tooltip-menu menu" style="display: none;">
+                <ul>
+                  <li class="action-archive">archive this message                   <div class="arrow">
+                    </div>
+                    <div class="arrow inside">
+                    </div>
+                  </li>
+                  <li class="action-delete">delete this message</li>
+                  <li class="action-classic">view using the classic reader</li>
+                  <li class="action-source">view message source</li>
+                </ul>
+              </div>
+            </span>
+          </div>
+        </div>
+        <div class="detailsPlaceholder">
+        </div>
+        <div class="detailsLine">
+        </div>
+        <div class="lightningImipBar notificationBar" style="display: none">
+          <img class="lightningImipImage" src="chrome://calendar/skin/cal-icon32.png" />
+          <span class="lightningImipText">
+          </span>
+          <button class="lightningImipButton lightningImipButton1" style="display: none">
+          </button>
+          <button class="lightningImipButton lightningImipButton2" style="display: none">
+          </button>
+          <button class="lightningImipButton lightningImipButton3" style="display: none">
+          </button>
+        </div>
+        <div class="phishingBar notificationBar" style="display: none">
+          <img src="chrome://messenger/skin/icons/phishing.png" style="vertical-align: middle;" />         This message may be a scam:         <span class="ignore-warning">
+            <a href="javascript:">ignore warning</a>
+          </span>
+        </div>
+        <div class="remoteContent notificationBar" style="display: none">         Remote content was hidden:         <span class="show-remote-content">
+            <a href="javascript:">show remote content</a> -         </span>
+          <span class="always-display">
+            <a href="javascript:">always show remote content from benjamin.lerner@gmail.com</a>
+          </span>
+        </div>
+        <div class="messageBody">
+          <!-- Weird markup to deal with whitespace DOM nodes -->
+          <ul class="tags special-tags">
+            <li class="keep-tag tag-signed" title="This message has been signed">
+              <img src="chrome://conversations/content/i/sign.png" />             signed</li>
+            <li class="keep-tag tag-decrypted" title="This message has been decrypted before display">
+              <img src="chrome://conversations/content/i/enc.png" />             decrypted</li>
+            <li class="keep-tag in-folder" title="Jump to this folder">In benjamin.lerner@gmail.com/Inbox</li>
+          </ul>
+          <ul class="tags regular-tags">
+          </ul>
+          <div class="iframe-container">
+            <iframe xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" style="height: 20px" type="content"/>
+          </div>
+          <div class="body-container">
+          </div>
+          <div class="embedsContainer">
+          </div>
+        </div>
+        <div class="messageFooter">
+          <div class="footerActions">
+            <button class="edit-draft">
+              <span>edit draft</span>
+              <span class="ext">
+              </span>
+            </button>
+            <button class="buttonReply">
+              <span>reply</span>
+              <span class="ext">
+              </span>
+            </button>
+            <button class="buttonReplyAll" style="display: none;">
+              <span>reply all</span>
+              <span class="ext">
+              </span>
+            </button>
+            <button class="buttonReplyList" style="display: none;">
+              <span>reply to list</span>
+              <span class="ext">
+              </span>
+            </button>
+            <button class="buttonForward">forward<span class="ext">
+              </span>
+            </button>
+          </div>
+        </div>
+        <div class="quickReply expand">
+          <div class="replyHeader" style="display: block;">
+            <div class="quickReplyRecipients" style="display: block;">
+              <ul class="fromField">             from:             <li class="senderName">benjamin.lerner@gmail.com</li>,             <li class="replyMethod">
+                  <input type="radio" name="reply-method" value="reply" onchange="changeComposeFields('reply')" id="reply-radio" />
+                  <label for="reply-radio">reply</label>
+                </li>
+                <li class="replyMethod replyMethod-replyAll" style="display: none;">
+                  <input type="radio" name="reply-method" value="replyAll" onchange="changeComposeFields('replyAll')" id="replyAll-radio" />
+                  <label for="replyAll-radio">reply all</label>
+                </li>
+                <li class="replyMethod replyMethod-replyList" style="display: none;">
+                  <input type="radio" name="reply-method" value="replyList" onchange="changeComposeFields('replyList')" id="replyList-radio" />
+                  <label for="replyList-radio">reply to list</label>
+                </li>
+                <li class="replyMethod">
+                  <input type="radio" name="reply-method" value="forward" onchange="changeComposeFields('forward')" id="forward-radio" />
+                  <label for="forward-radio">forward</label>
+                </li>
+                <li class="showCc">| <a onclick="showCc(); editFields();" href="javascript:">add cc</a>
+                </li>
+                <li class="showBcc">| <a onclick="showBcc(); editFields();" href="javascript:">add bcc</a>
+                </li>
+              </ul>
+              <div class="editRecipientList editToList hbox">
+                <div class="label">to:</div>
+                <div class="boxFlex">
+                  <input type="text" id="to" style="display: none;" />
+                  <ul class="token-input-list-facebook">
+                    <li title="Ben &lt;benjamin.lerner@gmail.com&gt;" class="token-input-token-facebook">
+                      <p>Ben</p>
+                      <span class="token-input-delete-token-facebook">x</span>
+                    </li>
+                    <li class="token-input-input-token-facebook">
+                      <input type="text" style="outline: medium none;" />
+                    </li>
+                  </ul>
+                  <div class="token-input-dropdown-facebook" style="display: none;">
+                  </div>
+                </div>
+              </div>
+              <div class="editRecipientList editCcList hbox" style="display: none">
+                <div class="label">cc:</div>
+                <div class="boxFlex">
+                  <input type="text" id="cc" style="display: none;" />
+                  <ul class="token-input-list-facebook">
+                    <li class="token-input-input-token-facebook">
+                      <input type="text" style="outline: medium none;" />
+                    </li>
+                  </ul>
+                  <div class="token-input-dropdown-facebook" style="display: none;">
+                  </div>
+                </div>
+              </div>
+              <div class="editRecipientList editBccList hbox" style="display: none">
+                <div class="label">bcc:</div>
+                <div class="boxFlex">
+                  <input type="text" id="bcc" style="display: none;" />
+                  <ul class="token-input-list-facebook">
+                    <li class="token-input-input-token-facebook">
+                      <input type="text" style="outline: medium none;" />
+                    </li>
+                  </ul>
+                  <div class="token-input-dropdown-facebook" style="display: none;">
+                  </div>
+                </div>
+              </div>
+              <ul class="recipientList toList">             to:                          <li title="benjamin.lerner@gmail.com">Ben</li>
+                <span class="recipientListSeparator">
+                </span>
+                <li class="add-more"> - <a href="javascript:" onclick="editFields('to');">edit</a>
+                </li>
+              </ul>
+              <ul class="recipientList ccList" style="display: none;">             cc:                          <li class="add-more"> - <a href="javascript:" onclick="editFields('cc');">edit</a>
+                </li>
+              </ul>
+              <ul class="recipientList bccList" style="display: none;">             bcc:                          <li class="add-more"> - <a href="javascript:" onclick="editFields('bcc');">edit</a>
+                </li>
+              </ul>
+            </div>
+            <div class="quickReplyHeader" style="display: none; overflow: auto">
+              <span class="statusMessage" style="float: left;">
+              </span>
+              <span class="statusPercentage" style="float: right;">
+              </span>
+              <span class="statusThrobber" style="float: right;">
+                <img src="chrome://conversations/content/i/loader.gif" style="vertical-align: middle;" />
+              </span>
+            </div>
+          </div>
+          <ul class="inputs cf noPad" style="padding-right: 14rem">
+            <li class="reply expand selected">
+              <div class="popout" title="Reply in a new window" alt="popout">
+              </div>
+              <div class="textWrap">
+                <div class="icon">
+                  <span>reply</span>
+                  <img src="i/reply.png" />
+                </div>
+                <textarea class="sans selected" spellcheck="true" id="TARGETED">
+                </textarea>
+              </div>
+            </li>
+            <li class="replyAll expand invisible">
+              <div class="popout" title="Reply all in a new window" alt="popout">
+              </div>
+              <div class="textWrap">
+                <div class="icon">
+                  <span>reply all</span>
+                  <img src="i/replyAll.png" />
+                </div>
+                <textarea class="sans" spellcheck="true">
+                </textarea>
+              </div>
+            </li>
+            <li class="misc invisible" style="width: 14rem">
+              <ul class="actions cf">
+                <li class="fwd">
+                  <a href="javascript:">Forward</a>
+                </li>
+                <li class="list">
+                  <a href="javascript:">Reply to list</a>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <div class="replyFooter" style="overflow: auto; display: block;" tabindex="-1">
+            <button id="send" style="float:right;margin-left:3px;" onclick="gComposeSession.send();">           send         </button>
+            <button id="sendArchive" style="float:right;margin-left:3px;" onclick="gComposeSession.send({ archive: true });">           send &amp; archive         </button>
+            <button id="save" style="float:right" onclick="onSave();">save</button>
+            <a class="discard" href="javascript:" id="discard" onclick="confirmDiscard()">discard</a>
+          </div>
+        </div>
+      </li>
+    </ul>
+    <div class="bottom-links">
+      <a class="link" href="javascript:" onclick="forwardConversation(event);">
+        Forward this conversation
+      </a> –
+      <a class="link" href="javascript:" onclick="printConversation(event);">
+        Print this conversation
+      </a>
+    </div>
+  </div>
+</body>
+</html>
+
+
+                  </browser>
+                  <vbox id="singlemessage" flex="1" hidden="true">
+                    <hbox id="msgHeaderView" class="main-header-area">
+                      <deck id="msgHeaderViewDeck" selectedIndex="0" persist="selectedIndex" flex="1" context="header-toolbar-context-menu">
+                        <vbox id="expandedHeaderView" flex="1" show_header_mode="normal">
+                          <vbox id="expandedHeadersBox" flex="1">
+                            <hbox id="expandedHeadersTopBox" flex="1">
+                              <toolbox id="header-view-toolbox" class="inline-toolbox" defaulticonsize="small" minwidth="50px" defaultlabelalign="end" defaultmode="full" inlinetoolbox="true" mode="full" iconsize="small" labelalign="end">
+                                <toolbar id="header-view-toolbar" class="inline-toolbar" align="start" customizable="true" mode="full" context="header-toolbar-context-menu" defaulticonsize="small" defaultmode="full" defaultset="hdrReplyToSenderButton,hdrSmartReplyButton,hdrForwardButton,hdrArchiveButton,hdrJunkButton,hdrTrashButton" iconsize="small">
+                                  <toolbarbutton id="hdrReplyToSenderButton" label="reply" tooltiptext="reply to this message" oncommand="MsgReplyMessage(event);RestoreFocusAfterHdrButton();" observes="button_reply" class="toolbarbutton-1 msgHeaderView-button hdrReplyToSenderButton" removable="true" hidden="true"/>
+                                  <toolbaritem id="hdrSmartReplyButton" label="smart reply" removable="true">
+                                    <toolbarbutton id="hdrDummyReplyButton" label="smart reply" hidden="true" class="toolbarbutton-1 msgHeaderView-button hdrDummyReplyButton"/>
+                                    <toolbarbutton id="hdrReplyOnlyButton" label="reply" tooltiptext="reply to this message" oncommand="MsgReplyMessage(event);RestoreFocusAfterHdrButton();" observes="button_reply" class="toolbarbutton-1 msgHeaderView-button hdrReplyOnlyButton"/>
+                                    <toolbarbutton id="hdrReplyButton" label="reply" tooltiptext="reply to this message" oncommand="MsgReplyMessage(event);RestoreFocusAfterHdrButton();" observes="button_reply" class="toolbarbutton-1 msgHeaderView-button hdrReplyButton" type="menu-button" hidden="true">
+                                      <menupopup id="hdrReplyDropdown">
+                                        <menuitem id="hdrReply_ReplySubButton" label="reply" tooltiptext="reply to this message" observes="button_reply"/>
+                                        <menuseparator id="hdrReplySubSeparator"/>
+                                        <menuitem id="hdrReply_ReplyAllSubButton" label="reply all" tooltiptext="reply to sender and all recipients" observes="button_replyall" oncommand="MsgReplyToAllMessage(event); event.stopPropagation();                                          RestoreFocusAfterHdrButton();"/>
+                                      </menupopup>
+                                    </toolbarbutton>
+                                    <toolbarbutton id="hdrReplyAllButton" label="reply all" tooltiptext="reply to sender and all recipients" oncommand="MsgReplyToAllMessage(event);RestoreFocusAfterHdrButton();" observes="button_replyall" class="toolbarbutton-1 msgHeaderView-button hdrReplyButton hdrReplyAllButton" type="menu-button" hidden="true">
+                                      <menupopup id="hdrReplyAllDropdown">
+                                        <menuitem id="hdrReplyAll_ReplyAllSubButton" label="reply all" tooltiptext="reply to sender and all recipients" observes="button_replyall"/>
+                                        <menuseparator id="hdrReplyAllSubSeparator"/>
+                                        <menuitem id="hdrReplySubButton" label="reply" tooltiptext="reply to this message" observes="button_reply" oncommand="MsgReplyMessage(event); event.stopPropagation();                                          RestoreFocusAfterHdrButton();"/>
+                                      </menupopup>
+                                    </toolbarbutton>
+                                    <toolbarbutton id="hdrReplyListButton" label="reply list" tooltiptext="reply to mailing list" oncommand="MsgReplyToListMessage(event);RestoreFocusAfterHdrButton();" observes="button_replylist" class="toolbarbutton-1 msgHeaderView-button hdrReplyButton hdrReplyListButton" type="menu-button" hidden="true" disabled="true">
+                                      <menupopup id="hdrReplyListDropdown">
+                                        <menuitem id="hdrReplyList_ReplyListSubButton" label="reply list" tooltiptext="reply to mailing list" observes="button_replylist" disabled="true"/>
+                                        <menuseparator id="hdrReplyListSubSeparator"/>
+                                        <menuitem id="hdrRelplyList_ReplyAllSubButton" label="reply all" tooltiptext="reply to sender and all recipients" observes="button_replyall" oncommand="MsgReplyToAllMessage(event); event.stopPropagation();                                          RestoreFocusAfterHdrButton();"/>
+                                        <menuitem id="hdrReplyList_ReplySubButton" label="reply" tooltiptext="reply to this message" observes="button_reply" oncommand="MsgReplyMessage(event); event.stopPropagation();                                          RestoreFocusAfterHdrButton();"/>
+                                      </menupopup>
+                                    </toolbarbutton>
+                                  </toolbaritem>
+                                  <toolbarbutton id="hdrForwardButton" label="forward" tooltiptext="forward this message" oncommand="MsgForwardMessage(event);RestoreFocusAfterHdrButton();" observes="button_forward" class="toolbarbutton-1 msgHeaderView-button hdrForwardButton" removable="true"/>
+                                  <toolbarbutton id="hdrArchiveButton" label="archive" tooltiptext="archive this message" oncommand="MsgArchiveSelectedMessages(event);RestoreFocusAfterHdrButton();" observes="button_archive" class="toolbarbutton-1 msgHeaderView-button hdrArchiveButton" removable="true"/>
+                                  <toolbarbutton id="hdrJunkButton" label="junk" tooltiptext="mark this message as junk" observes="button_junk" class="toolbarbutton-1 msgHeaderView-button hdrJunkButton" oncommand="goDoCommand('button_junk');RestoreFocusAfterHdrButton();" removable="true"/>
+                                  <toolbarbutton id="hdrTrashButton" label="delete" tooltiptext="delete this message" observes="button_delete" class="toolbarbutton-1 msgHeaderView-button hdrTrashButton" oncommand="goDoCommand(event.shiftKey ? 'cmd_shiftDelete' :                                                     'cmd_delete');RestoreFocusAfterHdrButton();" removable="true"/>
+                                </toolbar>
+                              </toolbox>
+                              <box id="expandedBoxSpacer"/>
+                              <grid id="expandedHeaders">
+                                <columns id="expandedHeadersColumns">
+                                  <column id="expandedHeadersNameColumn" minwidth="0"/>
+                                  <column id="expandedHeadersValueColumn" flex="1"/>
+                                </columns>
+                                <rows id="expandedHeaderRows">
+                                  <row id="expandedfromRow">
+                                    <label id="expandedfromLabel" class="headerName" value="from " control="expandedfromBox"/>
+                                    <mail-multi-emailHeaderField id="expandedfromBox" flex="1"/>
+                                  </row>
+                                </rows>
+                              </grid>
+                            </hbox>
+                            <hbox id="expandedHeadersBottomBox">
+                              <grid id="expandedHeaders2" flex="1">
+                                <columns id="expandedHeaders2Columns">
+                                  <column id="expandedHeaders2NameColumn" minwidth="0"/>
+                                  <column id="expandedHeaders2ValueColumn" flex="1"/>
+                                </columns>
+                                <rows id="expandedHeader2Rows">
+                                  <row id="expandedsubjectRow">
+                                    <label id="expandedsubjectLabel" class="headerName" value="subject " control="expandedsubjectBox"/>
+                                    <mail-headerfield id="expandedsubjectBox" flex="1"/>
+                                  </row>
+                                  <row id="expandedorganizationRow" collapsed="true">
+                                    <label id="expandedorganizationLabel" class="headerName" value="organization " control="expandedorganizationBox"/>
+                                    <mail-headerfield id="expandedorganizationBox"/>
+                                  </row>
+                                  <row id="expandedsenderRow" collapsed="true">
+                                    <label id="expandedsenderLabel" class="headerName" value="sender " control="expandedsenderBox"/>
+                                    <mail-emailheaderfield id="expandedsenderBox"/>
+                                  </row>
+                                  <row id="expandedreply-toRow" collapsed="true">
+                                    <label id="expandedreply-toLabel" class="headerName" value="reply-to " control="expandedreply-toBox"/>
+                                    <mail-multi-emailHeaderField id="expandedreply-toBox"/>
+                                  </row>
+                                  <row id="expandedtoRow">
+                                    <label id="expandedtoLabel" class="headerName" value="to " control="expandedtoBox"/>
+                                    <mail-multi-emailHeaderField id="expandedtoBox" flex="1"/>
+                                  </row>
+                                  <row id="expandedccRow" collapsed="true">
+                                    <label id="expandedccLabel" class="headerName" value="cc " control="expandedccBox"/>
+                                    <mail-multi-emailHeaderField id="expandedccBox" flex="1"/>
+                                  </row>
+                                  <row id="expandedbccRow" collapsed="true">
+                                    <label id="expandedbccLabel" class="headerName" value="bcc " control="expandedbccBox"/>
+                                    <mail-multi-emailHeaderField id="expandedbccBox"/>
+                                  </row>
+                                  <row id="expandednewsgroupsRow" collapsed="true">
+                                    <label id="expandednewsgroupsLabel" class="headerName" value="newsgroups " control="expandednewsgroupsBox"/>
+                                    <mail-newsgroups-headerfield id="expandednewsgroupsBox"/>
+                                  </row>
+                                  <row id="expandedfollowup-toRow" collapsed="true">
+                                    <label id="expandedfollowup-toLabel" class="headerName" value="followup-to " control="expandedfollowup-toBox"/>
+                                    <mail-newsgroups-headerfield id="expandedfollowup-toBox"/>
+                                  </row>
+                                  <row id="expandeddateRow" collapsed="true">
+                                    <label id="expandeddateLabel" class="headerName" value="date " control="expandeddateBox"/>
+                                    <mail-headerfield id="expandeddateBox" flex="1"/>
+                                  </row>
+                                  <row id="expandedmessage-idRow" collapsed="true">
+                                    <label id="expandedmessage-idLabel" class="headerName" value="message-id " control="expandedmessage-idBox"/>
+                                    <mail-messageids-headerfield id="expandedmessage-idBox"/>
+                                  </row>
+                                  <row id="expandedin-reply-toRow" collapsed="true">
+                                    <label id="expandedin-reply-toLabel" class="headerName" value="in-reply-to " control="expandedin-reply-toBox"/>
+                                    <mail-messageids-headerfield id="expandedin-reply-toBox"/>
+                                  </row>
+                                  <row id="expandedreferencesRow" collapsed="true">
+                                    <label id="expandedreferencesLabel" class="headerName" value="references " control="expandedReferencesBox"/>
+                                    <mail-messageids-headerfield id="expandedreferencesBox" flex="1"/>
+                                  </row>
+                                  <row id="expandedtagsRow" collapsed="true">
+                                    <label id="expandedtagsLabel" class="headerName" value="tags " control="expandedtagsBox"/>
+                                    <mail-tagfield id="expandedtagsBox"/>
+                                  </row>
+                                  <row id="expandedcontent-baseRow" collapsed="true">
+                                    <label id="expandedcontent-baseLabel" class="headerName" value="website " control="expandedcontent-baseBox"/>
+                                    <mail-urlfield id="expandedcontent-baseBox"/>
+                                  </row>
+                                  <row id="expandeduser-agentRow" collapsed="true">
+                                    <label id="expandeduser-agentLabel" class="headerName" value="user-agent " control="expandeduser-agentBox"/>
+                                    <mail-headerfield id="expandeduser-agentBox" flex="1"/>
+                                  </row>
+                                  <row id="expandedRow" collapsed="true">
+                                    <label id="expandedLabel" value="" class="headerName" control="expandedBox"/>
+                                    <mail-headerfield id="expandedBox" flex="1"/>
+                                  </row>
+                                </rows>
+                              </grid>
+                              <vbox id="otherActionsBox" align="end">
+                                <hbox id="dateValueBox" align="top" flex="1">
+                                  <hbox id="smimeBox" insertbefore="dateLabel" collapsed="true">
+                                    <image id="signedHdrIcon" onclick="showMessageReadSecurityInfo();" collapsed="true"/>
+                                    <image id="encryptedHdrIcon" onclick="showMessageReadSecurityInfo();" collapsed="true"/>
+                                  </hbox>
+                                  <label id="dateLabel" class="dateLabel" flex="1" role="textbox" aria-readonly="true">12:14 PM</label>
+                                </hbox>
+                                <button type="menu" id="otherActionsButton" label="other actions" class="msgHeaderView-button msgHeaderView-flat-button">
+                                  <menupopup id="otherActionsPopup" onpopupshowing="onShowOtherActionsPopup();">
+                                    <menuitem id="otherActionsOpenConversation" label="open in conversation" accesskey="c" oncommand="gConversationOpener.openConversationForMessages(gFolderDisplay.selectedMessages);"/>
+                                    <menuitem id="otherActionsOpenInNewWindow" label="open in new window" accesskey="w" oncommand="MsgOpenNewWindowForMessage();"/>
+                                    <menuitem id="otherActionsOpenInNewTab" label="open in new tab" accesskey="t" oncommand="OpenMessageInNewTab(event);"/>
+                                    <menuitem id="viewSourceMenuItem" label="view source" accesskey="v" oncommand="ViewPageSource(gFolderDisplay.selectedMessageUris);"/>
+                                    <menuseparator id="otherActionsSeparator"/>
+                                    <menuitem id="markAsReadMenuItem" label="mark as read" accesskey="r" oncommand="MsgMarkMsgAsRead();"/>
+                                    <menuitem id="markAsUnreadMenuItem" label="mark as unread" accesskey="r" oncommand="MsgMarkMsgAsRead();"/>
+                                    <menuitem id="saveAsMenuItem" label="save as…" accesskey="s" oncommand="MsgSaveAsFile();"/>
+                                    <menuitem id="otherActionsPrint" label="print…" accesskey="p" oncommand="PrintEnginePrint();"/>
+                                  </menupopup>
+                                </button>
+                              </vbox>
+                            </hbox>
+                          </vbox>
+                          <vbox insertafter="editMessageBox" class="header-part1">
+                            <spacer flex="1"/>
+                            <button id="nostalgy_extract_rules_buttons" label="Import Nostalgy rules" oncommand="NostalgyExtractRules();" hidden="true"/>
+                            <spacer flex="1"/>
+                          </vbox>
+                        </vbox>
+                      </deck>
+                    </hbox>
+                    <hbox pack="start" align="center" collapsed="true" class="main-header-area" id="editMessageBox">
+                      <label id="editMessageDescription" control="editMessageButton" value="This is a draft message"/>
+                      <button id="editMessageButton" label="Edit…" oncommand="MsgComposeDraftMessage()"/>
+                    </hbox>
+                    <deck selectedIndex="0" collapsed="true" id="msgNotificationBar">
+                      <hbox id="msgNotificationNoStatus"/>
+                      <hbox id="phishingBar" class="msgNotificationBar" align="center">
+                        <image id="phishingBarImage"/>
+                        <vbox flex="1">
+                          <description flex="1" class="msgNotificationBarText">This message may be a scam.</description>
+                          <label id="disablePhishingWarning" class="msgNotificaton-smallText text-link" value="Disable scam detection for all messages" onclick="DisablePhishingWarning();"/>
+                          <label id="reportPhishingError" value="This message doesn't appear to be a scam." class="msgNotificaton-smallText text-link" collapsed="true"/>
+                        </vbox>
+                        <button label="Ignore Warning" oncommand="IgnorePhishingWarning();"/>
+                      </hbox>
+                      <hbox id="junkBar" class="msgNotificationBar" align="center">
+                        <image id="junkBarImage"/>
+                        <description flex="1" class="msgNotificationBarText">Junk Mail</description>
+                        <button label="Not Junk" oncommand="JunkSelectedMessages(false);"/>
+                      </hbox>
+                      <hbox id="remoteContentBar" class="msgNotificationBar" align="center">
+                        <image id="remoteContentImage"/>
+                        <vbox flex="1">
+                          <description class="msgNotificationBarText">To protect your privacy, Thunderbird has blocked remote content in this message.</description>
+                          <label id="allowRemoteContentForAuthorDesc" class="msgNotificaton-smallText text-link" onclick="allowRemoteContentForSender();"/>
+                        </vbox>
+                        <button id="remoteContentBarButton" label="Show Remote Content" oncommand="LoadMsgWithRemoteContent();"/>
+                      </hbox>
+                      <hbox id="mdnBar" class="msgNotificationBar" align="center">
+                        <image id="mdnBarImage"/>
+                        <description id="mdnBarMessage" class="msgNotificationBarText" flex="1"/>
+                        <button label="Ignore" accesskey="I" oncommand="IgnoreMDNResponse();"/>
+                        <button label="Send Return Receipt" accesskey="S" oncommand="SendMDNResponse();"/>
+                      </hbox>
+                    </deck>
+                    <hbox id="messagepanewrapper" flex="1">
+                      <browser id="messagepane" context="mailContext" autofind="false" minheight="1" flex="1" name="messagepane" tooltip="aHTMLTooltip" disablehistory="true" type="content-primary" src="about:blank" onresize="return messagePaneOnResize(event);" disablesecurity="true" onclick="return contentAreaClick(event);" clickthrough="never"/>
+                    </hbox>
+                    <splitter id="attachment-splitter" collapse="after" resizebefore="closest" resizeafter="closest" collapsed="true" orient="vertical"/>
+                    <vbox id="attachmentView" collapsed="true">
+                      <hbox align="center" id="attachmentBar" context="attachment-toolbar-context-menu" onclick="if (event.button == 0 &amp;&amp; event.originalTarget.id == 'attachmentBar') toggleAttachmentList(undefined, true);">
+                        <button type="checkbox" id="attachmentToggle" onmousedown="event.preventDefault();" oncommand="toggleAttachmentList(this.checked, true);"/>
+                        <image id="attachmentIcon"/>
+                        <label id="attachmentCount"/>
+                        <label id="attachmentName" crop="center" flex="1" context="attachmentItemContext" onclick="if (event.button == 0) { TryHandleAllAttachments('open'); RestoreFocusAfterHdrButton(); }" ondraggesture="nsDragAndDrop.startDrag(event,attachmentNameDNDObserver);"/>
+                        <label id="attachmentSize"/>
+                        <spacer flex="9999"/>
+                        <toolbox id="attachment-view-toolbox" class="inline-toolbox" defaulticonsize="small" minwidth="50px" defaultlabelalign="end" defaultmode="full" inlinetoolbox="true" mode="full" iconsize="small" labelalign="end">
+                          <toolbar id="attachment-view-toolbar" class="inline-toolbar" align="start" customizable="true" mode="full" context="attachment-toolbar-context-menu" defaulticonsize="small" defaultmode="full" defaultset="attachmentSaveAll" iconsize="small">
+                            <toolbaritem id="attachmentSaveAll" title="save all" removable="true">
+                              <toolbarbutton type="menu-button" id="attachmentSaveAllSingle" class="toolbarbutton-1 msgHeaderView-button" label="save" tooltiptext="save the attached file" oncommand="TryHandleAllAttachments('saveAs'); RestoreFocusAfterHdrButton();" hidden="true">
+                                <menupopup id="attachmentSaveAllSingleMenu" onpopupshowing="onShowSaveAttachmentMenuSingle();">
+                                  <menuitem id="button-openAttachment" oncommand="TryHandleAllAttachments('open'); event.stopPropagation(); RestoreFocusAfterHdrButton();" label="open" accesskey="o"/>
+                                  <menuitem id="button-saveAttachment" oncommand="TryHandleAllAttachments('saveAs'); event.stopPropagation(); RestoreFocusAfterHdrButton();" label="save as…" accesskey="s"/>
+                                  <menuseparator id="button-menu-separator"/>
+                                  <menuitem id="button-detachAttachment" oncommand="TryHandleAllAttachments('detach'); event.stopPropagation(); RestoreFocusAfterHdrButton();" label="detach…" accesskey="d"/>
+                                  <menuitem id="button-deleteAttachment" oncommand="TryHandleAllAttachments('delete'); event.stopPropagation(); RestoreFocusAfterHdrButton();" label="delete" accesskey="e"/>
+                                </menupopup>
+                              </toolbarbutton>
+                              <toolbarbutton type="menu-button" id="attachmentSaveAllMultiple" class="toolbarbutton-1 msgHeaderView-button" label="save all" tooltiptext="save all the attached files" oncommand="TryHandleAllAttachments('save'); RestoreFocusAfterHdrButton();">
+                                <menupopup id="attachmentSaveAllMultipleMenu" onpopupshowing="onShowSaveAttachmentMenuMultiple();">
+                                  <menuitem id="button-openAllAttachments" oncommand="TryHandleAllAttachments('open'); event.stopPropagation(); RestoreFocusAfterHdrButton();" label="open all…" accesskey="o"/>
+                                  <menuitem id="button-saveAllAttachments" oncommand="TryHandleAllAttachments('save'); event.stopPropagation(); RestoreFocusAfterHdrButton();" label="save all…" accesskey="s"/>
+                                  <menuseparator id="button-menu-separator-all"/>
+                                  <menuitem id="button-detachAllAttachments" oncommand="TryHandleAllAttachments('detach'); event.stopPropagation(); RestoreFocusAfterHdrButton();" label="detach all…" accesskey="d"/>
+                                  <menuitem id="button-deleteAllAttachments" oncommand="TryHandleAllAttachments('delete'); event.stopPropagation(); RestoreFocusAfterHdrButton();" label="delete all…" accesskey="e"/>
+                                </menupopup>
+                              </toolbarbutton>
+                            </toolbaritem>
+                          </toolbar>
+                        </toolbox>
+                      </hbox>
+                      <attachmentlist orient="horizontal" id="attachmentList" flex="1" seltype="multiple" context="attachmentListContext" itemcontext="attachmentItemContext" ondraggesture="nsDragAndDrop.startDrag(event,attachmentListDNDObserver);" ondragover="nsDragAndDrop.dragOver(event, attachmentListDNDObserver);"/>
+                    </vbox>
+                    <findbar id="FindToolbar" browserid="messagepane" hidden="true"/>
+                  </vbox>
+                </vbox>
+              </box>
+            </vbox>
+          </box>
+        </box>
+      </tabpanels>
+    </tabmail>
+    <vbox id="contentTab" collapsed="true">
+      <vbox flex="1">
+        <notificationbox flex="1">
+          <browser clickthrough="never" id="dummycontentbrowser" type="content-targetable" flex="1" autocompletepopup="PopupAutoComplete" context="mailContext"/>
+        </notificationbox>
+        <findbar browserid="dummycontentbrowser" hidden="true"/>
+      </vbox>
+    </vbox>
+    <vbox id="chromeTab" collapsed="true">
+      <vbox flex="1">
+        <notificationbox flex="1">
+          <browser id="dummychromebrowser" flex="1" disablesecurity="true" disablehistory="true" autocompletepopup="PopupAutoComplete" clickthrough="never"/>
+        </notificationbox>
+      </vbox>
+    </vbox>
+  </hbox>
+  <panel id="customizeToolbarSheetPopup" noautohide="true">
+    <iframe id="customizeToolbarSheetIFrame" style="width: 86ch; height: 36em;" hidden="true"/>
+  </panel>
+  <notificationbox id="mail-notification-box"/>
+  <statusbar id="status-bar" class="chromeclass-status" mode="normal">
+    <hbox insertbefore="statusText" id="statusTextBox" flex="1">
+      <statusbarpanel id="offline-status" class="statusbarpanel-iconic" oncommand="MailOfflineMgr.toggleOfflineStatus();" tooltiptext="You are currently online."/>
+      <statusbarpanel insertbefore="statusText" maxwidth="604.8">
+        <label id="statusbar-nostalgy-label" crop="center" flex="1" value="(G)o (S)ave (C)opy"/>
+      </statusbarpanel>
+      <statusbarpanel id="statusText" label="Downloading 165 of 428 in Sent Mail" flex="1"/>
+      <statusbarpanel class="statusbarpanel-progress" id="statusbar-progresspanel">
+        <progressmeter class="progressmeter-statusbar" id="statusbar-icon" mode="determined" value="1"/>
+      </statusbarpanel>
+      <statusbarpanel class="statusbarpanel-progress" id="quotaPanel" hidden="true">
+        <stack>
+          <progressmeter class="progressmeter-statusbar" id="quotaMeter" mode="normal" value="0"/>
+          <label id="quotaLabel" onclick="gFolderTreeController.editFolder('QuotaTab');"/>
+        </stack>
+      </statusbarpanel>
+    </hbox>
+    <statusbarpanel id="unreadMessageCount" label="Unread: 0"/>
+    <statusbarpanel id="totalMessageCount" label="Total: 1"/>
+  </statusbar>
+  <script type="application/javascript" src="chrome://communicator/content/utilityOverlay.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/msgHdrViewOverlay.js"/>
+  <script type="application/javascript" src="chrome://global/content/nsDragAndDrop.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/mailCommands.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/junkCommands.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/mailWindowOverlay.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/mailTabs.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/messageDisplay.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/folderDisplay.js"/>
+  <script type="application/javascript" src="chrome://messenger-newsblog/content/newsblogOverlay.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/mail-offline.js"/>
+  <script type="application/javascript" src="chrome://global/content/printUtils.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/msgViewPickerOverlay.js"/>
+  <script type="application/javascript" src="chrome://global/content/viewZoomOverlay.js"/>
+  <popupset>
+    <panel type="glodacomplete-richlistbox" id="PopupGlodaAutocomplete" noautofocus="true" ignorekeys="true" level="top"/>
+  </popupset>
+  <script type="application/javascript"/>
+  <script src="quickFilterBar.js" type="application/javascript"/>
+  <script src="overlay.js"/>
+  <script type="application/x-javascript" src="chrome://messenger/content/about-support/overlay.js"/>
+  <script type="application/javascript" src="chrome://messenger-smime/content/msgReadSMIMEOverlay.js"/>
+  <script src="searchOverlay.js"/>
+  <script type="application/x-javascript" src="overlay.js"/>
+  <script src="misc.js"/>
+  <script src="folders.js"/>
+  <script src="nostalgy_keys.js"/>
+  <script src="sqlite.js"/>
+  <script src="nfpredict.js"/>
+  <script src="nostalgy.js"/>
+  <script src="header_parser.js"/>
+  <statusbar hidden="true" class="chromeclass-status" id="nostalgy-statusbar">
+    <statusbarpanel flex="1">
+      <label id="nostalgy-command-label"/>
+      <textbox id="nostalgy-folderbox" type="autocomplete" tabScrolling="true" ontextentered="NostalgyRunCommand();" ontextcommand="NostalgyRunCommand();" ontextreverted="NostalgyHide(true);" ontextrevert="NostalgyHide(true);" flex="1" maxrows="25" crop="center" sizetopopup="pref" timeout="50" showpopup="true" disableKeyNavigation="true"/>
+    </statusbarpanel>
+  </statusbar>
+  <script type="application/x-javascript" src="chrome://patcher/content/watch.js"/>
+  <script type="application/javascript" src="chrome://messenger-smime/content/msgHdrViewSMIMEOverlay.js"/>
+  <script type="application/javascript" src="chrome://communicator/content/utilityOverlay.js"/>
+  <script type="application/javascript" src="chrome://global/content/charsetOverlay.js"/>
+  <script type="application/javascript" src="chrome://communicator/content/utilityOverlay.js"/>
+  <script type="application/javascript" src="chrome://messenger/content/mailCore.js"/>
+  <script type="application/javascript" src="chrome://inspector/content/hooks.js"/>
+  <script type="application/javascript"/>
+  <script type="application/javascript"/>
+</window>

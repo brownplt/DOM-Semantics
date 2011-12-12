@@ -1,0 +1,45 @@
+<window id="messengerWindow" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" title="Inbox - Mozilla Thunderbird" titlemodifier="Mozilla Thunderbird" titlemenuseparator=" - " onload="OnLoadMessenger()" onunload="OnUnloadMessenger()" screenX="0" screenY="0" persist="width height screenX screenY sizemode" toggletoolbar="true" windowtype="mail:3pane" lightweightthemes="true" lightweightthemesfooter="status-bar" sizemode="normal" width="1024" height="1080" chromehidden="">
+  <hbox id="tabmail-container" flex="1">
+    <tabmail id="tabmail" flex="1" panelcontainer="tabpanelcontainer">
+      <tabpanels id="tabpanelcontainer" flex="1" class="plain" selectedIndex="0">
+        <box id="mailContent" orient="vertical" flex="1" layout="standard">
+          <box id="messengerBox" orient="horizontal" flex="1" minheight="100" height="100" persist="height">
+            <vbox flex="1">
+              <box orient="vertical" id="messagesBox" flex="1">
+                <vbox id="messagepanebox" flex="2" minheight="100" height="200" minwidth="100" width="200" persist="height width">
+                  <browser context="mailContext" clickthrough="never" id="multimessage" style="height: 0px; min-height: 1px" flex="1" name="multimessage" disablesecurity="true" disablehistory="true" tooltip="aHTMLTooltip" src="chrome://conversations/content/stub.xhtml" autofind="false" focusring="true">
+
+
+<!DOCTYPE html [
+  <!ENTITY % pageDTD SYSTEM "chrome://conversations/locale/pages.dtd"> %pageDTD;
+]>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<body>
+  <div id="wrapper">
+    <ul id="messageList">
+      <li class="message inView" tabindex="1">
+        <div class="quickReply expand">
+          <ul class="inputs cf noPad" style="padding-right: 14rem">
+            <li class="reply expand selected">
+              <div class="textWrap">
+                <textarea class="sans selected" spellcheck="true" id="TARGETED">
+                </textarea>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </li>
+    </ul>
+  </div>
+</body>
+</html>
+                  </browser>
+                </vbox>
+              </box>
+            </vbox>
+          </box>
+        </box>
+      </tabpanels>
+    </tabmail>
+  </hbox>
+</window>

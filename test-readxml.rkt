@@ -14,10 +14,10 @@
 
 (define test-xml
   (xml->xexpr (document-element
-               (read-xml (open-input-file "../TARGETED.xml")))))
+               (read-xml (open-input-file "sample-data/TARGETED.xml")))))
 
 (define test-json
-  (rest (json->sxml (open-input-file "../TARGETED.json"))))
+  (rest (json->sxml (open-input-file "sample-data/TARGETED.json"))))
 
 (create-dom test-xml (first test-json) (term null))
 
