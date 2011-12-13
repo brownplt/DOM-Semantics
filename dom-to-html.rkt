@@ -128,14 +128,13 @@
      ");")]  
   [(s->js (setEventHandler loc_target T S))
    ,(string-append 
-     "var handler = \""
-     (regexp-replace* #rx"(?m:\")" (term (s->js S)) "\\\\\"")
-     "\";\n"
      "document.getElementById(\""
      (symbol->string (term loc_target))
      "\").setAttribute(\"on"
      (term T)
-     "\", handler);")]
+     "\", \""
+     (regexp-replace* #rx"(?m:\")" (term (s->js S)) "\\\\\"")
+     "\");")]
   [(s->js (removeEventHandler loc_target T))
    ,(string-append
      "document.getElementById(\""
