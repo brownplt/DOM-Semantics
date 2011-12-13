@@ -4,6 +4,7 @@
 (require "redex-domv2.rkt")
 (require xml)
 (require (planet neil/json-parsing:1:=2))
+(provide loc-store)
 
 (define-syntax test
   (syntax-rules ()
