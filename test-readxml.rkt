@@ -14,28 +14,33 @@
 
 (define test-xml
   (xml->xexpr (document-element
-               (read-xml (open-input-file "../tbird.xml")))))
+               (read-xml (open-input-file "sample-data/TARGETED.xml")))))
 
 (define test-json
-  (rest (json->sxml (open-input-file "../tbird-events.json"))))
+  (rest (json->sxml (open-input-file "sample-data/TARGETED.json"))))
 
 (create-dom test-xml (first test-json) (term null))
 
-; Note: these tests are eclipsed by the "N-store" check.
-; Test each node to see if it satisfies the matching requirements.
-;(for-each (lambda(loc-and-node)
-;            (test N (second loc-and-node) "node"))
-;          loc-to-node)
+; Test each item in the loc-store to ensure it is a listener or a node.
+(for-each (lambda (loc-plus)
+            (if (or (redex-match DOM N (second loc-plus))
+                    (redex-match DOM S (second loc-plus)))
+                (begin '())
+                (begin (display "FAILED: ")
+                       (display (second loc-plus))
+                       (newline))))
+          loc-store)
 
 ; Test the node store to make sure it satisfies the matching requirements.
-(test N-store loc-to-node "node store")
+(test N-store loc-store "loc-store")
 
-(define passed (filter (lambda (loc-and-node)
-                         (redex-match DOM N (second loc-and-node)))
-                       loc-to-node))
-(define failed (filter (lambda (loc-and-node)
-                         (not (redex-match DOM N (second loc-and-node))))
-                       loc-to-node))
+; Find the TARGETED node
+(define targeted
+  (filter (lambda (loc-plus)
+          (and (redex-match DOM N (second loc-plus))
+               (list? (regexp-match-positions "TARGETED" ;(symbol->string 'loc_4093)
+                                              (second (second loc-plus))))))
+        loc-store))
 
 ; For use with the test data below.
 ;(extract-children-as-json   test-json)

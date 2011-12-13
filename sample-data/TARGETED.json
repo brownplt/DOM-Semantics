@@ -1,0 +1,354 @@
+{
+  "listeners": {},
+  "tagName": "window",
+  "id": "messengerWindow",
+  "class": "",
+  "children": {
+    "43": {
+      "listeners": {},
+      "tagName": "hbox",
+      "id": "tabmail-container",
+      "class": "",
+      "children": {
+        "0": {
+          "listeners": {},
+          "tagName": "tabmail",
+          "id": "tabmail",
+          "class": "",
+          "children": {
+            "1": {
+              "listeners": {
+                "0": {
+                  "source": "({handleEvent:(function (event) {switch (event.type) {case \"InstallBrowserTheme\":case \"PreviewBrowserTheme\":case \"ResetBrowserThemePreview\":if (event.target.ownerDocument.defaultView.top != content) {return;}default:;}switch (event.type) {case \"InstallBrowserTheme\":this._installRequest(event);break;case \"PreviewBrowserTheme\":this._preview(event);break;case \"ResetBrowserThemePreview\":this._resetPreview(event);break;case \"pagehide\":this._resetPreview();break;default:;}}), onTabTitleChanged:(function (aTab) {}), onTabSwitched:(function (aTab, aOldTab) {this._resetPreview();}), get _manager () {var temp = {};Components.utils.import(\"resource://gre/modules/LightweightThemeManager.jsm\", temp);delete this._manager;return this._manager = temp.LightweightThemeManager;}, _installRequest:(function (event) {var node = event.target;var data = this._getThemeFromNode(node);if (!data) {return;}if (this._isAllowed(node)) {this._install(data);return;}var messengerBundle = document.getElementById(\"bundle_messenger\");var buttons = [{label: messengerBundle.getString(\"lwthemeInstallRequest.allowButton\"), accessKey: messengerBundle.getString(\"lwthemeInstallRequest.allowButton.accesskey\"), callback: function () {LightWeightThemeWebInstaller._install(data);}}];this._removePreviousNotifications();var message = messengerBundle.getFormattedString(\"lwthemeInstallRequest.message\", [node.ownerDocument.location.host]);var notificationBox = this._getNotificationBox();var notificationBar = notificationBox.appendNotification(message, \"lwtheme-install-request\", \"\", notificationBox.PRIORITY_INFO_MEDIUM, buttons);notificationBar.persistence = 1;}), _install:(function (newTheme) {var previousTheme = this._manager.currentTheme;this._manager.currentTheme = newTheme;if (this._manager.currentTheme && this._manager.currentTheme.id == newTheme.id) {this._postInstallNotification(newTheme, previousTheme);}}), _postInstallNotification:(function (newTheme, previousTheme) {\nfunction text(id) {return document.getElementById(\"bundle_messenger\").getString(\"lwthemePostInstallNotification.\" + id);}\n\nvar buttons = [{label: text(\"undoButton\"), accessKey: text(\"undoButton.accesskey\"), callback: function () {LightWeightThemeWebInstaller._manager.forgetUsedTheme(newTheme.id);LightWeightThemeWebInstaller._manager.currentTheme = previousTheme;}}, {label: text(\"manageButton\"), accessKey: text(\"manageButton.accesskey\"), callback: function () {openAddonsMgr(\"addons://list/theme\");}}];this._removePreviousNotifications();var notificationBox = this._getNotificationBox();var notificationBar = notificationBox.appendNotification(text(\"message\"), \"lwtheme-install-notification\", \"\", notificationBox.PRIORITY_INFO_MEDIUM, buttons);notificationBar.persistence = 1;notificationBar.timeout = Date.now() + 20000;}), _removePreviousNotifications:(function () {var box = this._getNotificationBox();[\"lwtheme-install-request\", \"lwtheme-install-notification\"].forEach(function (value) {var notification = box.getNotificationWithValue(value);if (notification) {box.removeNotification(notification);}});}), _previewWindow:null, _preview:(function (event) {if (!this._isAllowed(event.target)) {return;}var data = this._getThemeFromNode(event.target);if (!data) {return;}this._resetPreview();this._previewWindow = event.target.ownerDocument.defaultView;this._previewWindow.addEventListener(\"pagehide\", this, true);document.getElementById(\"tabmail\").registerTabMonitor(this);this._manager.previewTheme(data);}), _resetPreview:(function (event) {if (!this._previewWindow || event && !this._isAllowed(event.target)) {return;}this._previewWindow.removeEventListener(\"pagehide\", this, true);this._previewWindow = null;document.getElementById(\"tabmail\").unregisterTabMonitor(this);this._manager.resetPreview();}), _isAllowed:(function (node) {var pm = Components.classes['@mozilla.org/permissionmanager;1'].getService(Components.interfaces.nsIPermissionManager);var prefs = [[\"xpinstall.whitelist.add\", pm.ALLOW_ACTION], [\"xpinstall.whitelist.add.36\", pm.ALLOW_ACTION], [\"xpinstall.blacklist.add\", pm.DENY_ACTION]];prefs.forEach(function ([pref, permission]) {var hosts = Application.prefs.getValue(pref, \"\");if (hosts) {hosts.split(\",\").forEach(function (host) {pm.add(makeURI(\"http://\" + host.trim()), \"install\", permission);});Application.prefs.setValue(pref, \"\");}});var uri = node.ownerDocument.documentURIObject;return pm.testPermission(uri, \"install\") == pm.ALLOW_ACTION;}), _getNotificationBox:(function () {var browser = document.getElementById(\"tabmail\").getBrowserForSelectedTab();if (browser && browser.parentNode.tagName == \"notificationbox\") {return browser.parentNode;}return document.getElementById(\"mail-notification-box\");}), _getThemeFromNode:(function (node) {return this._manager.parseTheme(node.getAttribute(\"data-browsertheme\"), node.baseURI);})})",
+                  "type": "InstallBrowserTheme",
+                  "capture": false
+                },
+                "1": {
+                  "source": "({handleEvent:(function (event) {switch (event.type) {case \"InstallBrowserTheme\":case \"PreviewBrowserTheme\":case \"ResetBrowserThemePreview\":if (event.target.ownerDocument.defaultView.top != content) {return;}default:;}switch (event.type) {case \"InstallBrowserTheme\":this._installRequest(event);break;case \"PreviewBrowserTheme\":this._preview(event);break;case \"ResetBrowserThemePreview\":this._resetPreview(event);break;case \"pagehide\":this._resetPreview();break;default:;}}), onTabTitleChanged:(function (aTab) {}), onTabSwitched:(function (aTab, aOldTab) {this._resetPreview();}), get _manager () {var temp = {};Components.utils.import(\"resource://gre/modules/LightweightThemeManager.jsm\", temp);delete this._manager;return this._manager = temp.LightweightThemeManager;}, _installRequest:(function (event) {var node = event.target;var data = this._getThemeFromNode(node);if (!data) {return;}if (this._isAllowed(node)) {this._install(data);return;}var messengerBundle = document.getElementById(\"bundle_messenger\");var buttons = [{label: messengerBundle.getString(\"lwthemeInstallRequest.allowButton\"), accessKey: messengerBundle.getString(\"lwthemeInstallRequest.allowButton.accesskey\"), callback: function () {LightWeightThemeWebInstaller._install(data);}}];this._removePreviousNotifications();var message = messengerBundle.getFormattedString(\"lwthemeInstallRequest.message\", [node.ownerDocument.location.host]);var notificationBox = this._getNotificationBox();var notificationBar = notificationBox.appendNotification(message, \"lwtheme-install-request\", \"\", notificationBox.PRIORITY_INFO_MEDIUM, buttons);notificationBar.persistence = 1;}), _install:(function (newTheme) {var previousTheme = this._manager.currentTheme;this._manager.currentTheme = newTheme;if (this._manager.currentTheme && this._manager.currentTheme.id == newTheme.id) {this._postInstallNotification(newTheme, previousTheme);}}), _postInstallNotification:(function (newTheme, previousTheme) {\nfunction text(id) {return document.getElementById(\"bundle_messenger\").getString(\"lwthemePostInstallNotification.\" + id);}\n\nvar buttons = [{label: text(\"undoButton\"), accessKey: text(\"undoButton.accesskey\"), callback: function () {LightWeightThemeWebInstaller._manager.forgetUsedTheme(newTheme.id);LightWeightThemeWebInstaller._manager.currentTheme = previousTheme;}}, {label: text(\"manageButton\"), accessKey: text(\"manageButton.accesskey\"), callback: function () {openAddonsMgr(\"addons://list/theme\");}}];this._removePreviousNotifications();var notificationBox = this._getNotificationBox();var notificationBar = notificationBox.appendNotification(text(\"message\"), \"lwtheme-install-notification\", \"\", notificationBox.PRIORITY_INFO_MEDIUM, buttons);notificationBar.persistence = 1;notificationBar.timeout = Date.now() + 20000;}), _removePreviousNotifications:(function () {var box = this._getNotificationBox();[\"lwtheme-install-request\", \"lwtheme-install-notification\"].forEach(function (value) {var notification = box.getNotificationWithValue(value);if (notification) {box.removeNotification(notification);}});}), _previewWindow:null, _preview:(function (event) {if (!this._isAllowed(event.target)) {return;}var data = this._getThemeFromNode(event.target);if (!data) {return;}this._resetPreview();this._previewWindow = event.target.ownerDocument.defaultView;this._previewWindow.addEventListener(\"pagehide\", this, true);document.getElementById(\"tabmail\").registerTabMonitor(this);this._manager.previewTheme(data);}), _resetPreview:(function (event) {if (!this._previewWindow || event && !this._isAllowed(event.target)) {return;}this._previewWindow.removeEventListener(\"pagehide\", this, true);this._previewWindow = null;document.getElementById(\"tabmail\").unregisterTabMonitor(this);this._manager.resetPreview();}), _isAllowed:(function (node) {var pm = Components.classes['@mozilla.org/permissionmanager;1'].getService(Components.interfaces.nsIPermissionManager);var prefs = [[\"xpinstall.whitelist.add\", pm.ALLOW_ACTION], [\"xpinstall.whitelist.add.36\", pm.ALLOW_ACTION], [\"xpinstall.blacklist.add\", pm.DENY_ACTION]];prefs.forEach(function ([pref, permission]) {var hosts = Application.prefs.getValue(pref, \"\");if (hosts) {hosts.split(\",\").forEach(function (host) {pm.add(makeURI(\"http://\" + host.trim()), \"install\", permission);});Application.prefs.setValue(pref, \"\");}});var uri = node.ownerDocument.documentURIObject;return pm.testPermission(uri, \"install\") == pm.ALLOW_ACTION;}), _getNotificationBox:(function () {var browser = document.getElementById(\"tabmail\").getBrowserForSelectedTab();if (browser && browser.parentNode.tagName == \"notificationbox\") {return browser.parentNode;}return document.getElementById(\"mail-notification-box\");}), _getThemeFromNode:(function (node) {return this._manager.parseTheme(node.getAttribute(\"data-browsertheme\"), node.baseURI);})})",
+                  "type": "PreviewBrowserTheme",
+                  "capture": false
+                },
+                "2": {
+                  "source": "({handleEvent:(function (event) {switch (event.type) {case \"InstallBrowserTheme\":case \"PreviewBrowserTheme\":case \"ResetBrowserThemePreview\":if (event.target.ownerDocument.defaultView.top != content) {return;}default:;}switch (event.type) {case \"InstallBrowserTheme\":this._installRequest(event);break;case \"PreviewBrowserTheme\":this._preview(event);break;case \"ResetBrowserThemePreview\":this._resetPreview(event);break;case \"pagehide\":this._resetPreview();break;default:;}}), onTabTitleChanged:(function (aTab) {}), onTabSwitched:(function (aTab, aOldTab) {this._resetPreview();}), get _manager () {var temp = {};Components.utils.import(\"resource://gre/modules/LightweightThemeManager.jsm\", temp);delete this._manager;return this._manager = temp.LightweightThemeManager;}, _installRequest:(function (event) {var node = event.target;var data = this._getThemeFromNode(node);if (!data) {return;}if (this._isAllowed(node)) {this._install(data);return;}var messengerBundle = document.getElementById(\"bundle_messenger\");var buttons = [{label: messengerBundle.getString(\"lwthemeInstallRequest.allowButton\"), accessKey: messengerBundle.getString(\"lwthemeInstallRequest.allowButton.accesskey\"), callback: function () {LightWeightThemeWebInstaller._install(data);}}];this._removePreviousNotifications();var message = messengerBundle.getFormattedString(\"lwthemeInstallRequest.message\", [node.ownerDocument.location.host]);var notificationBox = this._getNotificationBox();var notificationBar = notificationBox.appendNotification(message, \"lwtheme-install-request\", \"\", notificationBox.PRIORITY_INFO_MEDIUM, buttons);notificationBar.persistence = 1;}), _install:(function (newTheme) {var previousTheme = this._manager.currentTheme;this._manager.currentTheme = newTheme;if (this._manager.currentTheme && this._manager.currentTheme.id == newTheme.id) {this._postInstallNotification(newTheme, previousTheme);}}), _postInstallNotification:(function (newTheme, previousTheme) {\nfunction text(id) {return document.getElementById(\"bundle_messenger\").getString(\"lwthemePostInstallNotification.\" + id);}\n\nvar buttons = [{label: text(\"undoButton\"), accessKey: text(\"undoButton.accesskey\"), callback: function () {LightWeightThemeWebInstaller._manager.forgetUsedTheme(newTheme.id);LightWeightThemeWebInstaller._manager.currentTheme = previousTheme;}}, {label: text(\"manageButton\"), accessKey: text(\"manageButton.accesskey\"), callback: function () {openAddonsMgr(\"addons://list/theme\");}}];this._removePreviousNotifications();var notificationBox = this._getNotificationBox();var notificationBar = notificationBox.appendNotification(text(\"message\"), \"lwtheme-install-notification\", \"\", notificationBox.PRIORITY_INFO_MEDIUM, buttons);notificationBar.persistence = 1;notificationBar.timeout = Date.now() + 20000;}), _removePreviousNotifications:(function () {var box = this._getNotificationBox();[\"lwtheme-install-request\", \"lwtheme-install-notification\"].forEach(function (value) {var notification = box.getNotificationWithValue(value);if (notification) {box.removeNotification(notification);}});}), _previewWindow:null, _preview:(function (event) {if (!this._isAllowed(event.target)) {return;}var data = this._getThemeFromNode(event.target);if (!data) {return;}this._resetPreview();this._previewWindow = event.target.ownerDocument.defaultView;this._previewWindow.addEventListener(\"pagehide\", this, true);document.getElementById(\"tabmail\").registerTabMonitor(this);this._manager.previewTheme(data);}), _resetPreview:(function (event) {if (!this._previewWindow || event && !this._isAllowed(event.target)) {return;}this._previewWindow.removeEventListener(\"pagehide\", this, true);this._previewWindow = null;document.getElementById(\"tabmail\").unregisterTabMonitor(this);this._manager.resetPreview();}), _isAllowed:(function (node) {var pm = Components.classes['@mozilla.org/permissionmanager;1'].getService(Components.interfaces.nsIPermissionManager);var prefs = [[\"xpinstall.whitelist.add\", pm.ALLOW_ACTION], [\"xpinstall.whitelist.add.36\", pm.ALLOW_ACTION], [\"xpinstall.blacklist.add\", pm.DENY_ACTION]];prefs.forEach(function ([pref, permission]) {var hosts = Application.prefs.getValue(pref, \"\");if (hosts) {hosts.split(\",\").forEach(function (host) {pm.add(makeURI(\"http://\" + host.trim()), \"install\", permission);});Application.prefs.setValue(pref, \"\");}});var uri = node.ownerDocument.documentURIObject;return pm.testPermission(uri, \"install\") == pm.ALLOW_ACTION;}), _getNotificationBox:(function () {var browser = document.getElementById(\"tabmail\").getBrowserForSelectedTab();if (browser && browser.parentNode.tagName == \"notificationbox\") {return browser.parentNode;}return document.getElementById(\"mail-notification-box\");}), _getThemeFromNode:(function (node) {return this._manager.parseTheme(node.getAttribute(\"data-browsertheme\"), node.baseURI);})})",
+                  "type": "ResetBrowserThemePreview",
+                  "capture": false
+                }
+              },
+              "tagName": "tabpanels",
+              "id": "tabpanelcontainer",
+              "class": "plain",
+              "children": {
+                "0": {
+                  "listeners": {},
+                  "tagName": "box",
+                  "id": "mailContent",
+                  "class": "",
+                  "children": {
+                    "0": {
+                      "listeners": {},
+                      "tagName": "box",
+                      "id": "messengerBox",
+                      "class": "",
+                      "children": {
+                        "2": {
+                          "listeners": {},
+                          "tagName": "vbox",
+                          "id": "",
+                          "class": "",
+                          "children": {
+                            "0": {
+                              "listeners": {},
+                              "tagName": "box",
+                              "id": "messagesBox",
+                              "class": "",
+                              "children": {
+                                "2": {
+                                  "listeners": {},
+                                  "tagName": "vbox",
+                                  "id": "messagepanebox",
+                                  "class": "",
+                                  "children": {
+                                    "0": {
+                                      "listeners": {
+                                        "0": {
+                                          "source": null,
+                                          "type": "contextmenu",
+                                          "capture": false
+                                        },
+                                        "1": {
+                                          "source": null,
+                                          "type": "mousedown",
+                                          "capture": true
+                                        },
+                                        "2": {
+                                          "source": null,
+                                          "type": "dragover",
+                                          "capture": false
+                                        },
+                                        "3": {
+                                          "source": null,
+                                          "type": "drop",
+                                          "capture": false
+                                        },
+                                        "4": {
+                                          "source": null,
+                                          "type": "keypress",
+                                          "capture": false
+                                        },
+                                        "5": {
+                                          "source": "function onPageShow(aEvent) {this.attachFormFill();if (this.pageReport) {var i = 0;while (i < this.pageReport.length) {if (this.pageReport[i].requestingWindow && this.pageReport[i].requestingWindow.document == this.pageReport[i].requestingDocument) {i++;} else {this.pageReport.splice(i, 1);}}if (this.pageReport.length == 0) {this.pageReport = null;this.updatePageReport();}}}",
+                                          "type": "pageshow",
+                                          "capture": true
+                                        },
+                                        "6": {
+                                          "source": "function onPageHide(aEvent) {if (this.pageReport) {this.pageReport = null;this.updatePageReport();}if (this.feeds && aEvent.target == this.contentDocument) {this.feeds = null;}if (!this.docShell || !this.fastFind) {return;}var tabBrowser = this.getTabBrowser();if (!tabBrowser || tabBrowser.mCurrentBrowser == this) {this.fastFind.setDocShell(this.docShell);}if (this._scrollable) {var doc = this._scrollable.ownerDocument || this._scrollable.document;if (doc == aEvent.target) {this._autoScrollPopup.hidePopup();}}}",
+                                          "type": "pagehide",
+                                          "capture": true
+                                        },
+                                        "7": {
+                                          "source": "function onPopupBlocked(evt) {if (!this.pageReport) {this.pageReport = new Array;}var obj = {requestingWindow: evt.requestingWindow, requestingDocument: evt.requestingWindow.document, popupWindowURI: evt.popupWindowURI, popupWindowFeatures: evt.popupWindowFeatures, popupWindowName: evt.popupWindowName};this.pageReport.push(obj);this.pageReport.reported = false;this.updatePageReport();}",
+                                          "type": "DOMPopupBlocked",
+                                          "capture": true
+                                        },
+                                        "8": {
+                                          "source": null,
+                                          "type": "mouseout",
+                                          "capture": false
+                                        },
+                                        "9": {
+                                          "source": null,
+                                          "type": "mousemove",
+                                          "capture": false
+                                        },
+                                        "10": {
+                                          "source": null,
+                                          "type": "dragstart",
+                                          "capture": true
+                                        }
+                                      },
+                                      "tagName": "browser",
+                                      "id": "multimessage",
+                                      "class": "",
+                                      "children": {},
+                                      "subDoc": {
+                                        "listeners": {},
+                                        "tagName": "html",
+                                        "id": "",
+                                        "class": null,
+                                        "children": {
+                                          "1": {
+                                            "listeners": {},
+                                            "tagName": "body",
+                                            "id": "",
+                                            "class": null,
+                                            "children": {
+                                              "4": {
+                                                "listeners": {},
+                                                "tagName": "div",
+                                                "id": "wrapper",
+                                                "class": null,
+                                                "children": {
+                                                  "1": {
+                                                    "listeners": {},
+                                                    "tagName": "ul",
+                                                    "id": "messageList",
+                                                    "class": null,
+                                                    "children": {
+                                                      "0": {
+                                                        "listeners": {
+                                                          "0": {
+                                                            "source": "(function (event) {\"use strict\";keyListener.onKeyUp(event);})",
+                                                            "type": "keydown",
+                                                            "capture": false
+                                                          }
+                                                        },
+                                                        "tagName": "li",
+                                                        "id": "",
+                                                        "class": "message inView",
+                                                        "children": {
+                                                          "8": {
+                                                            "listeners": {
+                                                              "0": {
+                                                                "source": "(function (event) {\"use strict\";event.stopPropagation();})",
+                                                                "type": "keyup",
+                                                                "capture": false
+                                                              },
+                                                              "1": {
+                                                                "source": "(function (event) {\"use strict\";event.stopPropagation();})",
+                                                                "type": "keypress",
+                                                                "capture": false
+                                                              },
+                                                              "2": {
+                                                                "source": "(function (event) {\"use strict\";if (!self._domNode.getElementsByClassName(\"quickReply\").length) {return;}var window = self._conversation._htmlPane.contentWindow;switch (event.keyCode) {case mainWindow.KeyEvent.DOM_VK_RETURN:if (isAccel(event)) {if (event.shiftKey) {window.gComposeSession.send({archive: true});} else {window.gComposeSession.send();}}break;case mainWindow.KeyEvent.DOM_VK_ESCAPE:Log.debug(\"Escape from quickReply\");self._domNode.focus();break;default:;}event.stopPropagation();})",
+                                                                "type": "keydown",
+                                                                "capture": false
+                                                              }
+                                                            },
+                                                            "tagName": "div",
+                                                            "id": "",
+                                                            "class": "quickReply expand",
+                                                            "children": {
+                                                              "1": {
+                                                                "listeners": {},
+                                                                "tagName": "ul",
+                                                                "id": "",
+                                                                "class": "inputs cf noPad",
+                                                                "children": {
+                                                                  "0": {
+                                                                    "listeners": {
+                                                                      "0": {
+                                                                        "source": "(function () {return typeof jQuery !== \"undefined\" && !jQuery.event.triggered ? jQuery.event.handle.apply(eventHandle.elem, arguments) : undefined;})",
+                                                                        "type": "click",
+                                                                        "capture": false
+                                                                      }
+                                                                    },
+                                                                    "tagName": "li",
+                                                                    "id": "",
+                                                                    "class": "reply expand selected",
+                                                                    "children": {
+                                                                      "1": {
+                                                                        "listeners": {},
+                                                                        "tagName": "div",
+                                                                        "id": "",
+                                                                        "class": "textWrap",
+                                                                        "children": {
+                                                                          "1": {
+                                                                            "listeners": {
+                                                                              "0": {
+                                                                                "source": null,
+                                                                                "type": "keypress",
+                                                                                "capture": false
+                                                                              },
+                                                                              "1": {
+                                                                                "source": "(function () {return typeof jQuery !== \"undefined\" && !jQuery.event.triggered ? jQuery.event.handle.apply(eventHandle.elem, arguments) : undefined;})",
+                                                                                "type": "blur",
+                                                                                "capture": false
+                                                                              },
+                                                                              "2": {
+                                                                                "source": null,
+                                                                                "type": "keydown",
+                                                                                "capture": false
+                                                                              },
+                                                                              "3": {
+                                                                                "source": null,
+                                                                                "type": "keypress",
+                                                                                "capture": false
+                                                                              },
+                                                                              "4": {
+                                                                                "source": null,
+                                                                                "type": "keyup",
+                                                                                "capture": false
+                                                                              },
+                                                                              "5": {
+                                                                                "source": null,
+                                                                                "type": "keypress",
+                                                                                "capture": false
+                                                                              },
+                                                                              "6": {
+                                                                                "source": null,
+                                                                                "type": "draggesture",
+                                                                                "capture": false
+                                                                              },
+                                                                              "7": {
+                                                                                "source": null,
+                                                                                "type": "dragenter",
+                                                                                "capture": false
+                                                                              },
+                                                                              "8": {
+                                                                                "source": null,
+                                                                                "type": "dragover",
+                                                                                "capture": false
+                                                                              },
+                                                                              "9": {
+                                                                                "source": null,
+                                                                                "type": "dragexit",
+                                                                                "capture": false
+                                                                              },
+                                                                              "10": {
+                                                                                "source": null,
+                                                                                "type": "drop",
+                                                                                "capture": false
+                                                                              },
+                                                                              "11": {
+                                                                                "source": null,
+                                                                                "type": "mousedown",
+                                                                                "capture": true
+                                                                              },
+                                                                              "12": {
+                                                                                "source": null,
+                                                                                "type": "mouseup",
+                                                                                "capture": true
+                                                                              },
+                                                                              "13": {
+                                                                                "source": null,
+                                                                                "type": "click",
+                                                                                "capture": true
+                                                                              },
+                                                                              "14": {
+                                                                                "source": null,
+                                                                                "type": "blur",
+                                                                                "capture": true
+                                                                              },
+                                                                              "15": {
+                                                                                "source": null,
+                                                                                "type": "focus",
+                                                                                "capture": true
+                                                                              },
+                                                                              "16": {
+                                                                                "source": null,
+                                                                                "type": "text",
+                                                                                "capture": false
+                                                                              },
+                                                                              "17": {
+                                                                                "source": null,
+                                                                                "type": "compositionstart",
+                                                                                "capture": false
+                                                                              },
+                                                                              "18": {
+                                                                                "source": null,
+                                                                                "type": "compositionend",
+                                                                                "capture": false
+                                                                              }
+                                                                            },
+                                                                            "tagName": "textarea",
+                                                                            "id": "TARGETED",
+                                                                            "class": "sans selected",
+                                                                            "children": {}
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

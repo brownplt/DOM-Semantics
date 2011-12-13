@@ -1007,7 +1007,7 @@
    
    ; dispatch-default-not-prevented
    (--> (state (in-hole Ctx
-                        (dispatch-default (name E_inner (event T Bubbles Cancels Trusted Meta loc_default))
+                        (dispatch-default (name E_inner (event T Bubbles Cancels #t Meta loc_default))
                                           #f
                                           loc_target))
                ((loc_a N_a) ...
@@ -1022,6 +1022,94 @@
                 (loc_c S_c) ...)
                Log)
         dispatch-not-default-prevented)
+   
+   ; untrusted non-click non-DOMActivate event -> shouldn't do default action
+   (--> (state (in-hole 
+                Ctx
+                (dispatch-default 
+                 (name E_inner 
+                       (side-condition
+                        (event 
+                         T 
+                         Bubbles Cancels #f 
+                         Meta 
+                         loc_default)
+                        (let ([event-type (term T)])
+                          (and (not (equal? event-type "click"))
+                               (not (equal? event-type "DOMActivate"))))))
+                 #f
+                 loc_target))
+               N-store
+               Log)
+        (state (in-hole Ctx 
+                        (debug-print "untrusted event, default action skipped"))
+               N-store
+               Log)
+        untrusted-skip-default)
+   
+   ; click or DOMActivate events should do default action if they were
+   ; generated from an activation trigger
+   ; See 3.4, paragraph 2
+   (--> (state (in-hole 
+                Ctx
+                (dispatch-default 
+                 (name E_inner 
+                       (side-condition
+                        (event 
+                         T 
+                         Bubbles Cancels #f 
+                         ((string_b any_b) ...
+                          ("fromscript" #f)
+                          (string_a any_a) ...) 
+                         loc_default)
+                        (let ([event-type (term T)])
+                          (or (equal? event-type "click")
+                              (equal? event-type "DOMActivate")))))
+                 #f
+                 loc_target))
+               ((loc_a N_a) ...
+                (loc_b S_b) ...
+                (loc_default S_default)
+                (loc_c S_c) ...)
+               Log)
+        (state (in-hole Ctx S_default)
+               ((loc_a N_a) ...
+                (loc_b S_b) ...
+                (loc_default S_default)
+                (loc_c S_c) ...)
+               Log)
+        do-click-domactivate-default)
+   (--> (state (in-hole 
+                Ctx
+                (dispatch-default 
+                 (name E_inner 
+                       (side-condition
+                        (event 
+                         T 
+                         Bubbles Cancels #f 
+                         ((string_b any_b) ...
+                          ("fromscript" #t)
+                          (string_a any_a) ...) 
+                         loc_default)
+                        (let ([event-type (term T)])
+                          (or (equal? event-type "click")
+                              (equal? event-type "DOMActivate")))))
+                 #f
+                 loc_target))
+               ((loc_a N_a) ...
+                (loc_b S_b) ...
+                (loc_default S_default)
+                (loc_c S_c) ...)
+               Log)
+        (state (in-hole
+                Ctx
+                (debug-print "click or DOMActivate from script, skipped DA"))
+               ((loc_a N_a) ...
+                (loc_b S_b) ...
+                (loc_default S_default)
+                (loc_c S_c) ...)
+               Log)
+        skip-click-domactivate-default)
 
    
    ))
