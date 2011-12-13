@@ -1,8 +1,6 @@
 #lang racket
 (require redex)
 (require "redex-domv2.rkt")
-(require (planet "html-writing.rkt" ("neil" "html-writing.plt" 1 0)))
-(require (planet "html-parsing.rkt" ("neil" "html-parsing.plt" 1 2)))
 (provide model->xexp xexp->html)
 
 (define (bind-ref binds key)
@@ -61,30 +59,33 @@
 
 (define (indent s)
   (regexp-replace* #rx"(?m:^)" s "  "))
+(define (loc->id s)
+  (regexp-replace* #rx"-" s "_"))
 (define (bool->string b)
   (if b "true" "false"))
 
-;(define-metafunction DOM
-;  [(map-closure (seq S_1 S_2) any_lsmap)
-;   (map-closure S_2 (map-closure S_1 any_lsmap))]
-;  [(map-closure (if-phase P S_t S_f) any_lsmap)
-;   (map-closure S_f (map-closure S_t any_lsmap))]
-;  [(map-closure (if-curTarget loc S_t S_f) any_lsmap)
-;   (map-closure S_f (map-closure S_t any_lsmap))]
-;  [(map-closure (addEventListener loc_target T bool loc_listener)
-;                (any ...
-;                 (loc_listener S_listener)
-;                 any ...))
-;   (map-closure S_listener ,(hash-set (term any_lsmap) (term loc_listener) (gensym "listener")))]
-;  [(map-closure (removeEventListener loc_target T bool loc_listener)
-;                (any ...
-;                 (loc_listener S_listener)
-;                 any ...))
-;   (map-closure S_listener ,(hash-set (term any_lsmap) (term loc_listener) (gensym "listener")))]    
-;  [(map-closure (setEventHandler loc T S_listener) any_lsmap)
-;   (map-closure S_listener any_lsmap)]
-;  [(map-closure any any_lsmap)
-;   any_lsmap])
+(define (xexp->html sxml)
+  (let* ([tagname (first sxml)]
+         [attrsPresent (and (> (length sxml) 1)
+                            (list? (second sxml))
+                            (equal? '@ (first (second sxml))))]
+         [attrs (if attrsPresent
+                    (rest (second sxml))
+                    empty)]
+         [body (if attrsPresent (cddr sxml) (cdr sxml))])
+    (string-append
+     "<" (symbol->string tagname)
+     (apply 
+      string-append 
+      (map (lambda (attr) (string-append " " (symbol->string (first attr))
+                                         "=\"" (second attr) "\"")) attrs))
+     ">\n"
+     (if (and (> (length body) 0)
+              (string? (first body)))
+         (indent (first body))
+         (string-join (map indent (map xexp->html body)) "\n"))
+     "\n</" (symbol->string tagname) ">")))
+
 
 (define-metafunction DOM
   [(s->js (seq S_1 S_2))
@@ -110,9 +111,9 @@
      "\").addEventListener(\""
      (term T)
      "\", "
-     (bool->string (term bool))
+     (loc->id (symbol->string (term loc_listener)))
      ", "
-     (symbol->string (term loc_listener))
+     (bool->string (term bool))
      ");")]
   [(s->js (removeEventListener loc_target T bool loc_listener))
    ,(string-append 
@@ -121,19 +122,27 @@
      "\").removeEventListener(\""
      (term T)
      "\", "
-     (bool->string (term bool))
+     (loc->id (symbol->string (term loc_listener)))
      ", "
-     (symbol->string (term loc_listener))
+     (bool->string (term bool))
      ");")]  
   [(s->js (setEventHandler loc_target T S))
    ,(string-append 
+     "var handler = \""
+     (regexp-replace* #rx"(?m:\")" (term (s->js S)) "\\\\\"")
+     "\";\n"
      "document.getElementById(\""
      (symbol->string (term loc_target))
      "\").setAttribute(\"on"
      (term T)
-     "\", "
-     (term (s->js S))
-     ");")]
+     "\", handler);")]
+  [(s->js (removeEventHandler loc_target T))
+   ,(string-append
+     "document.getElementById(\""
+     (symbol->string (term loc_target))
+     "\").removeAttribute(\"on"
+     (term T)
+     "\");")]
   [(s->js (if-phase P S_t S_f))
    ,(string-append
      "if (event.eventPhase === "
@@ -148,16 +157,16 @@
      "\n}")]
   [(s->js (if-curTarget loc S_t S_f))
    ,(string-append
-     "if (event.curTarget === document.getElementById(\""
+     "if (event.currentTarget === document.getElementById(\""
      (symbol->string (term loc))
-     "\") {\n"
+     "\")) {\n"
      (indent (term (s->js S_t)))
      "\n} else {\n"
      (indent (term (s->js S_f)))
      "\n}")]
   [(s->js (pre-dispatch loc () (event T Bubbles Cancels Trusted Meta loc_default)))
    ,(string-append
-     "var evt = document.createEvent(\"" (term T) "\");\n"
+     "var evt = document.createEvent(\"Event\");\n"
      "evt.initEvent(\"" (term T) "\", "
      (bool->string (term Bubbles))
      ", "
@@ -177,7 +186,9 @@
 (define (handlers-if-any ls)
   (let* ([target-phases (or
                          (redex-match DOM ((TP_a (HL_a ...)) ...
-                                           ((T target) ((handler S) (listener bool_l loc_l) ...))
+                                           ((T target) ((listener bool_a loc_a) ...
+                                                        (handler S)
+                                                        (listener bool_b loc_b) ...))
                                            (TP_b (HL_b ...)) ...) ls)
                          empty)]
          [handlers (bind-refs target-phases (list 'T 'S))]
@@ -186,7 +197,7 @@
     handlerAttrs)
   )
 
-(define (model->xexp model)
+(define (model->xexp model . extras)
   (let* ([program (second model)]
          [store (third model)]
          [top-node-matches (redex-match DOM 
@@ -215,8 +226,9 @@
                             (list (string->symbol (bind-ref binds 'string_name)))
                             (list 
                              (append
-                              (list '@)
-                              (list (list 'id (symbol->string loc)))
+                              (list '@
+                                    (list 'id (symbol->string loc))
+                                    (list 'style "display: none;"))
                               (handlers-if-any (bind-ref binds 'LS))))
                             (map node-to-xexp (bind-ref binds 'loc_kid)))
                            ))))
@@ -231,7 +243,7 @@
                 (let ([loc (first l)]
                       [body (second l)])
                   (string-append "\nfunction " 
-                                 (symbol->string loc)
+                                 (loc->id (symbol->string loc))
                                  "(event) {\n"
                                  (indent (term (s->js ,body)))
                                  "\n}\n")))
@@ -261,7 +273,7 @@
                                                           type
                                                           (first parts)
                                                           (lookup-listener (second parts))
-                                                          (symbol->string (second parts))
+                                                          (loc->id (symbol->string (second parts)))
                                                           )))
                                                 ret))
                                             (bind-refs (redex-match DOM (listener bool loc) t)
@@ -281,27 +293,90 @@
                                                ");\n")))
                         js))]
                      )
-              (apply string-append (map (lambda (t) (if (null? t) "" (apply listener-to-js t))) targets))))])
-    (append
-     (list (string->symbol "html"))
-     (map node-to-xexp top-locs)
-     (list (list 'script (apply string-append define-listeners)))
-     (list (list 'script (string-append "\n" (apply string-append (map install-listeners all-locs)))))
-     (list (list 'script (string-append "\n" (term (s->js ,program))))))))
-
-(define seq (lambda S
-  (foldr (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
-           #f
-           S)))
-
-(define listener1 
-  (seq
-   (term skip)
-   (term (return #t))
-   (term stop-prop)
-   (term stop-immediate)
-   (term (debug-print "hello!"))
-   (term (addEventListener loc_kid "click" #t skip))
-   (term (if-phase target skip (debug-print "here")))))
-
-; (displayln (term (s->js ,listener1 ,(term ,(make-immutable-hasheq empty)))))
+              (apply string-append (map (lambda (t) (if (null? t) "" (apply listener-to-js t))) targets))))]
+         [scaffolding #<<SCAFFOLDING
+if (!Array.prototype.push) {
+  Array.prototype.push = function (item) {
+    this[this.length] = item;
+    return this.length;
+  }
+}
+// From https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/indexOf
+if (!Array.prototype.indexOf) {  
+  Array.prototype.indexOf = function (searchElement /*, fromIndex */ ) {  
+    "use strict";  
+    if (this === void 0 || this === null) {  
+      throw new TypeError();  
+    }  
+    var t = Object(this);  
+    var len = t.length >>> 0;  
+    if (len === 0) {  
+      return -1;  
+    }  
+    var n = 0;  
+    if (arguments.length > 0) {  
+      n = Number(arguments[1]);  
+      if (n !== n) { // shortcut for verifying if it's NaN  
+        n = 0;  
+      } else if (n !== 0 && n !== Infinity && n !== -Infinity) {  
+        n = (n > 0 || -1) * Math.floor(Math.abs(n));  
+      }  
+    }  
+    if (n >= len) {  
+      return -1;  
+    }  
+    var k = n >= 0 ? n : Math.max(len - Math.abs(n), 0);  
+    for (; k < len; k++) {  
+      if (k in t && t[k] === searchElement) {  
+        return k;  
+      }  
+    }  
+    return -1;  
+  }  
+}
+// Scaffolding
+var debug = {
+  log: [],
+  print: function (msg) {
+    debug.log.push(msg);
+  },
+  inLog: function (msg) {
+    return (debug.log.indexOf(msg) != -1);
+  },
+  emptyLog: function (msg) {
+    return (debug.log.length > 0);
+  },
+  clearLog: function() {
+    debug.log = [];
+  },
+  printResult: function (msg) {
+    var txt = document.createElement("p");
+    txt.setAttribute("style", "margin: 0px;");
+    txt.textContent = msg;
+    document.body.appendChild(txt);
+  },
+  checkOutput: function (expected, msg) {
+    var result = ((!!expected) == (!!debug.inLog(msg))) ? "PASSED" : "FAILED";
+    debug.printResult(result);
+    if (result === "FAILED") {
+      for (var i = 0; i < debug.log.length; i++) {
+        debug.printResult(debug.log[i]);
+      }
+    }
+  }
+}
+SCAFFOLDING
+                      ]
+         )
+    (string-append
+     "<!DOCTYPE HTML>\n"
+     (xexp->html
+      (list (string->symbol "html")
+            (append
+             (list 'body (list '@ (list 'style "margin: 0px;")))
+             (map node-to-xexp top-locs)
+             (list (list 'script scaffolding))
+             (list (list 'script (apply string-append define-listeners)))
+             (list (list 'script (string-append "\n" (apply string-append (map install-listeners all-locs)))))
+             (list (list 'script (string-append "\n" (term (s->js ,program)))))
+            (map (lambda (str) (list 'script str)) extras)))))))

@@ -68,9 +68,11 @@
   ; Event Listeners
   ; 4.4 - EventListener interface
   [HL (listener bool loc)
-      (handler S)]
+      (handler S)
+      (nullhandler)]
   [L (listener bool S) ;was this installed with useCapture?
-     (handler S)]
+     (handler S)
+     (nullhandler)]
   ; Predispatch: target node, path root->target, event
   [PD (pre-dispatch parent (loc ...) E)]
   [PDef bool]
@@ -102,6 +104,7 @@
      (addEventListener loc string bool loc)
      (removeEventListener loc string bool loc)
      (setEventHandler loc string S)
+     (removeEventHandler loc string)
      (if-phase P S S)
      (if-curTarget loc S S)
      PD
@@ -130,7 +133,9 @@
 
 (define-metafunction DOM
   [(lookup-listeners ((handler S) HL_wanted ...) ((loc_a S_a) ...))
-   ((handler S) (lookup-listeners (HL_wanted ...) ((loc_a S_a) ...)))]
+   ,(cons 
+     (term (handler S))
+     (term (lookup-listeners (HL_wanted ...) ((loc_a S_a) ...))))]
   [(lookup-listeners ((listener bool loc_listener) HL_wanted ...)
                      ((loc_a S_a) ...
                       (loc_listener S_listener)
@@ -223,26 +228,42 @@
 
 ; TODO(matt) - comment/annotate setHandler(Helper)
 (define-metafunction DOM
-  [(setHandlerHelper ((TP_a (L_a ...)) ...
-                      ((string_type P) ((handler S_ignore) L_p ...))
-                      (TP_b (L_b ...)) ...)
+  [(setHandlerHelper ((TP_a (HL_a ...)) ...
+                      ((string_type P) ((listener bool_p loc_p) ... 
+                                        (handler S_ignore)
+                                        (listener bool_q loc_q) ...))
+                      (TP_b (HL_b ...)) ...)
                      string_type P
                      S_handler)
-   ((TP_a (L_a ...)) ...
-    ((string_type P) ((handler S_handler) L_p ...))
-    (TP_b (L_b ...)) ...)] ;if a handler was present for this (type, phase) pair, overwrite it
-  [(setHandlerHelper ((TP_a (L_a ...)) ...
-                      ((string_type P) (L_p ...))
-                      (TP_b (L_b ...)) ...)
+   ((TP_a (HL_a ...)) ...
+    ((string_type P) ((listener bool_p loc_p) ... 
+                      (handler S_handler)
+                      (listener bool_q loc_q) ...))
+    (TP_b (HL_b ...)) ...)] ;if a handler was present for this (type, phase) pair, overwrite it
+  [(setHandlerHelper ((TP_a (HL_a ...)) ...
+                      ((string_type P) ((listener bool_p loc_p) ... 
+                                        (nullhandler)
+                                        (listener bool_q loc_q) ...))
+                      (TP_b (HL_b ...)) ...)
                      string_type P
                      S_handler)
-   ((TP_a (L_a ...)) ...
-    ((string_type P) ((handler S_handler) L_p ...))
-    (TP_b (L_b ...)) ...)] ;if a handler was missing for this (type, phase) pair, add it
-  [(setHandlerHelper ((TP_a (L_a ...)) ...)
+   ((TP_a (HL_a ...)) ...
+    ((string_type P) ((listener bool_p loc_p) ... 
+                      (handler S_handler)
+                      (listener bool_q loc_q) ...))
+    (TP_b (HL_b ...)) ...)] ;if a handler was once present for this (type, phase) pair, overwrite it
+  [(setHandlerHelper ((TP_a (HL_a ...)) ...
+                      ((string_type P) (HL_p ...))
+                      (TP_b (HL_b ...)) ...)
                      string_type P
                      S_handler)
-   ((TP_a (L_a ...)) ...
+   ((TP_a (HL_a ...)) ...
+    ((string_type P) (HL_p ... (handler S_handler) ))
+    (TP_b (HL_b ...)) ...)] ;if a handler was missing for this (type, phase) pair, add it
+  [(setHandlerHelper ((TP_a (HL_a ...)) ...)
+                     string_type P
+                     S_handler)
+   ((TP_a (HL_a ...)) ...
     ((string_type P) ((handler S_handler))))]
   ) ; if nothing exists for this (type, phase) pair, add it
 
@@ -251,6 +272,27 @@
    (setHandlerHelper
     (setHandlerHelper LS string_type target S_handler)
     string_type bubble S_handler)])
+
+(define-metafunction DOM
+  [(removeHandlerHelper ((TP_a (HL_a ...)) ...
+                         ((string_type P) ((listener bool_p loc_p) ...
+                                           (handler S_ignore)
+                                           (listener bool_q loc_q) ...))
+                         (TP_b (HL_b ...)) ...)
+                        string_type P)
+   ((TP_a (HL_a ...)) ...
+    ((string_type P) ((listener bool_p loc_p) ...
+                      (nullhandler)
+                      (listener bool_q loc_q) ...))
+    (TP_b (HL_b ...)) ...)]
+  [(removeHandlerHelper LS string_type P)
+   LS])
+
+(define-metafunction DOM
+  [(removeHandler LS string_type)
+   (removeHandlerHelper
+    (removeHandlerHelper LS string_type target)
+    string_type bubble)])
 
 ; getDefaultAction
 ; See 5.1.1 - List of DOM3 Event Types
@@ -429,14 +471,14 @@
    ; HTML5 Specification, Section 6.1.6.1 - Event handlers
    ; http://www.w3.org/TR/html5/webappapis.html#event-handler-attributes
    (--> (state (in-hole Ctx
-                        (dispatch (event T_event Bubbles Cancels Trusted Meta S_default)
+                        (dispatch (event T_event Bubbles Cancels Trusted Meta loc_default)
                                   parent P PDef SP SI
                                   (loc_child ...) (L ...)
                                   (handler (in-hole DispCtx (return bool)))))
                N-store
                Log)
         (state (in-hole Ctx
-                        (dispatch (event T_event Bubbles Cancels Trusted Meta S_default)
+                        (dispatch (event T_event Bubbles Cancels Trusted Meta loc_default)
                                   parent P PDef SP SI
                                   (loc_child ...) (L ...)
                                   (listener #f
@@ -794,6 +836,31 @@
                Log)
         do-setEventHandler)
 
+   ; setEventHandler
+   (--> (state (in-hole Ctx
+                        (removeEventHandler loc_target string_type))
+               ((loc_a N_a) ...
+                (loc_target
+                 (node
+                  string_name
+                  LS
+                  (loc_kids ...)
+                  parent_node))
+                (loc_b N_b) ...
+                (loc_c S_c) ...)
+               Log)
+        (state (in-hole Ctx skip)
+               ((loc_a N_a) ...
+                (loc_target
+                 (node string_name
+                       (removeHandler LS string_type)
+                       (loc_kids ...)
+                       parent_node))
+                (loc_b N_b) ...
+                (loc_c S_c) ...)
+               Log)
+        do-removeEventHandler)
+   
    ; debug-print
    (--> (state (in-hole Ctx (debug-print string_new))
                N-store
