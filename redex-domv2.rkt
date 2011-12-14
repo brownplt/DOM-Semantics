@@ -1043,6 +1043,15 @@
                 (loc_c S_c) ...)
                Log)
         skip-click-domactivate-default)
+   
+   (--> (state (in-hole Ctx mutate)
+               N-store
+               Log)
+        (state (in-hole Ctx skip)
+               N-store
+               Log)
+        skip-mutate)
+        
 
    
    ))

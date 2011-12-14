@@ -351,6 +351,7 @@
         <ul class="toc">
           <li><a href="#references-References-Normative">G.1 Normative References</a></li>
           <li><a href="#references-References-Informative">G.2 Informative References</a></li>
+          <li><a href="#redex-refs">References to Redex Model</a></li>
         </ul>
       </li>
     </ul>
@@ -850,7 +851,9 @@
         <em>The <a href="#events-event-type-isTrusted"><code>isTrusted</code></a> attribute of trusted events has a value of <code>true</code>, while untrusted events have a <a href="#events-event-type-isTrusted"><code>isTrusted</code></a> attribute value of <code>false</code>.</p></em>
 
 
-        <p>Most untrusted events should not trigger <a class="def" href="#glossary-default-action">default actions</a>, with the exception of <a class="eventtype" href="#event-type-click"><code>click</code></a> or <a class="eventtype" href="#event-type-DOMActivate"><code>DOMActivate</code></a> events which have been synthesized and are managed by the <a class="def" href="#glossary-user-agent">user agents</a> event as the <a class="def" href="#glossary-default-action">default action</a> of an <a class="def" href="#glossary-activation-trigger">activation trigger</a> (see <a href="#event-flow-activation">Activation triggers and behaviors</a> for more details); these <a class="def" href="#glossary-user-agent">user-agent</a>-managed synthesized events have an <a href="#events-event-type-isTrusted"><code>isTrusted</code></a> attribute value of <code>false</code>, but still initiate any <a class="def" href="#glossary-default-action">default actions</a>.  All other untrusted events must behave as if the <a href="#events-event-type-preventDefault"><code>Event.preventDefault()</code></a> method had been called on that event.</p>
+        <!-- untrusted-skip-default -->
+        <p>(<a href='#untrusted-skip-default' class='redex-link'>[untrusted-skip-default]</a>)<br />
+        <em>Most untrusted events should not trigger <a class="def" href="#glossary-default-action">default actions</a>, with the exception of <a class="eventtype" href="#event-type-click"><code>click</code></a> or <a class="eventtype" href="#event-type-DOMActivate"><code>DOMActivate</code></a> events which have been synthesized and are managed by the <a class="def" href="#glossary-user-agent">user agents</a> event as the <a class="def" href="#glossary-default-action">default action</a> of an <a class="def" href="#glossary-activation-trigger">activation trigger</a> (see <a href="#event-flow-activation">Activation triggers and behaviors</a> for more details); these <a class="def" href="#glossary-user-agent">user-agent</a>-managed synthesized events have an <a href="#events-event-type-isTrusted"><code>isTrusted</code></a> attribute value of <code>false</code>, but still initiate any <a class="def" href="#glossary-default-action">default actions</a>.  All other untrusted events must behave as if the <a href="#events-event-type-preventDefault"><code>Event.preventDefault()</code></a> method had been called on that event.</p></em>
         <p>For security reasons, a <a class="def" href="#glossary-host-language">host language</a> should not define events which are not cancelable (see <a href="#event-flow-default-cancel">Default actions and cancelable events</a>), but also have <a class="def" href="#glossary-default-action">default actions</a>, since these <a class="def" href="#glossary-default-action">default actions</a> may be initiated by untrusted events.</p>
       </div>
 <!-- div2 Events-flow-cancelation -->
@@ -7853,7 +7856,7 @@ interface <a href="#events-MutationNameEvent">MutationNameEvent</a> : <a href="#
 
     <div>
 
-        <h3 id='redex-refs'>References to Redex Model</h3>
+      <h3 id='redex-refs'><a id='redex-refs' href='#redex-refs'>References to Redex Model</a></h3>
 
         <dl>
           <dt id="pre-dispatch">
@@ -7991,6 +7994,13 @@ interface <a href="#events-MutationNameEvent">MutationNameEvent</a> : <a href="#
             <strong class="informref">[Trusted]</strong>
           </dt>
           <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L40">Trusted</a></cite>
+          </dd>
+        </dl>
+        <dl>
+          <dt id="untrusted-skip-default">
+            <strong class="informref">[untrusted-skip-default]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L959">untrusted-skip-default</a></cite>
           </dd>
         </dl>
     </div>
