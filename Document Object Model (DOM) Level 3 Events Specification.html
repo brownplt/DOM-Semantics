@@ -732,9 +732,18 @@
         <p>
           <span class="assert must">Implementations must let event objects accomplish an event phase by applying the following steps while there are pending event targets in the partial propagation path for this phase and the event object's propagation has not been stopped through <a href="#events-event-type-stopPropagation"><code>Event.stopPropagation()</code></a>.</span>
         </p>
+
+
+        <!-- collect reductions -->
         <p>
-          <span class="assert must">First, the implementation must determine the <em>current target</em>. This must be the next pending event target in the partial propagation path, starting with the first. From the perspective of an event listener this must be the event target the listener has been registered on.</span>
+        (<a href='#capture-to-capture-collect' class='redex-link'>[capture-to-capture-collect]</a>, 
+         <a href='#capture-to-target-collect' class='redex-link'>[capture-to-target-collect]</a>, 
+         <a href='#target-to-bubble-collect' class='redex-link'>[target-to-bubble-collect]</a>, 
+         <a href='#bubble-to-bubble-collect' class='redex-link'>[bubble-to-bubble-collect]</a>)<br />
+          <em><span class="assert must">First, the implementation must determine the <em>current target</em>. This must be the next pending event target in the partial propagation path, starting with the first. From the perspective of an event listener this must be the event target the listener has been registered on.</span></em>
         </p>
+
+
         <p>
 
           <!-- COLLECT-FOUND -->
@@ -775,19 +784,38 @@
             </em>
           </li>
         </ul>
+
+        <!-- more-to-do -->
         <p>
-          <span class="assert must">An implementation must trigger a listener by invoking the <a href="#events-EventListener-handleEvent"><code class="method-name">EventListener.handleEvent()</code></a> method or an equivalent binding-specific mechanism.</span>
+          (<a href='#more-to-do' class='redex-link'>[more-to-do]</a>)<br />
+          <em><span class="assert must">An implementation must trigger a listener by invoking the <a href="#events-EventListener-handleEvent"><code class="method-name">EventListener.handleEvent()</code></a> method or an equivalent binding-specific mechanism.</span></em>
         </p>
+
+
         <p><span class="assert must">As the final step of the event dispatch, for reasons of backwards compatibility, the implementation must reset the event object's internal-propagation and default-action-prevention states.</span> This ensures that an event object may be properly dispatched multiple times while also allowing to prevent the event object's propagation or <a class="def" href="#glossary-default-action">default actions</a> prior to the event dispatch.</p>
         <p>In the production of the <a class="def" href="#glossary-propagation-path">propagation path</a>, if the <a class="def" href="#glossary-defaultView">defaultView</a> implements the <a href="#events-EventTarget">EventTarget</a> interface, the event propagates from <a class="def" href="#glossary-defaultView">defaultView</a> to the <code>document</code> object during the <a class="def" href="#glossary-capture-phase">capture phase</a>, and from the <code>document</code> object to the <a class="def" href="#glossary-defaultView">defaultView</a> during the <a class="def" href="#glossary-bubbling-phase">bubble phase</a>.</p>
         <p>The model defined above must be applied regardless of the specific event flow associated with an event target. Each event flow must define how the propagation path must be determined and which event phases are supported. The <em>DOM event flow</em> is an application of this model: the propagation path for a <code>Node</code> object must be determined by its <code>Node.parentNode</code> chain, and if applicable, the document's containing <a class="def" href="#glossary-defaultView">defaultView</a>; all events accomplish the capture and target phases; whether an event accomplishes the bubble phase must be defined individually for each <a class="def" href="#glossary-event-type">event type</a>. An alternate application of this model can be found in [<cite><a class="informative" href="#references-DOMLS">DOM3 Load and Save</a></cite>].</p>
-        <p>Implementations of the DOM event model must be reentrant. Event listeners may perform actions that cause additional events to be dispatched. Such events are handled in a synchronous manner, the event propagation that causes the event listener to be triggered must resume only after the event dispatch of the new event is completed.</p>
+
+
+        <!-- Ctx -->
+        <p>
+        (<a href='#Ctx' class='redex-link'>[Ctx]</a>)<br />
+        <em>Implementations of the DOM event model must be reentrant. Event listeners may perform actions that cause additional events to be dispatched. Such events are handled in a synchronous manner, the event propagation that causes the event listener to be triggered must resume only after the event dispatch of the new event is completed.</em>
+        </p>
+
+
       </div>
 <!-- div2 Events-flow -->
       <div>
         <h3><a id="event-flow-default-cancel" href="#event-flow-default-cancel">3.2 Default actions and cancelable events</a></h3>
 
-        <p>Event objects may have one or more <a class="def" href="#glossary-default-action">default actions</a> associated with them.  These are actions the implementation must perform in combination with the dispatch of the event object.  An example is the [<cite><a class="informative" href="#references-HTML5">HTML5</a></cite>] form element. When the user submits the form (e.g., by pressing on a submit button), the HTML event <code class="eventtype">submit</code> will be dispatched to the element and the <a class="def" href="#glossary-default-action">default action</a> for this <a class="def" href="#glossary-event-type">event type</a> will be generally to send a request to a Web server with the parameters from the form.</p>
+        <!-- dispatch-default -->
+        <p>
+        (<a href='#dispatch-default' class='redex-link'>[dispatch-default]</a>)<br />
+        <em>Event objects may have one or more <a class="def" href="#glossary-default-action">default actions</a> associated with them.  These are actions the implementation must perform in combination with the dispatch of the event object.  An example is the [<cite><a class="informative" href="#references-HTML5">HTML5</a></cite>] form element. When the user submits the form (e.g., by pressing on a submit button), the HTML event <code class="eventtype">submit</code> will be dispatched to the element and the <a class="def" href="#glossary-default-action">default action</a> for this <a class="def" href="#glossary-event-type">event type</a> will be generally to send a request to a Web server with the parameters from the form.</em>
+        </p>
+
+
         <!-- dispatch-not-default-prevented -->
         <p>(<a href='#dispatch-not-default-prevented' class='redex-link'>[dispatch-not-default-prevented]</a>)<br />
         <em><a class="def" href="#glossary-default-action">Default actions</a> should be performed after the event dispatch has been completed, </em><br /><br />but in exceptional cases also immediately before the event is dispatched.</p>
@@ -943,7 +971,13 @@
         <dl>
           <dt><strong>Interface <em><a id="events-Event">Event</a></em></strong> (introduced in <strong class="since">DOM Level 2</strong>)</dt>
           <dd>
-            <p>The <code>Event</code> interface is used to provide contextual information about an event to the listener processing the event. An object which implements the <code>Event</code> interface must be passed as the parameter to an <a href="#events-EventListener"><code>EventListener</code></a>. The object passed to the event listener may also implement derived interfaces that provide access to information directly relating to the type of event they represent.</p>
+
+            <!-- event -->
+            <p>
+            (<a href='#event' class='redex-link'>[event]</a>)<br />
+            <em>The <code>Event</code> interface is used to provide contextual information about an event to the listener processing the event. </p></em>
+            
+            <p>An object which implements the <code>Event</code> interface must be passed as the parameter to an <a href="#events-EventListener"><code>EventListener</code></a>. The object passed to the event listener may also implement derived interfaces that provide access to information directly relating to the type of event they represent.</p>
             <p>To create an instance of the <code>Event</code> interface, use the <a href="#events-DocumentEvent-createEvent"><code>DocumentEvent.createEvent("Event")</code></a> method call.</p>
             <dl>
               <dt>
@@ -1006,32 +1040,65 @@ interface <a href="#events-Event">Event</a> {
               <dt><strong>Attributes</strong></dt>
               <dd>
                 <dl>
+
+                  <!-- Bubbles -->
+                  (<a href='#Bubbles' class='redex-link'>[Bubbles]</a>)<br />
+                  <em>
                   <dt><code class="attribute-name"><a id="events-event-type-canBubble">bubbles</a></code> of type <code>boolean</code>, readonly</dt>
                   <dd><p>Used to indicate whether or not an event is a bubbling event. If the event can bubble the value must be <code>true</code>, otherwise the value must be <code>false</code>.</p></dd>
+                  </em>
 
+                  <!-- Cancels -->
+                  (<a href='#Cancels' class='redex-link'>[Cancels]</a>)<br />
+                  <em>
                   <dt><code class="attribute-name"><a id="events-event-type-canCancel">cancelable</a></code> of type <code>boolean</code>, readonly</dt>
                   <dd><p>Used to indicate whether or not an event can have its <a class="def" href="#glossary-default-action">default action</a> prevented (see also <a href="#event-flow-default-cancel">Default actions and cancelable events</a>). If the <a class="def" href="#glossary-default-action">default action</a> can be prevented the value must be <code>true</code>, otherwise the value must be <code>false</code>.</p></dd>
+                  </em>
 
+                  <!-- dispatch -->
+                  (curTarget contained in <a href='#dispatch' class='redex-link'>[dispatch]</a>)<br />
+                  <em>
                   <dt><code class="attribute-name"><a id="events-event-type-currentTarget">currentTarget</a></code> of type <a href="#events-EventTarget"><code>EventTarget</code></a>, readonly</dt>
                   <dd><p>Used to indicate the <a href="#events-EventTarget"><code>EventTarget</code></a> whose <a href="#events-EventListener"><code>EventListeners</code></a> are currently being processed. This is particularly useful during the capture and bubbling phases. When used with the <a href="#event-flow">Event dispatch and DOM event flow</a>, this attribute contains the <a class="def" href="#glossary-proximal-event-target">proximal event target</a> or a target ancestor.</p></dd>
+                  </em>
 
+                  <!-- dispatch -->
+                  (defaultPrevented contained in <a href='#dispatch' class='redex-link'>[dispatch]</a>)<br />
+                  <em>
                   <dt><code class="attribute-name"><a id="events-event-type-defaultPrevented">defaultPrevented</a></code> of type <code>boolean</code>, readonly, introduced in <strong class="version">DOM Level 3</strong></dt>
                   <dd><p>Used to indicate whether <a href="#events-event-type-preventDefault"><code>Event.preventDefault()</code></a> has been called for this event.</p></dd>
+                  </em>
 
+                  <!-- Trusted -->
+                  (<a href='#Trusted' class='redex-link'>[Trusted]</a>)<br />
+                  <em>
                   <dt><code class="attribute-name"><a id="events-event-type-isTrusted">isTrusted</a></code> of type <code>boolean</code>, readonly, introduced in <strong class="version">DOM Level 3</strong></dt>
                   <dd><p>Used to indicate whether this event was generated by the <a class="def" href="#glossary-user-agent">user agent</a> (trusted) or by script (untrusted).  See <a href="#trusted-events">trusted events</a> for more details.</p></dd>
+                  </em>
 
+                  <!-- phases -->
+                  (<a href='#phases' class='redex-link'>[phases]</a>)<br />
+                  <em>
                   <dt><code class="attribute-name"><a id="events-event-type-eventPhase">eventPhase</a></code> of type <code>unsigned short</code>, readonly</dt>
                   <dd><p>Used to indicate which phase of event flow is currently being accomplished.</p></dd>
+                  </em>
 
+                  <!-- dispatch -->
+                  (target contained in <a href='#dispatch' class='redex-link'>[dispatch]</a>)<br />
+                  <em>
                   <dt><code class="attribute-name"><a id="events-event-type-target">target</a></code> of type <a href="#events-EventTarget"><code>EventTarget</code></a>, readonly</dt>
                   <dd><p>Used to indicate the <a class="def" href="#glossary-event-target">event target</a>. This attribute contains the <a class="def" href="#glossary-proximal-event-target">proximal event target</a> when used with the <a href="#event-flow">Event dispatch and DOM event flow</a>.</p></dd>
+                  </em>
 
                   <dt><code class="attribute-name"><a id="events-event-type-timeStamp">timeStamp</a></code> of type <code>DOMTimeStamp</code>, readonly</dt>
                   <dd><p>Used to specify the time at which the event was created in milliseconds relative to 1970-01-01T00:00:00Z.</p></dd>
 
+                  <!-- type -->
+                  (<a href='#type' class='redex-link'>[type]</a>)<br />
+                  <em>
                   <dt><code class="attribute-name"><a id="events-event-type-type">type</a></code> of type <code>DOMString</code>, readonly</dt>
                   <dd><p>The name of the event type. The name must be a <code>DOMString</code>.  <a href="#conf-specs">Specifications that define events</a>, <a href="#conf-authors">content authors</a>, and <a href="#conf-author-tools">authoring tools</a> must use case-sensitive event type names.</p></dd>
+                  </em>
 
                 </dl>
               </dd>
@@ -1072,7 +1139,12 @@ interface <a href="#events-Event">Event</a> {
                     </div>
                   </dd>
 
+
+                  <!-- prevent-default, do-prevent-default -->
+                  <br />
                   <dt>
+                    (<a href='#prevent-default' class='redex-link'>[prevent-default]</a>, <a href='#do-prevent-default' class='redex-link'>[do-prevent-default]</a>)<br />
+                  <em>
                     <code class="method-name">
                       <a id="events-event-type-preventDefault">preventDefault</a>
                     </code>
@@ -1087,8 +1159,14 @@ interface <a href="#events-Event">Event</a> {
                       <div><strong>No Exceptions</strong></div>
                     </div>
                   </dd>
+                  </em><br />
 
-                  <dt><code class="method-name"><a id="events-event-type-stopImmediatePropagation">stopImmediatePropagation</a></code> introduced in <strong class="since">DOM Level 3</strong></dt>
+                  <!-- stop-immediate, do-stop-immediate -->
+                  <br />
+                  <dt>
+                  (<a href='#stop-immediate' class='redex-link'>[stop-immediate]</a>, <a href='#do-stop-immediate' class='redex-link'>[do-stop-immediate]</a>)<br />
+                  <em>
+                  <code class="method-name"><a id="events-event-type-stopImmediatePropagation">stopImmediatePropagation</a></code> introduced in <strong class="since">DOM Level 3</strong></dt>
                   <dd>
                     <div class="method">
                       Prevents other event listeners from being triggered and, unlike <a href="#events-event-type-stopPropagation"><code>Event.stopPropagation()</code></a> its effect must be immediate . Once it has been called, further calls to this method have no additional effect.
@@ -1100,8 +1178,13 @@ interface <a href="#events-Event">Event</a> {
                       <div><strong>No Exceptions</strong></div>
                     </div>
                   </dd>
+                  </em><br />
 
+                  <!-- stop-prop, do-stop-prop -->
+                  <br />
                   <dt>
+                  (<a href='#stop-prop' class='redex-link'>[stop-prop]</a>, <a href='#do-stop-prop' class='redex-link'>[do-stop-prop]</a>)<br />
+                  <em>
                     <code class="method-name">
                       <a id="events-event-type-stopPropagation">stopPropagation</a>
                     </code>
@@ -1117,6 +1200,7 @@ interface <a href="#events-Event">Event</a> {
                       <div><strong>No Exceptions</strong></div>
                     </div>
                   </dd>
+                  </em><br />
                 </dl>
               </dd>
             </dl>
@@ -1204,12 +1288,22 @@ interface <a href="#events-CustomEvent">CustomEvent</a> : <a href="#events-Event
         <dl>
           <dt><strong>Interface <em><a id="events-EventTarget">EventTarget</a></em></strong> (introduced in <strong class="since">DOM Level 2</strong>)</dt>
           <dd>
-            <p>The <code>EventTarget</code> interface must be implemented by all the objects which could be <a class="def" href="#glossary-event-target">event targets</a> in an implementation which supports an event flow. The interface allows registration and removal of event listeners, and dispatch of events to an event target.</p>
+
+            <!-- node -->
+            <p>
+            (<a href='#node' class='redex-link'>[node]</a>)<br />
+            <em>
+            The <code>EventTarget</code> interface must be implemented by all the objects which could be <a class="def" href="#glossary-event-target">event targets</a> in an implementation which supports an event flow. The interface allows registration and removal of event listeners, and dispatch of events to an event target.</p>
+            </em>
             
             <p class="note" id="EventTarget-trusted"><strong>Note:</strong>  Though an event listener can be registered for any <a class="def" href="#glossary-event-target">event target</a> node, the user agent only dispatches UA-generated (trusted) events on node types that are defined as proximal event target types for that specific event type (see the <a href="#event-types-list">List of DOM3 Event Types</a>); for example, a <a class="eventtype" href="#event-type-mouseover"><code>mouseover</code></a> event type registered on a text node will never be fired by the user agent, though a content author could dispatch an event of that type on the text node via script.</p>
             
             <p>When used with the DOM event flow, this interface must be implemented by all <a class="def" href="#glossary-proximal-event-target">proximal event targets</a> and target ancestors, i.e., all DOM <code>Nodes</code> of the tree support this interface when the implementation conforms to DOM Level 3 Events and, therefore, this interface can be obtained by using binding-specific casting methods on an instance of the <code>Node</code> interface.</p>
-            <p>Invoking <code>addEventListener</code> repeatedly on the same <code>EventTarget</code> with the same values for the parameters <code>type</code>, <code>listener</code>, and <code>useCapture</code> has no effect. Doing so does not cause the <a href="#events-EventListener"><code>EventListener</code></a> to be called more than once and does not cause a change in the triggering order.</p>
+            <p>
+            (<a href='#addEventListener' class='redex-link'>[addEventListener]</a>)<br />
+            <em>
+            Invoking <code>addEventListener</code> repeatedly on the same <code>EventTarget</code> with the same values for the parameters <code>type</code>, <code>listener</code>, and <code>useCapture</code> has no effect. Doing so does not cause the <a href="#events-EventListener"><code>EventListener</code></a> to be called more than once and does not cause a change in the triggering order.</p>
+            </em>
 
             <p class="note" id="EventTarget-onfoo"><strong>Note:</strong>  In addition to the <a href="#events-EventTarget-addEventListener">EventTarget.addEventListener</a> method, some <a class="def" href="#glossary-host-language">host languages</a> may allow a content author to register event listeners by the use of attributes, e.g., <em><code>onclick="handleClick()"</code></em>.  Because the details of this are often language-specific, this type of event listener registration is not defined in this specification, but in general, any event type may be used as an attribute in this way by adding the prefix <em><code>on-</code></em> to the event type name, and events so dispatched should behave consistently with the event registration and propagation defined in this specification, with the same interfaces, properties, and methods.</p>
             <dl>
@@ -1240,12 +1334,16 @@ interface <a href="#events-EventTarget">EventTarget</a> {
               <dd>
                 <dl>
                   <dt>
+                <!-- addEventListener -->
+                  (<a href='#addEventListener' class='redex-link'>[addEventListener]</a>)<br />
+                  <em>
                     <code class="method-name">
                       <a id="events-EventTarget-addEventListener">addEventListener</a>
                     </code>
                   </dt>
                   <dd>
                     <div class="method">Registers an event listener, depending on the <code>useCapture</code> parameter, on the capture phase of the DOM event flow or its target and bubbling phases.
+                    </em>
                       <div class="parameters">
                         <strong>Parameters</strong>
                         <div class="paramtable">
@@ -1279,14 +1377,19 @@ interface <a href="#events-EventTarget">EventTarget</a> {
                     </div>
 <!-- method -->
                   </dd>
+                  <br />
 
                   <dt>
+                  <!-- removeEventListener -->
+                  (<a href='#removeEventListener' class='redex-link'>[removeEventListener]</a>)<br />
+                  <em>
                     <code class="method-name">
                       <a id="events-EventTarget-removeEventListener">removeEventListener</a>
                     </code>
                   </dt>
                   <dd>
                     <div class="method">Removes an event listener. Calling <code>removeEventListener</code> with arguments which do not identify any currently registered <a href="#events-EventListener"><code>EventListener</code></a> on the <code>EventTarget</code> has no effect. 
+                    </em>
                       <div class="parameters">
                         <strong>Parameters</strong>
                         <div class="paramtable">
@@ -7918,6 +8021,14 @@ interface <a href="#events-MutationNameEvent">MutationNameEvent</a> : <a href="#
         </dl>
 
         <dl>
+          <dt id="target-to-bubble-collect">
+            <strong class="informref">[target-to-bubble-collect]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L606">target-to-bubble-collect</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
           <dt id="bubble-to-bubble-collect">
             <strong class="informref">[bubble-to-bubble-collect]</strong>
           </dt>
@@ -8003,6 +8114,119 @@ interface <a href="#events-MutationNameEvent">MutationNameEvent</a> : <a href="#
           <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L959">untrusted-skip-default</a></cite>
           </dd>
         </dl>
+
+        <dl>
+          <dt id="Ctx">
+            <strong class="informref">[Ctx]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L124">Ctx</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="dispatch-default">
+            <strong class="informref">[dispatch-default]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L90">dispatch-default</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="event">
+            <strong class="informref">[event]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L19">event</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="Bubbles">
+            <strong class="informref">[Bubbles]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L30">Bubbles</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="dispatch">
+            <strong class="informref">[dispatch]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L81">dispatch</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="type">
+            <strong class="informref">[type]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L25">type</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="prevent-default">
+            <strong class="informref">[prevent-default]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L101">prevent-default</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="stop-immediate">
+            <strong class="informref">[stop-immediate]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L100">stop-immediate</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="do-stop-immediate">
+            <strong class="informref">[do-stop-immediate]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L929">do-stop-immediate</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="stop-prop">
+            <strong class="informref">[stop-prop]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L99">stop-prop</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="do-stop-prop">
+            <strong class="informref">[do-stop-prop]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L911">do-stop-prop</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="node">
+            <strong class="informref">[node]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L59">node</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="addEventListener">
+            <strong class="informref">[addEventListener]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L152">addEventListener</a></cite>
+          </dd>
+        </dl>
+
+        <dl>
+          <dt id="removeEventListener">
+            <strong class="informref">[removeEventListener]</strong>
+          </dt>
+          <dd><cite class="w3cwd"><a href="https://github.com/mjc1283/DOM-Semantics/blob/master/redex-domv2.rkt#L199">removeEventListener</a></cite>
+          </dd>
+        </dl>
+
     </div>
 
 
