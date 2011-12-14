@@ -224,11 +224,14 @@
                       ,(bind-ref binds 'Log))))
              "stop-immediate-called")
 
+(define (make-seq stmts)
+  (foldr (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
+         #f
+         stmts))
+
 (define add-event-state
   (term 
-   (state ,(foldr
-            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
-            #f
+   (state ,(make-seq
             (list
              (term (addEventListener loc_parent "click" #t loc_parent1))
              (term (addEventListener loc_current "click" #t loc_current2))
@@ -271,9 +274,7 @@
   (let ([l1 (term (debug-print "L1"))]
         [l2 (term (debug-print "L2"))])
   (term 
-   (state ,(foldr
-            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
-            #f
+   (state ,(make-seq
             (list
              (term (addEventListener loc_current "click" #t
                                      loc-l1))
@@ -300,9 +301,7 @@
   (let ([l1 (term (debug-print "L1"))]
         [l2 (term (debug-print "L2"))])
   (term 
-   (state ,(foldr
-            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
-            #f
+   (state ,(make-seq
             (list
              (term (addEventListener loc_current "click" #t
                                      loc-l1))
@@ -330,9 +329,7 @@
   (let ([l1 (term (debug-print "L1"))]
         [l2 (term (debug-print "L2"))])
   (term 
-   (state ,(foldr
-            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
-            #f
+   (state ,(make-seq
             (list
              (term (addEventListener loc_current "click" #t
                                      loc-l1))
@@ -358,9 +355,7 @@
 (define cancel-cancelable-state
   (let ([l1 (term prevent-default)])
   (term 
-   (state ,(foldr
-            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
-            #f
+   (state ,(make-seq
             (list
              (term (addEventListener loc_current "click" #t
                                      loc-l1))
@@ -381,9 +376,7 @@
 (define cancel-uncancelable-state
   (let ([l1 (term prevent-default)])
   (term 
-   (state ,(foldr
-            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
-            #f
+   (state ,(make-seq
             (list
              (term (addEventListener loc_current "click" #t
                                      loc-l1))
@@ -413,9 +406,7 @@
 (define cancel-uncancelable-state-meta
   (let ([l1 (term prevent-default)])
   (term 
-   (state ,(foldr
-            (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
-            #f
+   (state ,(make-seq
             (list
              (term (addEventListener loc_current "click" #t
                                      loc-l1))
@@ -456,9 +447,7 @@
   (let ([l1 (term (debug-print "capture listener"))]
         [l2 (term (debug-print "bubble listener"))])
     (term 
-     (state ,(foldr
-              (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
-              #f
+     (state ,(make-seq
               (list
                (term (addEventListener loc_current "nobubble" #t
                                        loc_l1))
@@ -482,6 +471,7 @@
 (test-log (list "capture listener" "nobubble default action")
           test-non-bubbling-state
           "log for test-non-bubbling-state")
+
 (define pd-untrusted
   (term (pre-dispatch loc_current 
                       ,empty
@@ -547,3 +537,71 @@
 (test-log (list "click or DOMActivate from script, skipped DA")
           test-skip-untrusted-click
           "log for test-skip-untrusted-click")
+
+;<button id="test">Start Demo</button>
+;<script>
+; var button = document.getElementById('test');
+; button.addEventListener('click', function () { alert('ONE') }, false);
+; button.setAttribute('onclick', "alert('NOT CALLED')"); // event handler listener is registered here
+; button.addEventListener('click', function () { alert('THREE') }, false);
+; button.onclick = function () { alert('TWO'); };
+; button.addEventListener('click', function () { alert('FOUR') }, false);
+;</script>
+
+(define test-handler-order-state-1
+  (let ([l1 (term (debug-print "ONE"))]
+        [l2 (term (debug-print "TWO"))]
+        [l3 (term (debug-print "THREE"))]
+        [l4 (term (debug-print "FOUR"))])
+    (term 
+     (state ,(make-seq
+              (term (
+               (addEventListener loc_child "click" #f loc-l1)
+               (setEventHandler loc_child "click" (debug-print "NOT CALLED"))
+               (addEventListener loc_child "click" #f loc-l3)
+               (setEventHandler loc_child "click" ,l2)
+               (addEventListener loc_child "click" #f loc-l4)
+               (pre-dispatch loc_child ,empty (event "click" #f #f #t ,empty loc-skip)))
+               ))
+            ((loc_child (node "child" ,empty ,empty loc_parent))
+             (loc_parent (node "parent" ,empty (loc_child) null))
+             (loc-l1 ,l1)
+             (loc-l3 ,l3)
+             (loc-l4 ,l4)
+             (loc-skip skip))
+            ,empty))))
+(test M test-handler-order-state-1 "test-handler-order-state-1")
+
+(test-log (list "ONE" "TWO" "THREE" "FOUR")
+          test-handler-order-state-1
+          "log for test-handler-order-state-1")
+
+
+(define test-handler-order-state-2
+  (let ([l1 (term (debug-print "ONE"))]
+        [l2 (term (debug-print "TWO"))]
+        [l3 (term (debug-print "THREE"))]
+        [l4 (term (debug-print "FOUR"))])
+    (term 
+     (state ,(make-seq
+              (term (
+               (addEventListener loc_child "click" #f loc-l1)
+               (setEventHandler loc_child "click" (debug-print "NOT CALLED"))
+               (addEventListener loc_child "click" #f loc-l3)
+               (removeEventHandler loc_child "click")
+               (addEventListener loc_child "click" #f loc-l4)
+               (setEventHandler loc_child "click" ,l2)
+               (pre-dispatch loc_child ,empty (event "click" #f #f #t ,empty loc-skip)))
+               ))
+            ((loc_child (node "child" ,empty ,empty loc_parent))
+             (loc_parent (node "parent" ,empty (loc_child) null))
+             (loc-l1 ,l1)
+             (loc-l3 ,l3)
+             (loc-l4 ,l4)
+             (loc-skip skip))
+            ,empty))))
+(test M test-handler-order-state-2 "test-handler-order-state-2")
+
+(test-log (list "ONE" "TWO" "THREE" "FOUR")
+          test-handler-order-state-2
+          "log for test-handler-order-state-2")

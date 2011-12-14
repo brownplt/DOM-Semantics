@@ -12,17 +12,19 @@
 ; next: add/removeEventListener, setEventHandler, "return" (?)
 ; last: if-curTarget, if-phase
 (define (js->listener-step js)
-  (let* ([stop-prop-pos (regexp-match-positions #rx"\\.stopPropagation" js)]
-         [stop-imm-pos  (regexp-match-positions #rx"\\.stopImmediatePropagation" js)]
-         [prev-def-pos  (regexp-match-positions #rx"\\.preventDefault" js)]
+  (let* ([stop-prop-pos (regexp-match-positions #rx"\\.stopPropagation\\(\\);" js)]
+         [stop-imm-pos  (regexp-match-positions #rx"\\.stopImmediatePropagation\\(\\);" js)]
+         [prev-def-pos  (regexp-match-positions #rx"\\.preventDefault\\(\\);" js)]
+         [mutate-pos  (regexp-match-positions #rx"mutate" js)]
          [sp-begin      (if (list? stop-prop-pos) (caar stop-prop-pos) +inf.0)]
          [si-begin      (if (list? stop-imm-pos) (caar stop-imm-pos) +inf.0)]
          [pd-begin      (if (list? prev-def-pos) (caar prev-def-pos) +inf.0)]
-         [min-begin     (min sp-begin si-begin pd-begin)])
+         [mutate-begin  (if (list? mutate-pos) (caar mutate-pos) +inf.0)]
+         [min-begin     (min sp-begin si-begin pd-begin mutate-begin)])
         (cond [(= min-begin +inf.0)
-                (term skip)]
+                (term (debug-print ,js))]
               [(= min-begin sp-begin)
-                (term (seq stop-prop
+                (term (seq (seq (debug-print "Stopping propagation") stop-prop)
                            ,(js->listener-step
                              (substring js (cdar stop-prop-pos)))))]
               [(= min-begin si-begin)
@@ -32,15 +34,21 @@
               [(= min-begin pd-begin)
                 (term (seq prevent-default
                            ,(js->listener-step
-                             (substring js (cdar prev-def-pos)))))])))
+                             (substring js (cdar prev-def-pos)))))]
+              [(= min-begin mutate-begin)
+                (term (seq mutate
+                           ,(js->listener-step
+                              (substring js (cdar mutate-pos)))))])))
 
 ; Takes a string of JS and returns a corresponding loc, which is added to the
 ; end of the loc-store with the listener-step associated with this JS string.
 (define (js->loc js)
   (let ([cur-loc (term ,(gensym 'loc_))])
          (begin (set! loc-store (append loc-store
-                                        (list (list cur-loc
-                                                    (js->listener-step js)))))
+                                        (list (list
+                                                cur-loc
+                                                (term (seq (debug-print ,(symbol->string cur-loc))
+                                                           ,(js->listener-step js)))))))
                 cur-loc)))
 
 ; When a JSON object is supposed to represent a list, it looks like this:
