@@ -58,6 +58,32 @@
             pdfpagelayout=SinglePage]{hyperref}
 \usepackage[capitalize]{cleveref}
 
+\usepackage{enumitem}
+\newlist{compactitem}{itemize}{3}
+\setlist[compactitem]{
+  topsep=0\baselineskip plus 0.5\baselineskip,
+  partopsep=0pt,
+  itemsep=0\baselineskip plus 0.5\baselineskip,
+  parsep=0pt,
+  label=\textbullet
+}
+\newlist{compactdesc}{description}{3}
+\setlist[compactdesc]{
+  topsep=0\baselineskip plus 0.5\baselineskip,
+  partopsep=0pt,
+  itemsep=0\baselineskip plus 0.5\baselineskip,
+  parsep=0pt,
+}
+\newlist{compactenum}{enumerate}{3}
+\setlist[compactenum]{
+  topsep=0.25\baselineskip plus 0.25\baselineskip minus 0.25\baselineskip,
+  partopsep=0pt,
+  itemsep=0.25\baselineskip plus 0.25\baselineskip minus 0.25\baselineskip,
+  parsep=0pt,
+  label={\arabic*.},ref={\arabic*}
+}
+
+
 \makeatletter
 \newcommand{\paraemph}{\@startsection{paragraph}{4}{\z@}%
   {3.25ex \@plus 1ex \@minus .2ex}{-1em}{\normalfont\normalsize\itshape}}
@@ -167,51 +193,258 @@ Specifically, this paper provides the following contributions:
 \begin{enumerate}
 \item A short, executable, and testable model of event dispatch.
   Writing such a model clarifies potential sources of confusion in the
-  spec itself, provides an oracle against which future implementations
-  can be tested, and provides a foundation for future program analyses.
-\item Simple proofs using the model that clarify how and when script's
-  side effects can affect the dipatching of current and subsequent
-  events.  Thus far such claims were merely the \emph{intent} of the
-  lengthy, prose spec; now we can show the intended behaviros are upheld.
+  spec itself, provides an oracle against which implementations can be
+  tested, and provides a foundation for future program analyses.  As a
+  case in point, systematically testing small examples in our model
+  revealed discrepant behavior among the major browsers.
+\item Simple proofs that the model upholds properties expected of the
+  spec, such as precisely how and when script's side effects can
+  affect the dipatching of current and subsequent events.  Because the
+  model closely resembles the spec, such proofs lend confidence that
+  the spec itself enjoys the same properties; thus far such claims
+  were merely the \emph{intent} of the lengthy, prose spec.
 \item An application of the model to ADsafe [CITE], to determine
   whether ADsafe widgets in fact may still affect the control flow of
   their host, despite the ADsafe sandbox.
 \item An application of the model to two Thunderbird extensions to
   detect a real conflict between them.  Further, the model is used to
   show that the fix (as implemented by one extension author)
-  suffices to correct the bug.
+  currently suffices to correct the bug, but that another, simpler fix
+  is more robust.
 \end{enumerate}
 Elaborating our model into a fully-fledged testing tool or model
 checker, which can scale to full-size programs, is an engineering
 effort left to future work.
 
 \section{Understanding web program control flow}\label{sec:c3-architecture}
-\textbf{It is naive to think of the execution of a web program as
-  merely an event loop alongside a tree-structured data store.
-  Rather, the structure of the tree influences the propagation of
-  events, and the side effects of events can modify the tree.
-  Understanding web program behavior therefore requires modeling all
-  the subtleties of event dispatch through the DOM.}
+The intuitive but incomplete model for programming web pages is that
+of an asynchronous event loop, where events are triggered by user
+interaction, and with event callbacks that have access to an object
+graph representing the tree structure of the \HTML, known as the
+Document Object Model (DOM).  The full definition of ``the DOM'' is in
+fact spread over many specifications [CITECITECITECITECITE],
+comprising far more than just this tree structure.  In reality, the
+DOM object graph is more interconnected than a mere tree and can be
+arbitrarily entangled with the \JS heap; event callbacks are attached
+directly to these DOM nodes; and while the event loop itself is not
+available as a first-class entity through the DOM, nodes may support
+APIs that implicitly cause further events to be dispatched or that
+modify the tree structure.
+
+In short, it is na\"{\i}ve to think of the execution of a web program
+as merely an event loop alongside a tree-structured data store.
+Rather, the structure of the tree influences the propagation of
+events, and the side effects of events can modify the tree.
+Understanding web program behavior therefore requires modeling all the
+subtleties of event dispatch through the DOM.  Like all portions of
+web-related programming, the event mechanisms were developed over
+time, resulting in historical quirks and oddities.  We explain the
+main features of event dispatch in this section, then develop our
+model of it in the following one.
 
 \subsection{Event dispatch in $N$ easy stages}
 \paragraph{Static document structure, one event listener}
-\lipsum[1-2]
+We take as a running example a simple document fragment of three
+nodes: \ftag{div}{}{\ftag{p}{}{\stag{span}}}.  In the simplest case,
+suppose as the page loads we attach a single event listener to the
+\stag{span}:
+\begin{alltt}
+  spanNode.addEventListener("click",
+    function(event) \{ alert("In click"); \});
+\end{alltt}
+
+This statement registers the function as an \emph{listener} for mouse
+``click'' events only; any other event types are ignored.  When an
+event is \emph{dispatched} to a particular \emph{target}, the
+listener on that target for that event type---if there is one---is
+invoked.  Thus a ``click'' event targeted at the \stag{span} will
+yield the alert; a ``keypress'' event will not, nor will a ``click''
+event targeted at the \stag{p} node.
+
+Note that scripts can construct new event objects programmatically and
+then dispatch them to target nodes.  These events behave identically
+to browser-generated events, with one caveat addressed later.
 \paragraph{Multiple listeners and the dispatch chain}
-\lipsum[3]
+The above example is unnecessarily restricted in two key ways.  First,
+the suggestively named \impl{addEventListener} API can in fact be used
+repeatedly, for the same node and the same event type, to add
+\emph{multiple} listeners for an event.  These listeners will be
+called in the order they were installed whenever their triggering
+event is dispatched.  This flexibiility allows for cleaner program
+structure: clicking on a form button, say, might trigger both the
+display of new form fields and the validation of existing ones; these
+disparate pieces of functionality can now be in separate listeners
+rather than one monolithic one.
+
+Second, web programs frequently may respond to events on several
+elements in the same way.  One approach would be to install the same
+function as a listener on each such element, but this is brittle if
+the page structure is later changed.  Instead, a more robust approach
+would install the listener once on the nearest common ancestor of all
+the intended targets.  To achieve this, event dispatch will call
+listeners on \emph{each ancestor of the target node} as well, known as
+the \emph{dispatch chain}.  Thus adding a listener to the other two
+nodes in our example:
+\begin{alltt}
+  function listener(event) \{
+    alert("At " + event.currentTarget.nodeName +
+          " with actual target " + 
+          event.target.nodeName);
+  \}
+  pNode.addEventListener("click", listener);
+  divNode.addEventListener("click", listener);
+\end{alltt}
+will trigger \emph{three} alerts: ``In click'', ``At p with actual
+target span'', and ``At div with actual target span'' in that order:
+the event ``bubbles'' from the target node through its
+ancestors to the root of the document.\footnote{Additionally, for
+  legacy reasons it also propagates to the global \impl{window}
+  object; this detail does not substantially change any of our
+  subsequent modeling.}
+
+For symmetry, programs may want to perform some generic response
+\emph{before} the event reaches the target node, rather than only
+after.  Accordingly, event dispatch in fact defines a so-called
+\emph{capturing} phase, where listeners are called starting at the
+root and propagating down to the target node.  To install a
+capture-phase listener, \impl{addEventListener} takes a third, boolean
+\impl{useCapture} parameter: when true, the listener is for capturing;
+when missing or false, the listener is for bubbling.
+
+Event dispatch therefore comprises three phases: ``capture'', from
+root to the target's parent and running only capture-phase listeners;
+``target'', at the target node and running all listeners; and
+``bubble'', from the target's parent to the root and running only
+bubble-phase listeners.  The \impl{event} parameter to each listener
+contains three fields indicating the current \impl{eventPhase}, the
+\impl{currentTarget}, and the intended \impl{target} of the event.
+For our running example, an event targeted at the \stag{span} will
+call listeners
+\begin{compactenum}
+\item On \stag{div} for phase \impl{capture}, then
+\item On \stag{p} for phase \impl{capture}, then
+\item On \stag{span} for phase \impl{target}, then
+\item On \stag{p} for phase \impl{bubble}, then
+\item On \stag{div} for phase \impl{bubble}.
+\end{compactenum}
 \paragraph{Aborting event propagation}
-\lipsum[4]
+It may be the case that a capture- or target-phase listener completely
+handles an event, and that the app has no need to propagate the event
+further.  The app could maintain some global flag and have each
+listener check the flag and abort accordingly, but this is tedious and
+error-prone.  Instead, the \impl{event} object can be used to stop the
+event propagation in two ways:
+\begin{compactitem}
+\item \impl{event.stopPropagation()} tells dispatch to terminate as
+  soon as all listeners on the current node complete, regardless of
+  whether listeners are installed on future nodes of the dispatch
+  chain.  Thus calling this in a target-phase listener on \stag{span}
+  will abort dispatch between steps~3 and~4 above.
+\item \impl{event.stopImmediatePropagation()} tells dispatch to
+  terminate as soon as the current listener returns, regardless of
+  whether other listeners are installed on this or future nodes in the
+  dispatch chain.  Thus calling this in a capture-phase listener on
+  \stag{p} will abort dispatch in the middle of step~2, even if there
+  are more capture-phase listeners on \stag{p}.
+\end{compactitem}
+
 \paragraph{Dynamic document structure: no effect!}
-\lipsum[5]
+So far our example listeners have had no side effects; in general,
+however, they often do.  This may interact oddly with the informal
+definitions above: for instance, if a target-phase listener removes
+the target node from the document, what should the dispatch chain be?
+Several options are possible; the currently specified behavior is that
+the dispatch chain is \emph{fixed} at the beginning of dispatch, and
+is unmodified by changes in document structure.  Thus in our running
+example, regardless of whether nodes are deleted, re-parented or
+otherwise modified, the five steps listed are unaffected.
+
 \paragraph{Dynamic listeners: some effect!}
-\lipsum[6]
+We can now address the last oversimplification, that event listeners
+are added once and for all at the start of the program.  In fact they
+can be added and removed dynamically (using the analogous
+\impl{removeEventListener} API) throughout the program's execution.
+For example, a common idiom is the ``run-once'' listener that removes
+itself the first time it runs:
+\begin{alltt}
+  function runOnce(event) \{
+    targetNode.removeEventListener("click", runOnce);
+    ...
+  \}
+  targetNode.addEventListener("click", runOnce);
+\end{alltt}
+
+Such actions have a limited effect on the current dispatch: listeners
+added (resp. removed) to a \emph{future} node in the dispatch chain
+will (resp. will not) be called by the dispatch algorithm; listeners
+added (resp. removed) to the \emph{current} or \emph{past} nodes in
+the dispatch chain will be ignored (resp. will still be called).  More
+intuitively, a refinement of the five steps above says that 
+dispatching an event to \stag{span} will:
+\begin{compactitem}
+\item Determine the capture-phase listeners on \stag{div} and run
+  them, then
+\item Determine the capture-phase listeners on \stag{p} and run
+  them, then
+\item Determine the target-phase (i.e. all) listeners on \stag{span} and run
+  them, then
+\item Determine the bubble-phase listeners on \stag{p} and run
+  them, then
+\item Determine the bubble-phase listeners on \stag{div} and run
+  them.
+\end{compactitem}
+Since the determination of the relevant listeners is lazily computed
+in each step, dispatch will only notice added or removed listeners
+that apply to later steps.
+
 \paragraph{Dealing with legacy ``handlers''}
-\lipsum[7]
+Unfortunately, the mechanism explained so far---multiple listeners,
+capturing and bubbling, and cancellation---was not the first model
+proposed.  Originally, authors could write
+\etag{span}{\attr{onclick}{\impl{alert("In onclick");}}}, and define an event
+\emph{handler} for the ``click'' event.  There can be at most one
+handler for a given event on a given node, and this handler takes the
+form of a bare \JS statement.  
+
+To incorporate this legacy handler mechanism into the listener model
+above, handlers are implicitly wrapped in \impl{function(event) \{
+  ... \}}\footnote{The expert reader will note that some contortions
+  are needed to supply the right \impl{this} object and scope to the
+  handler.} and their return values are post-processed to accommodate
+the ad-hoc nature of legacy handler support.  Handlers can be modified
+by modifying the \impl{onclick} content attribute or by modifying the
+\impl{onclick} property of the node:
+\begin{alltt}
+  target.setAttribute("onclick", 
+           "alert('New handler');");
+  target.onclick = function(event) \{ 
+                     alert("New handler"); 
+                   \}
+\end{alltt}
+and for legacy compatibility, these mutations must not affect the
+relative execution order of the handler and any other ``click'' listeners.
+
 \paragraph{Default actions}
-\textbf{Some events by default cause the construction and dispatching
-  of a followup event, but only when the event is ``trusted'' and
-  generated by the browser itself.  Because that event is a new
-  dispatch, any changes to the document are visible as the dispatch
-  chain is constructed.}
+Finally, browsers implement a great deal of functionality in response
+to events: clicking a link will nagivate the page, typing into a text
+box will modify its contents, selecting one radio button will deselect
+the others, and so forth.  Such \emph{default actions} behave mostly
+like implicitly-installed listeners, with a few caveats.  Default
+actions are \emph{not} prevented by \impl{stopPropagation} or
+\impl{stopImmediatePropagation}; instead, authors must call
+\impl{preventDefault}.  (In legacy handlers, authors could return
+\impl{true} (or sometimes \impl{false}) to achive the same effect.)
+Default actions are \emph{not} run for programmatically constructed
+events; these events are considered ``untrusted'' and cannot be used
+to forge user interaction with the browser.
+
+The default action for many events is in fact to trigger the dispatch
+of a new event: for example, the default action of a ``keydown'' event
+will dispatch a new ``keypress'' event; likewise, the default action
+for ``mouseup'' is to dispatch a ``click'' event and possibly a
+``doubleclick'' event.  Note that these are new dispatches; any and
+all changes to the document structure made by script-installed
+listeners will be visible in the dispatch chain of these new events.
 
 \subsection{Non-trivial challenges}
 \subsubsection{Invited third-party code}
@@ -456,21 +689,106 @@ precision of the overall model.  We leave such efforts for future
 work.
 
 \subsection{Modeling challenge: adequacy}
-\lipsum[1-2]
+Whenever language experimenters build a model of a system, they must
+argue that the model adequately represents the system being examined,
+or else the model is of no relevance.  This is an inherently informal
+process, as the system here is the prose of the specification; if the
+spec were amenable to formal methods in the first place, there would
+be no need for a formal model!
+
+To simplify the case for our model's adequacy, we have annotated each
+paragraph of the spec with a link to the relevant definitions and
+reduction rules of our model.  A reasonably-knowledgable reader could
+flip back and forth between the spec and the model, and convince
+himself that the model faithfully represents the intent of the spec.
+An excerpt of this is shown in \cref{fig:aEL}, where we show the
+spec's definition for \impl{addEventListener} and the corresponding
+Redex metafunction that installs the listener into our
+model.\footnote{The spec requirement that \impl{addEventListener} be
+  idempotent is in fact defined elsewhere; that text in turn
+  corresponds to the (elided) \impl{addListenerHelper} metafunction.}
 
 \subsection{Caveats and un-modeled features}
-\paragraph{Iframes and nested documents} \lipsum[8]
-\paragraph{Non-tree-based dispatch} \textbf{e.g. XMLHttpRequest}
-\lipsum[9]
+\paragraph{Full \JS expressiveness}
+Our model uses a minimal set of statements for manipulating listeners
+and handlers.  Consequently, conditional control flow, DOM mutation,
+and any other \JS side effects are not included.  However, our Redex
+model is formulated such that it will be straightforward engineering
+to incorporate the Redex model of \LJS.  Our model will change
+slightly to incorporate a reified event object, rather than just data
+carried in the \impl{dispatch-*} contexts; we foresee no technical
+hurdles here.
+\paragraph{Iframes and nested documents}
+Our model currently assumes that there is only one document under
+consideration.  Consequently our model correctly models the fact that
+event propagation stops at the document root, because it only knows of
+a single document.  A more faithful model would incorporate a notion
+of documents and their nesting within \stag{iframe} elements, and
+explicitly include a rule that terminates the dispatch chain at the
+document root.  
+
+Additionally, because our model is not yet fully
+integrated with \JS, we do not model the \impl{window} object, and so
+do not include it as the first and last targets when constructing
+dispatch chains.  This detail does not materially affect our
+description of event dispatch, and is easy to include.
+\paragraph{Non-tree-based dispatch} 
+We have focused in our model on how event dispatch proceeds with
+tree-based sources of events, as they dominate other event sources.
+However, newer additions to the DOM also supply events that are not
+dispatched along the tree.  For example, \impl{XMLHttpRequest}
+responses, \stag{audio} and \stag{video} status updates, and web
+workers all generate events as their states change.  To incorporate
+those into our model, we need only create rules for each of them that
+construct their specific dispatch chains, bypassing
+\impl{pre-dispatch} and jumping directly to the
+\impl{dispatch-collect} context.  From then on, dispatch proceeds as
+normal.
 
 \section{Applications}
 \subsection{Provable properties of the model}
 \lipsum[1-8]
-\subsection{Always-present legacy handlers} \textbf{Because of the
-  wacky requirements of return values of handlers, and because
-  handlers are always present, do some events always fail to have a
-  default action?}
-\lipsum[1-3]
+\subsection{Finding real-world inconsistencies}
+\paragraph{Erroneous handling of \impl{removeEventListener}}
+We can use our model to systematically generate test cases and observe
+their behavior in the model, then translate the tests to \HTML and \JS
+and test existing browsers to see if they match our expectations.  One
+such set of tests revealed inconsistent behavior among the major browsers.
+These tests all use the same \ftag{div}{}{\ftag{p}{}{\stag{span}}}
+document, and install the following listeners:
+\begin{alltt}
+var targetNode, targetCapture;
+var triggerNode, triggerCapture;
+function g(event) \{ alert("In g"); \}
+function f(event) \{ 
+  targetNode.removeEventListener("click", 
+     g, targetCapture);
+\}
+triggerNode.addEventListener("click", f, 
+                             triggerCapture);
+targetNode.addEventListener("click", g, 
+                            targetCapture);
+\end{alltt}
+In words, this installs listener \impl{f} on \impl{triggerNode},
+either for capture ($\impl{triggerCapture}=\mathit{true}$) or not, that
+will then remove \impl{g}.  It then installs listener \impl{g} on
+\impl{targetNode} for capture or not (\impl{targetCapture}).  A
+systematic search of all possible values of these four variables
+reveals that when $\impl{targetNode}=\impl{triggerNode} \neq
+\stag{span}$ and $\impl{targetCapture}=\impl{triggerCapture}$, browser
+behavior differs.  Chrome (v15 and v16), Safari (v5.0.1) and Firefox
+(v3.6 through v8) will \emph{not} execute \impl{g}, while Internet
+Explorer (v9) and Opera (v11) \emph{will}.  
+
+Our model predicts the latter behavior is correct, but in truth one of
+three situations may hold: IE, Opera and our model may be right, or
+Chrome, Safari and Firefox may be right, or all six may be wrong.
+Regardless, our model can be used to make testable predictions about
+browsers; its mere existence was crucial in automatically finding this
+inconsistency.
+
+
+
 
 \subsection{ADsafe event propagation} \textbf{Does ADsafe properly
   protect events targeted within its subtree from bubbling out to the
@@ -479,9 +797,101 @@ work.
   important.}
 \lipsum[4-6]
 
-\subsection{Detecting real extension conflicts} \textbf{Resolving Conversations
-  and Nostalgy}
-\lipsum[7-9]
+\subsection{Detecting real extension conflicts} 
+\begin{figure}
+  \includegraphics[width=\columnwidth]{nostalgy}
+  \caption{Nostalgy's main interface: a folder selector in the status
+    bar}
+  \label{fig:nostalgy-screenshot}
+\end{figure}
+\begin{figure}
+  \includegraphics[width=\columnwidth]{conversations}
+  \caption{Thunderbird Conversation's main interface: text boxes in
+    the conversation view for quick replies}
+  \label{fig:conversation-screenshot}
+\end{figure}
+One of the present authors routinely uses several extensions to
+customize Thunderbird.  One such extension is Nostalgy~[CITE], which
+provides several convenient hot keys for archiving messages and
+navigating among folders.  For example, pressing `S' will save the
+current message.  This is achieved by two event listeners on
+the Thunderbird global \impl{window} object:
+
+\begin{alltt}
+function onNostalgyKeyPressCapture(event) \{
+  // handle ESC key
+  // handle Nostalgy cancellation
+\}
+function onNostalgyKeyPress(event) \{
+  // show folder selector
+  // handle key commands
+\}
+window.addEventListener("keypress", 
+          onNostalgyKeyPress, false);
+window.addEventListener("keypress", 
+          onNostalgyKeyPressCapture, true);
+\end{alltt}
+
+Implicit in this code is the assumption that all keypresses are
+intended to control Thunderbird, and not, for example, to input text.
+However, another extension allows the user to do just that.
+Thunderbird Conversations~[CITE] redefines the email preview pane to
+show a Gmail-like conversation view, complete with ``quick reply''
+boxes where the user can compose a response without leaving the main
+window.  This functionality is implemented by the default actions of
+the quick-reply \stag{textarea} tags, along with a bubble-phase
+listener on their grandparent \stag{div}:
+\begin{alltt}
+quickReplyDiv.addEventListener("keydown", 
+  function convKeyDown(event) \{
+    // If ENTER then send message
+    // If ESC then cancel editing
+    event.stopPropagation();
+  \});
+\end{alltt}
+
+At first glance, nothing in this code appears problematic; indeed,
+Conversations and Nostalgy are listening to two different events.
+However, our model includes the fact that the default action of a
+``keydown'' event is to dispatch a ``keypress'' event, and while
+Conversations does \impl{stopPropagation}, it does not
+\impl{preventDefault}---which means that any key strokes typed into
+the quick-reply box will effectively call \impl{convKeyDown},
+\impl{onNostalgyKeyPressCapture} and finally
+\impl{onNostalgyKeyPress}.  Consequently, typing a word containing an
+`S' will steal focus from editing the message, and jump to Nostalgy's
+``Save Message'' UI!  And indeed, if we input the Thunderbird DOM and
+these three event listeners into our model, it confirms that this
+behavior is correct according to the event dispatch rules.
+
+When the author contacted the developers of 
+Conversations, he implemented the following fix:
+\begin{alltt}
+quickReplyDiv.addEventListener("keypress",
+  function convKeyPress(event) 
+    \{ event.stopPropagation(); \});
+quickReplyDiv.addEventListener("keyup",
+  function convKeyUp(event)
+    \{ event.stopPropagation(); \});
+\end{alltt}
+Adding these two listeners to our model shows that event dispatch now
+calls \impl{convKeyDown}, \impl{onNostalgyKeyPressCapture}, and
+\impl{convKeyPress}, and no longer calls \impl{onNostalgyKeyPress},
+thereby avoiding the bug for now.  However, some of Nostalgy's code
+still gets called, leaving open the potential for future bugs.  A
+simpler, and more robust, fix is available: adding a call to
+\impl{preventDefault} in \impl{convKeyDown} would prevent the
+dispatch of the ``keypress'' event in the first place.
+
+Generalizing from this example, we can annotate listeners in our model
+with provenance information, and then query the model whether there
+exist any $(\mathit{eventType}, \mathit{targetNode})$ pairs for which
+dispatch will cause control to flow from one extension's listeners to
+another's.  We anticipate that such queries will statically yield
+other pairs of extensions whose behavior might conflict; for example,
+the Conversations author knows it is incompatible with other hot-key
+related extensions, and this analysis can determine others, or help
+pinpoint where bugfixes are needed.
 
 \section{Conclusion}\label{sec:conclusion}
 \lipsum[1]
