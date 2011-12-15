@@ -226,7 +226,14 @@
     bool_useCapture
     loc_listener)])
 
-; TODO(matt) - comment/annotate setHandler(Helper)
+; HTML5 Specification, Section 6.1.6.1 - Event handlers
+; All event handlers on an object, whether an element or some other object, and whether set to null or to a Function 
+; object, must be registered as event listeners on the object when it is created, as if the addEventListener() method 
+; on the object's EventTarget interface had been invoked, with the event type (type argument) equal to the type 
+; corresponding to the event handler (the event handler event type), the listener set to be a target and bubbling 
+; phase listener (useCapture argument set to false), and the event listener itself (listener argument) set to do nothing 
+; while the event handler's value is not a Function object, and set to invoke the call() callback of the Function object
+; associated with the event handler otherwise.
 (define-metafunction DOM
   [(setHandlerHelper ((TP_a (HL_a ...)) ...
                       ((string_type P) ((listener bool_p loc_p) ... 
