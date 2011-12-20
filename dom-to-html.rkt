@@ -63,6 +63,8 @@
   (regexp-replace* #rx"-" s "_"))
 (define (bool->string b)
   (if b "true" "false"))
+(define (single-line s)
+  (regexp-replace* #rx"\n" s "  "))
 
 (define (xexp->html sxml)
   (let* ([tagname (first sxml)]
@@ -133,7 +135,11 @@
      "\").setAttribute(\"on"
      (term T)
      "\", \""
-     (regexp-replace* #rx"(?m:\")" (term (s->js S)) "\\\\\"")
+     ;(single-line (regexp-replace* #rx"(?m:\")" (term (s->js S)) "\\\\\""))
+     (single-line
+      (string-join (regexp-split (regexp "[\"]") (string-join (regexp-split (regexp "[\\]")
+                                                                            (term (s->js S))) "\\\\"))
+                   "\\\""))
      "\");")]
   [(s->js (removeEventHandler loc_target T))
    ,(string-append
@@ -358,6 +364,25 @@ var debug = {
     var result = ((!!expected) == (!!debug.inLog(msg))) ? "PASSED" : "FAILED";
     debug.printResult(result);
     if (result === "FAILED") {
+      for (var i = 0; i < debug.log.length; i++) {
+        debug.printResult(debug.log[i]);
+      }
+    }
+  },
+  checkLog: function (expected) {
+    var result = (expected.length === debug.log.length);
+    if (result) {
+      for (var i = 0; i < debug.log.length; i++) {
+        result = result && (debug.log[i] === expected[i]);
+      }
+    }
+    debug.printResult(result ? "PASSED" : "FAILED");
+    if (!result) {
+      debug.printResult("Expected:");
+      for (var i = 0; i < expected.length; i++) {
+        debug.printResult(expected[i]);
+      }
+      debug.printResult("Actual:");
       for (var i = 0; i < debug.log.length; i++) {
         debug.printResult(debug.log[i]);
       }

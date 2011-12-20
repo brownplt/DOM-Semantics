@@ -136,6 +136,8 @@
    ,(cons 
      (term (handler S))
      (term (lookup-listeners (HL_wanted ...) ((loc_a S_a) ...))))]
+  [(lookup-listeners ((nullhandler) HL_wanted ...) ((loc_a S_a) ...))
+   (lookup-listeners (HL_wanted ...) ((loc_a S_a) ...))]
   [(lookup-listeners ((listener bool loc_listener) HL_wanted ...)
                      ((loc_a S_a) ...
                       (loc_listener S_listener)
