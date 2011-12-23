@@ -72,7 +72,7 @@
       (nullhandler)]
   [L (listener bool S) ;was this installed with useCapture?
      (handler S)
-     (nullhandler)]
+     (gethandler)]
   ; Predispatch: target node, path root->target, event
   [PD (pre-dispatch parent (loc ...) E)]
   [PDef bool]
@@ -132,12 +132,15 @@
 
 
 (define-metafunction DOM
+  ; NOTE: We're deferring looking up the handler until later, per the event handler processing algorithm
   [(lookup-listeners ((handler S) HL_wanted ...) ((loc_a S_a) ...))
    ,(cons 
-     (term (handler S))
+     (term (gethandler))
      (term (lookup-listeners (HL_wanted ...) ((loc_a S_a) ...))))]
   [(lookup-listeners ((nullhandler) HL_wanted ...) ((loc_a S_a) ...))
-   (lookup-listeners (HL_wanted ...) ((loc_a S_a) ...))]
+   ,(cons 
+     (term (gethandler))
+     (term (lookup-listeners (HL_wanted ...) ((loc_a S_a) ...))))]
   [(lookup-listeners ((listener bool loc_listener) HL_wanted ...)
                      ((loc_a S_a) ...
                       (loc_listener S_listener)
@@ -229,13 +232,6 @@
     loc_listener)])
 
 ; HTML5 Specification, Section 6.1.6.1 - Event handlers
-; All event handlers on an object, whether an element or some other object, and whether set to null or to a Function 
-; object, must be registered as event listeners on the object when it is created, as if the addEventListener() method 
-; on the object's EventTarget interface had been invoked, with the event type (type argument) equal to the type 
-; corresponding to the event handler (the event handler event type), the listener set to be a target and bubbling 
-; phase listener (useCapture argument set to false), and the event listener itself (listener argument) set to do nothing 
-; while the event handler's value is not a Function object, and set to invoke the call() callback of the Function object
-; associated with the event handler otherwise.
 (define-metafunction DOM
   [(setHandlerHelper ((TP_a (HL_a ...)) ...
                       ((string_type P) ((listener bool_p loc_p) ... 
@@ -476,6 +472,69 @@
                Log)
         finished-listener)
    
+   ; about to start handler, need to lookup what it is
+   ; HTML5 specification, Section 6.1.6.1 - Event handler processing algorithm
+   (--> (state (in-hole Ctx
+                        (dispatch (event T_event Bubbles Cancels Trusted Meta loc_default)
+                                  loc_target P PDef SP SI
+                                  (loc_child ...) (L ...)
+                                  (gethandler)))
+               ((loc_a any_a) ...
+                (loc_target
+                 (node string
+                       ((TP_a (HL_a ...)) ...
+                        ((T_event P) (HL_c ... (handler S_handler) HL_d ...))
+                        (TP_b (HL_b ...)) ...)
+                       (loc_kids ...)
+                       parent))
+                (loc_b any_b) ...)
+               Log)
+        (state (in-hole Ctx
+                        (dispatch (event T_event Bubbles Cancels Trusted Meta loc_default)
+                                  loc_target P PDef SP SI
+                                  (loc_child ...) (L ...)
+                                  (handler S_handler)))
+               ((loc_a any_a) ...
+                (loc_target
+                 (node string
+                       ((TP_a (HL_a ...)) ...
+                        ((T_event P) (HL_c ... (handler S_handler) HL_d ...))
+                        (TP_b (HL_b ...)) ...)
+                       (loc_kids ...)
+                       parent))
+                (loc_b any_b) ...)
+               Log)
+        gethandler-found-handler)
+   (--> (state (in-hole Ctx
+                        (dispatch (event T_event Bubbles Cancels Trusted Meta loc_default)
+                                  loc_target P PDef SP SI
+                                  (loc_child ...) (L ...)
+                                  (gethandler)))
+               ((loc_a any_a) ...
+                (loc_target
+                 (node string
+                       ((TP_a (HL_a ...)) ...
+                        ((T_event P) (HL_c ... (nullhandler) HL_d ...))
+                        (TP_b (HL_b ...)) ...)
+                       (loc_kids ...)
+                       parent))
+                (loc_b any_b) ...)
+               Log)
+        (state (in-hole Ctx
+                        (dispatch-next (event T_event Bubbles Cancels Trusted Meta loc_default)
+                                       loc_target P PDef SP SI
+                                       (loc_child ...) (L ...)))
+               ((loc_a any_a) ...
+                (loc_target
+                 (node string
+                       ((TP_a (HL_a ...)) ...
+                        ((T_event P) (HL_c ... (nullhandler) HL_d ...))
+                        (TP_b (HL_b ...)) ...)
+                       (loc_kids ...)
+                       parent))
+                (loc_b any_b) ...)
+               Log)
+        gethandler-no-handler)
    ; done with current handler, determine what steps to take
    ; HTML5 Specification, Section 6.1.6.1 - Event handlers
    ; http://www.w3.org/TR/html5/webappapis.html#event-handler-attributes
