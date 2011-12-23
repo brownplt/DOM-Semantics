@@ -1,5 +1,5 @@
 #lang racket
-(require redex)
+(require redex/reduction-semantics)
 (require "redex-domv2.rkt")
 (provide model->xexp xexp->html)
 

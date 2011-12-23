@@ -1,9 +1,13 @@
 #lang racket
-(require redex)
+(require redex/reduction-semantics)
 (require racket/date)
+(require racket/serialize)
+(require racket/place)
 (require "redex-domv2.rkt")
 (require "dom-to-html.rkt")
 
+(provide main)
+(provide place-main)
 
 (define (make-seq stmts)
   (foldr (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
@@ -19,43 +23,6 @@
 
 (define (rand-bool)
   (equal? (random 2) 0))
-
-(define n-div
-  (term (node "div"
-              ,empty
-              (loc_p)
-              null)))
-;(test N n-div "n-div")
-
-(define n-p
-  (term (node "p"
-              ,empty
-              (loc_span)
-              loc_div)))
-;(test N n-p "n-p")
-
-(define n-span
-  (term (node "span"
-              ,empty
-              ,empty
-              loc_p)))
-;(test N n-span "n-span")
-
-(define el-storo
-  (term ((loc_div ,n-div)
-         (loc_p ,n-p)
-         (loc_span ,n-span))))
-;(test N-store el-storo "el-storo")
-
-
-(define (add-listener-to-everything store type useCapture listener)
-  (let* ((allLocs (map first store))
-         (allAddListeners 
-          (map (lambda (loc) 
-                 (term (addEventListener ,loc ,type ,useCapture ,listener))) allLocs))
-         (addListenerStmt
-          (make-seq allAddListeners)))
-    addListenerStmt))
 
 
 (define (appendChild loc_parent loc_child store)
@@ -73,13 +40,23 @@
                 
   
 
-(define-struct testparams
+(define-serializable-struct testparams
   (num-tests num-nodes num-addListeners num-removeListeners num-setHandlers num-clearHandlers num-dispatches))
 
 (define (nth n lst)
   (first (list-tail lst (- n 1))))
 (define (random-in-list lst)
   (nth (+ 1 (random (length lst))) lst))
+
+(define next-nums (make-hash))
+(define (clear-next-nums)
+  (for-each (lambda (key) (dict-remove! next-nums key)) (dict-keys next-nums)))
+(define (next-num key)
+  (let ((next-num (dict-ref next-nums key 1)))
+    (dict-set! next-nums key (+ 1 next-num))
+    next-num))
+(define (next-sym prefix)
+  (string->symbol (string-append prefix (number->string (next-num prefix)))))
 
 (define (make-tree root locs store)
   (cond
@@ -95,122 +72,170 @@
        ['1 (let ((new-store (appendChild root (first locs) store)))
             (make-tree (first locs) (rest locs) new-store))])]))
 
+(define (makeAddEventListener target event useCapture listener)
+  (term 
+   (seq
+    (debug-print ,(string-append "Adding listener " (symbol->string listener) 
+                                 " to node " (symbol->string target)
+                                 " that is " (if useCapture "capturing" "bubbling")
+                                 " for event type " event))
+    (addEventListener ,target ,event ,useCapture ,listener))))
+(define (makeRemoveEventListener target event useCapture listener)
+  (term 
+   (seq
+    (debug-print ,(string-append "Removing listener " (symbol->string listener) 
+                                 " from node " (symbol->string target)
+                                 " that was " (if useCapture "capturing" "bubbling")
+                                 " for event type " event))
+    (removeEventListener ,target ,event ,useCapture ,listener))))
+(define (makeSetEventHandler target event handler)
+  (term 
+   (seq
+    (debug-print ,(string-append "Setting handler"
+                                 " for event type " event
+                                 " on node " (symbol->string target)
+                                 " to " (second (second handler))
+                                 ))
+    (setEventHandler ,target ,event ,handler))))
+(define (makeRemoveEventHandler target event)
+  (term 
+   (seq
+    (debug-print ,(string-append "Clearing handler"
+                                 " for event type " event
+                                 " on node " (symbol->string target)
+                                 ))
+    (removeEventHandler ,target ,event))))
+
 (define (make-prog number-of-tests events node-locs listener-locs handlers)
   (let ([addListeners (build-list (testparams-num-addListeners number-of-tests) 
                                   (lambda (i)
-                                    (term (addEventListener
-                                           ,(random-in-list node-locs)
-                                           ,(random-in-list events)
-                                           ,(rand-bool)
-                                           ,(random-in-list listener-locs)))))]
+                                    (makeAddEventListener
+                                     (random-in-list node-locs)
+                                     (random-in-list events)
+                                     (rand-bool)
+                                     (random-in-list listener-locs))))]
         [remListeners (build-list (testparams-num-removeListeners number-of-tests) 
                                   (lambda (i)
-                                    (term (removeEventListener
-                                           ,(random-in-list node-locs)
-                                           ,(random-in-list events)
-                                           ,(rand-bool)
-                                           ,(random-in-list listener-locs)))))]
+                                    (makeRemoveEventListener
+                                     (random-in-list node-locs)
+                                     (random-in-list events)
+                                     (rand-bool)
+                                     (random-in-list listener-locs))))]
         [setHandlers (build-list (testparams-num-setHandlers number-of-tests) 
                                  (lambda (i)
-                                   (term (setEventHandler
-                                          ,(random-in-list node-locs)
-                                          ,(random-in-list events)
-                                          ,(random-in-list handlers)))))]
+                                   (makeSetEventHandler
+                                    (random-in-list node-locs)
+                                    (random-in-list events)
+                                    (random-in-list handlers))))]
         [clearHandlers (build-list (testparams-num-clearHandlers number-of-tests) 
                                    (lambda (i)
-                                     (term (removeEventHandler
-                                            ,(random-in-list node-locs)
-                                            ,(random-in-list events)))))]
+                                     (makeRemoveEventHandler
+                                      (random-in-list node-locs)
+                                      (random-in-list events))))]
         [dispatches (build-list (testparams-num-dispatches number-of-tests)
                                 (lambda (i)
-                                  (term (pre-dispatch 
-                                         ,(random-in-list (rest node-locs)) ; we don't dispatch correctly to root nodes
-                                         ,empty
-                                         (event ,(random-in-list events)
-                                                ,(rand-bool)
-                                                ,(rand-bool)
-                                                #t 
-                                                ,empty
-                                                loc_skip)))))])
+                                  (let ([event (random-in-list events)]
+                                        [bubbles (rand-bool)]
+                                        [cancels (rand-bool)]
+                                        [target (random-in-list (rest node-locs))] ; we don't dispatch correctly to root nodes
+                                        )
+                                  (term 
+                                   (seq
+                                    (debug-print ,(string-append "Dispatching a "
+                                                                 (if bubbles "bubbling, " "non-bubbling, ")
+                                                                 (if cancels "cancelable " "non-cancelable ")
+                                                                 event " event to " (symbol->string target)))
+                                    (pre-dispatch 
+                                     ,target 
+                                     ,empty
+                                     (event ,event
+                                            ,bubbles
+                                            ,cancels
+                                            #t 
+                                            ,empty
+                                            loc_skip)))))))])
     (make-seq (shuffle (append addListeners remListeners setHandlers clearHandlers dispatches)))))
 
-(define (make-listener i number-of-tests events node-locs listener-locs)
-  (make-seq
-   (term 
-    (
-     (debug-print ,(string-append "Starting listener " (number->string i)))
-     ,(if (rand-bool)
-          (term (addEventListener 
-                 ,(random-in-list node-locs)
-                 ,(random-in-list events)
-                 ,(rand-bool) 
-                 ,(random-in-list listener-locs)))
-          (term skip))
-     ,(if (rand-bool)
-          (term (removeEventListener 
-                 ,(random-in-list node-locs)
-                 ,(random-in-list events)
-                 ,(rand-bool) 
-                 ,(random-in-list listener-locs)))
-          (term skip))
-     ,(if (and (rand-bool) (> (testparams-num-setHandlers number-of-tests) 0))
-          (term (setEventHandler
-                 ,(random-in-list node-locs)
-                 ,(random-in-list events)
-                 ,(make-handler (- 0 i) number-of-tests events node-locs listener-locs)))
-          (term skip))
-     ,(if (and (rand-bool) (> (testparams-num-clearHandlers number-of-tests) 0))
-          (term (removeEventHandler
-                 ,(random-in-list node-locs)
-                 ,(random-in-list events)))
-          (term skip))
-     (debug-print ,(string-append "Finished listener " (number->string i)))
-     ))))
+(define (make-listener number-of-tests events node-locs listener-locs)
+  (let ((listener-num (number->string (next-num "listener"))))
+    (make-seq
+     (term 
+      (
+       (debug-print ,(string-append "Starting listener " listener-num))
+       ,(if (and (rand-bool) (> (testparams-num-addListeners number-of-tests) 0))
+            (makeAddEventListener 
+             (random-in-list node-locs)
+             (random-in-list events)
+             (rand-bool) 
+             (random-in-list listener-locs))
+            (term skip))
+       ,(if (and (rand-bool) (> (testparams-num-removeListeners number-of-tests) 0))
+            (makeRemoveEventListener 
+             (random-in-list node-locs)
+             (random-in-list events)
+             (rand-bool) 
+             (random-in-list listener-locs))
+            (term skip))
+       ,(if (and (rand-bool) (> (testparams-num-setHandlers number-of-tests) 0))
+            (makeSetEventHandler
+             (random-in-list node-locs)
+             (random-in-list events)
+             (make-handler number-of-tests events node-locs listener-locs))
+            (term skip))
+       ,(if (and (rand-bool) (> (testparams-num-clearHandlers number-of-tests) 0))
+            (makeRemoveEventHandler
+             (random-in-list node-locs)
+             (random-in-list events))
+            (term skip))
+       (debug-print ,(string-append "Finished listener " listener-num))
+     )))))
 
-(define (make-handler i number-of-tests events node-locs listener-locs)
-  (make-seq
-   (term 
-    (
-     (debug-print ,(string-append "Starting handler " (number->string i)))
-     ,(if (rand-bool)
-          (term (addEventListener 
-                 ,(random-in-list node-locs)
-                 ,(random-in-list events)
-                 ,(rand-bool) 
-                 ,(random-in-list listener-locs)))
-          (term skip))
-     ,(if (rand-bool)
-          (term (removeEventListener 
-                 ,(random-in-list node-locs)
-                 ,(random-in-list events)
-                 ,(rand-bool) 
-                 ,(random-in-list listener-locs)))
-          (term skip))
-    ,(if (and (rand-bool) (> (testparams-num-setHandlers number-of-tests) 0))
-          (term (setEventHandler
-                 ,(random-in-list node-locs)
-                 ,(random-in-list events)
-                 ,(make-handler (- 0 i) number-of-tests events node-locs listener-locs)))
-          (term skip))
-     ,(if (and (rand-bool) (> (testparams-num-clearHandlers number-of-tests) 0))
-          (term (removeEventHandler
-                 ,(random-in-list node-locs)
-                 ,(random-in-list events)))
-          (term skip))
-     (debug-print ,(string-append "Finished handler " (number->string i)))
-     (return ,(rand-bool))
-     ))))
-
+(define (make-handler number-of-tests events node-locs listener-locs)
+  (let ((handler-num (number->string (next-num "handler"))))
+    (make-seq
+     (term 
+      (
+       (debug-print ,(string-append "Starting handler " handler-num))
+       ,(if (and (rand-bool) (> (testparams-num-addListeners number-of-tests) 0))
+            (makeAddEventListener 
+             (random-in-list node-locs)
+             (random-in-list events)
+             (rand-bool) 
+             (random-in-list listener-locs))
+            (term skip))
+       ,(if (and (rand-bool) (> (testparams-num-removeListeners number-of-tests) 0))
+            (makeRemoveEventListener 
+             (random-in-list node-locs)
+             (random-in-list events)
+             (rand-bool) 
+             (random-in-list listener-locs))
+            (term skip))
+       ,(if (and (rand-bool) (> (testparams-num-setHandlers number-of-tests) 0))
+            (makeSetEventHandler
+             (random-in-list node-locs)
+             (random-in-list events)
+             (make-handler number-of-tests events node-locs listener-locs))
+            (term skip))
+       ,(if (and (rand-bool) (> (testparams-num-clearHandlers number-of-tests) 0))
+            (makeRemoveEventHandler
+             (random-in-list node-locs)
+             (random-in-list events))
+            (term skip))
+       (debug-print ,(string-append "Finished handler " handler-num))
+       (return ,(rand-bool))
+       )))))
+  
 (define (generate-tests number-of-tests)
   (build-list (testparams-num-tests number-of-tests) (lambda (i) (gen-test number-of-tests))))
 (define (gen-test number-of-tests)
-  (let* ([node-locs (build-list (testparams-num-nodes number-of-tests) (lambda (i) (gensym "loc_node")))]
+  (clear-next-nums)
+  (let* ([node-locs (build-list (testparams-num-nodes number-of-tests) (lambda (i) (next-sym "loc_node")))]
          [init-store (map (lambda (loc) (list loc (term (node "div" ,empty ,empty null)))) node-locs)]
          [tree-store (make-tree (first node-locs) (rest node-locs) init-store)]
-         [listener-locs (build-list (testparams-num-addListeners number-of-tests) (lambda (i) (gensym "loc_listener")))]
+         [listener-locs (build-list (testparams-num-addListeners number-of-tests) (lambda (i) (next-sym "loc_listener")))]
          [events (list "click")]
-         [listeners (build-list (testparams-num-addListeners number-of-tests) (lambda (i) (make-listener (+ 1 i) number-of-tests events node-locs listener-locs)))]
-         [handlers (build-list (testparams-num-setHandlers number-of-tests) (lambda (i) (make-handler (+ 1 i) number-of-tests events node-locs listener-locs)))]
+         [listeners (build-list (testparams-num-addListeners number-of-tests) (lambda (i) (make-listener number-of-tests events node-locs listener-locs)))]
+         [handlers (build-list (testparams-num-setHandlers number-of-tests) (lambda (i) (make-handler number-of-tests events node-locs listener-locs)))]
          [setup (make-prog number-of-tests events node-locs listener-locs handlers)]
          [js-store 
           (update-store
@@ -223,13 +248,18 @@
          [log-test (string-append "debug.checkLog(["
                                   (string-join (map (lambda (s) (string-append "\"" s "\"")) final-log) ", ")
                                   "]);")])
-    (model->xexp model log-test)))
+    (list model (model->xexp model log-test))))
 
-(define (save-test directory name test)
-  (let ((test-name (string-append directory "/" name)))
+(define (save-test directory html-name rkt-name model test)
+  (let ((test-name (string-append directory "/" html-name))
+        (model-name (string-append directory "/" rkt-name)))
     (if (file-exists? test-name) (delete-file test-name) empty)
+    (if (file-exists? model-name) (delete-file model-name) empty)
     (with-output-to-file test-name
-      (lambda () (displayln test)))))
+      (lambda () (displayln test)))
+    (with-output-to-file model-name
+      (lambda () (write (serialize model))))))
+
 
 (define (save-test-runner name tests)
   (if (file-exists? name) (delete-file name) empty)
@@ -261,15 +291,53 @@
      (date-minute cur-date))))
 
 (define (test-explorer explorer-directory-prefix number-of-tests)
-  (let* ([tests (generate-tests number-of-tests)]
-         [cur-date (cur-date-string)]
-         [explorer-directory (string-append explorer-directory-prefix "." cur-date)]
-         [test-root (string-append explorer-directory "/")]
-         [test-files-names 
-          (map (lambda (test) 
-                 (list test-root (string-append (symbol->string (gensym cur-date)) ".html") test)
-                 ) tests)])
-    (if (not (directory-exists? explorer-directory)) (make-directory explorer-directory) empty)
-    (map (lambda (test) (apply save-test test)) test-files-names)
-    (save-test-runner (string-append test-root "testrun.html") (map second test-files-names))))
+  (let-values ([(directory prefix isDir) (split-path explorer-directory-prefix)])
+    (let* ([tests (generate-tests number-of-tests)]
+           [cur-date (cur-date-string)]
+           [explorer-directory (path->string (make-temporary-file 
+                                              (string-append (path->string prefix) "." cur-date "-~a")
+                                              'directory
+                                              directory))]
+           [test-root (string-append explorer-directory "/")]
+           [test-files-names 
+            (map (lambda (test) 
+                   (let ((test-name (symbol->string (gensym cur-date))))
+                     (append (list test-root (string-append test-name ".html") (string-append test-name ".rkt")) test))
+                   ) tests)])
+      (map (lambda (test) (apply save-test test)) test-files-names)
+      (save-test-runner (string-append test-root "testrun.html") (map second test-files-names)))))
+  
+(define (many-tests num-suites explorer-directory-prefix number-of-tests)
+  (for-each (lambda (i)
+              (let ((start-time (current-seconds))
+                    (finished-msg (string-append "Finished " (number->string (+ i 1)) " of " (number->string num-suites) " tests"
+                                                 " in " explorer-directory-prefix)))
+                (test-explorer explorer-directory-prefix number-of-tests)
+                (if (< i (- num-suites 1))
+                    (let ((delay (max 0 (- 61 (- (current-seconds) start-time)))))
+                      (displayln (string-append finished-msg
+                                                ", Waiting " (number->string delay) " seconds"))
+                      (sleep delay))
+                    (displayln finished-msg))))
+            (build-list num-suites (lambda (i) i))))
 
+(define (place-main ch)
+  (let ([args-to-manytests (deserialize (place-channel-get ch))])
+    (apply many-tests args-to-manytests)))
+
+(define (main)
+  (random-seed (current-milliseconds))
+  (file-stream-buffer-mode (current-output-port) 'none)
+  (let* ([test-dir (lambda (dir) (path->string (build-path (current-directory) dir)))]
+         [pls (for/list ([i (in-range 4)])
+                (dynamic-place (build-path (current-directory) "generate-tests.rkt") 'place-main))]
+         [args (list
+                (list 7 (test-dir "test-listeners-par") (make-testparams 50 10 4 2 0 0 1))
+                (list 7 (test-dir "test-listeners-par") (make-testparams 50 10 4 2 0 0 1))
+                (list 7 (test-dir "test-listeners-handlers-par") (make-testparams 50 10 4 2 2 2 1))
+                (list 7 (test-dir "test-listeners-handlers-par") (make-testparams 50 10 4 2 2 2 1)))])
+    (for ([arg (in-list args)]
+          [p pls])
+      (place-channel-put p (serialize arg)))
+    (map place-wait pls)))
+  

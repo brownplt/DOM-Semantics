@@ -1,5 +1,5 @@
 #lang racket
-(require redex)
+(require redex/reduction-semantics)
 (provide DOM DOM-reduce)
 
 ;; Version 2
@@ -1009,7 +1009,7 @@
                                           loc_target))
                N-store
                Log)
-        (state (in-hole Ctx (debug-print "default-prevented"))
+        (state (in-hole Ctx skip) ;(debug-print "default-prevented"))
                N-store
                Log)
         dispatch-default-prevented)
