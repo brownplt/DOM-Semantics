@@ -8,6 +8,8 @@
 
 (provide main)
 (provide place-main)
+(provide gen-test)
+(provide make-testparams)
 
 (define (make-seq stmts)
   (foldr (lambda (t acc) (if (equal? acc #f) t (term (seq ,t ,acc))))
@@ -326,16 +328,15 @@
     (apply many-tests args-to-manytests)))
 
 (define (main)
-  (random-seed (current-milliseconds))
-  (file-stream-buffer-mode (current-output-port) 'none)
+  (random-seed (modulo (current-milliseconds) (sub1 (expt 2 31))))
   (let* ([test-dir (lambda (dir) (path->string (build-path (current-directory) dir)))]
          [pls (for/list ([i (in-range 4)])
                 (dynamic-place (build-path (current-directory) "generate-tests.rkt") 'place-main))]
          [args (list
-                (list 7 (test-dir "test-listeners-par") (make-testparams 50 10 4 2 0 0 1))
-                (list 7 (test-dir "test-listeners-par") (make-testparams 50 10 4 2 0 0 1))
-                (list 7 (test-dir "test-listeners-handlers-par") (make-testparams 50 10 4 2 2 2 1))
-                (list 7 (test-dir "test-listeners-handlers-par") (make-testparams 50 10 4 2 2 2 1)))])
+                (list 1 (test-dir "test-listeners-handlers-par") (make-testparams 500 10 4 2 2 2 1))
+                (list 1 (test-dir "test-listeners-handlers-par") (make-testparams 500 10 4 2 2 2 1))
+                (list 1 (test-dir "test-listeners-handlers-par") (make-testparams 500 10 4 2 2 2 1))
+                (list 1 (test-dir "test-listeners-handlers-par") (make-testparams 500 10 4 2 2 2 1)))])
     (for ([arg (in-list args)]
           [p pls])
       (place-channel-put p (serialize arg)))

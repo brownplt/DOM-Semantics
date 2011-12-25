@@ -3,6 +3,8 @@
 (require "redex-domv2.rkt")
 (require "dom-to-html.rkt")
 
+(provide state-add-listener2-maker)
+(provide state-remove-listener2-maker)
 ;The naming scheme here represents 
 ;"current node-current phase-node to add to-phase to do the add"
 ;so div-cap-p-bub means during the capture phase on div, add the listenr
@@ -394,4 +396,4 @@
              (loc-l4 ,l4)
              (loc-skip skip))
             ,empty))))
-(displayln (model->xexp test-handler-order-state-2))
+;(displayln (model->xexp test-handler-order-state-2))
